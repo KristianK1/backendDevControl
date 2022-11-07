@@ -1,23 +1,35 @@
-interface IConnection {
-    username: string,
-    connectionId: number,
-    timestampBegin: string,
+import { connection } from "websocket"
+
+export interface IWSMessage {
+    messageType: 'connectDevice' | 'connectUser',
+    data: IWSSDeviceConnectRequest | IWSSUserConnectRequest
+}
+
+
+
+export interface IWSSUserConnectRequest {
+    authToken: string,
     frontEndType: 'web' | 'responsive-web' | 'mobileApp' | 'wearOS',
 }
 
-interface IConnectRequest {
-    username: string,
-    password: string,
-    connectionId?: number,
-    frontEndType: 'web' | 'responsive-web' | 'mobileApp' | 'wearOS',
+export interface IWSSDeviceConnectRequest {
+    deviceKey: string,
 }
 
-interface IConnectResponse {
-    connectionId: number,
+export interface IWSSBasicConnection {
+    startedAt: string,
+    connection: connection,
+    connectionUUID: string,
 }
 
-interface IDisconnectRequest {
-    username: string,
-    password: string,
-    connectionId: number,
+export interface IWSSConnectionUser {
+    userId: number,
+    basicConnection: IWSSBasicConnection,
+    frontendType: 'web' | 'responsive-web' | 'mobileApp' | 'wearOS',
 }
+
+export interface IWSSConnectionDevice {
+    deviceId: number,
+    basicConnection: IWSSBasicConnection,
+}
+

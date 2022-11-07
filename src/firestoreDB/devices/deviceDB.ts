@@ -60,6 +60,15 @@ export class DeviceDB {
         return newDevice.id;
     }
 
+    async getDeviceByKey(key: string) {
+        const allDevices = await this.getDevices();
+        let device = allDevices.find(o => o.deviceKey === key);
+        if (!device) {
+            throw ({ message: 'Device doesn\'t exist' });
+        }
+        return device;
+    }
+
     async renameDevice(id: number, deviceName: string) {
         let device: IDevice = await this.getDevicebyId(id);
         await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${id}`, {

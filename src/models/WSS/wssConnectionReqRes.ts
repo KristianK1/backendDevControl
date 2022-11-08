@@ -1,6 +1,6 @@
 import { connection } from "websocket"
 
-export interface IWSMessage {
+export interface IWSSMessage {
     messageType: 'connectDevice' | 'connectUser',
     data: IWSSDeviceConnectRequest | IWSSUserConnectRequest
 }

@@ -41,12 +41,17 @@ export class DeviceDB {
         return device;
     }
 
-    async addDevice(deviceName: string, userAdminId: number): Promise<number> {
+    async addDevice(deviceName: string, userAdminId: number, deviceKey?: string): Promise<number> {
         const allDevices = await this.getDevices();
-        let deviceKey: string;
-        while (true) {
-            deviceKey = uuid().replace('-', '');//.slice(0, 10);
-            if (!allDevices.find(o => o.deviceKey === deviceKey)) break;
+        if (!!deviceKey) {
+            if (allDevices.find(o => o.deviceKey === deviceKey)) {
+                throw ({ message: 'deviceKey exists' });
+            }
+        } else {
+            while (true) {
+                deviceKey = uuid().replaceAll('-', '');//.substring(0,10);
+                if (!allDevices.find(o => o.deviceKey === deviceKey)) break;
+            }
         }
         const maxId = await this.getMaxIds.getMaxDeviceId(true);
         const newDevice: IDevice = {

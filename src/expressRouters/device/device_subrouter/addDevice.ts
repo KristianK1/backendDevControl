@@ -18,7 +18,7 @@ router.post('/', async (req: any, res: any) => {
         res.send(e.message);
         return;
     }
-    let id = await deviceDb.addDevice(addDeviceReq.deviceName, addDeviceReq.userAdminId);
+    let id = await deviceDb.addDevice(addDeviceReq.deviceName, addDeviceReq.userAdminId, addDeviceReq.deviceKey);
     res.send(`${id}`);
 });
 

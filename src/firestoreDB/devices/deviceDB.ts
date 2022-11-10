@@ -1,9 +1,8 @@
 import { v4 as uuid } from 'uuid';
-import { IDevice, IDeviceFieldBasic, IFieldGroup } from "../../models/basicModels";
+import { IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldText, IFieldGroup } from "../../models/basicModels";
 import { FirestoreDB } from '../firestore';
 import { getMaxIds } from '../MaxIDs/MaxIDs';
 import { FieldValue } from 'firebase-admin/firestore';
-import { IAddFieldBasic } from '../../models/API/deviceCreateAlterReqRes';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 
 var deviceDBObj: DeviceDB;
@@ -59,10 +58,52 @@ export class DeviceDB {
             deviceName: deviceName,
             userAdminId: userAdminId,
             deviceKey: deviceKey,
-            deviceFieldGroups: []
+            deviceFieldGroups: [],
+            deviceFieldComplexGroups: [],
         }
         await this.firestore.setDocumentValue(DeviceDB.devCollName, `${newDevice.id}`, newDevice);
         return newDevice.id;
+    }
+
+    async RegisterDeviceData(deviceData: IDevice) {
+        let device = await this.getDeviceByKey(deviceData.deviceKey);
+        let deviceId = device.id;
+        if (device.deviceFieldComplexGroups.length == 0 && device.deviceFieldGroups.length == 0) {
+            //register
+            await this.firestore.setDocumentValue(DeviceDB.devCollName, `${deviceId}`, deviceData);
+        }
+        else {
+            for (let i = 0; i < deviceData.deviceFieldGroups.length; i++) {
+                let groupOld = device.deviceFieldGroups[i];
+                let groupNew = deviceData.deviceFieldGroups[i];
+
+                if (!groupOld) {
+                    await this.addDeviceFieldGroup(deviceId, i, groupNew.groupName);
+                }
+
+                if (groupNew.groupName !== groupOld.groupName) {
+                    this.renameDeviceFieldGroup(deviceId, groupOld.id, groupNew.groupName);
+                }
+
+                for (let j = 0; j < groupNew.fields.length; j++) {
+                    let fieldOld = groupOld.fields[i];
+                    let fieldNew = groupNew.fields[i];
+
+                    if (!fieldOld) {
+                        await this.addDeviceField(fieldNew);
+                    }
+
+                    if (fieldNew.fieldName !== fieldOld.fieldName) {
+                        await this.renameDeviceField(deviceId, i, j, fieldNew.fieldName);
+                    }
+                    if (this.compareFields(fieldNew, fieldOld) === false) {
+                        await this.deleteDeviceField(deviceId, i, j);
+                        await this.addDeviceField(fieldNew);
+                    }
+                }
+
+            }
+        }
     }
 
     async getDeviceByKey(key: string) {
@@ -108,19 +149,17 @@ export class DeviceDB {
         return devGroup;
     }
 
-    async addDeviceFieldGroup(deviceId: number, groupName: string): Promise<number> {
-        let device = await this.getDevicebyId(deviceId);
-        let newId = await this.getMaxIds.getMaxFieldGroupId(true);
+    async addDeviceFieldGroup(deviceId: number, groupId: number, groupName: string): Promise<void> {
+        // let device = await this.getDevicebyId(deviceId);
         let newGroup: IFieldGroup = {
-            id: newId,
+            id: groupId,
             groupName: groupName,
             fields: [],
         }
 
         await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
-            [`deviceFieldGroups.${newId}`]: newGroup
+            [`deviceFieldGroups.${newGroup.id}`]: newGroup
         });
-        return newId;
     }
 
     async renameDeviceFieldGroup(deviceId: number, groupId: number, groupName: string) {
@@ -157,28 +196,10 @@ export class DeviceDB {
         return field;
     }
 
-    async addDeviceField(deviceField: IAddFieldBasic): Promise<number> {
-        let device = await this.getDevicebyId(deviceField.deviceId);
-        this.getDeviceFieldGroup(device, deviceField.groupId); //baci error ako nema
-
-        if (deviceField.fieldName.length >= 15) {
-            throw ({ message: 'Field name too long (>=15 chars)' })
-        }
-        let newId = await this.getMaxIds.getMaxFieldId(true);
-
-        let field: IDeviceFieldBasic = {
-            deviceId: deviceField.deviceId,
-            groupId: deviceField.groupId,
-            id: newId,
-            fieldName: deviceField.fieldName,
-            fieldType: deviceField.fieldType,
-            fieldValue: deviceField.fieldValue,
-        }
-
+    async addDeviceField(deviceField: IDeviceFieldBasic): Promise<void> {
         await this.firestore.updateDocumentValue('devices', `${deviceField.deviceId}`, {
-            [`deviceFieldGroups.${deviceField.groupId}.fields.${newId}`]: field
+            [`deviceFieldGroups.${deviceField.groupId}.fields.${deviceField.id}`]: deviceField,
         });
-        return newId;
     }
 
     async renameDeviceField(deviceId: number, groupId: number, fieldId: number, fieldName: string) {
@@ -232,4 +253,54 @@ export class DeviceDB {
             });
         }
     }
+
+    compareFields(fieldNew: IDeviceFieldBasic, fieldOld: IDeviceFieldBasic): boolean {
+        try {
+            if (fieldNew.fieldType !== fieldOld.fieldType) return false;
+
+
+
+            if (fieldNew.fieldValue.IO !== fieldOld.fieldValue.IO) return false;
+
+            if (fieldNew.fieldType === 'numeric') {
+                let fieldValueNew: IDeviceFieldNumeric = JSON.parse(JSON.stringify(fieldNew.fieldValue));
+                let fieldValueOld: IDeviceFieldNumeric = JSON.parse(JSON.stringify(fieldNew.fieldValue));
+                if (fieldValueNew.minValue !== fieldValueOld.minValue) return false;
+                if (fieldValueNew.maxValue !== fieldValueOld.maxValue) return false;
+                if (fieldValueNew.valueStep !== fieldValueOld.valueStep) return false;
+                // if (fieldValueNew.fieldValue !== fieldValueOld.fieldValue) return false;            
+            }
+
+            // if (fieldNew.fieldType === 'text') {
+            //     let fieldValueNew: IDeviceFieldText = JSON.parse(JSON.stringify(fieldNew.fieldValue)); 
+            //     let fieldValueOld: IDeviceFieldText = JSON.parse(JSON.stringify(fieldNew.fieldValue)); 
+            //     if (fieldValueNew.fieldValue !== fieldValueOld.fieldValue) return false;
+            // }
+
+
+            // if (fieldNew.fieldType === 'button') {
+            //     let fieldValueNew: IDeviceFieldButton = JSON.parse(JSON.stringify(fieldNew.fieldValue)); 
+            //     let fieldValueOld: IDeviceFieldButton = JSON.parse(JSON.stringify(fieldNew.fieldValue)); 
+            //     if (fieldValueNew.fieldValue !== fieldValueOld.fieldValue) return false;            
+            // }
+
+            //RGB takoder svedno
+
+            if (fieldNew.fieldType === 'multipleChoice') {
+                let fieldValueNew: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(fieldNew.fieldValue));
+                let fieldValueOld: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(fieldNew.fieldValue));
+                if (fieldValueNew.values.length !== fieldValueOld.values.length) return false;
+                for (let i = 0; i < fieldValueNew.values.length; i++) {
+                    if (fieldValueNew.values[i] !== fieldValueOld[i]) return false;
+                }
+            }
+
+        } catch {
+            return false;
+        }
+
+        return true;
+    }
 }
+
+

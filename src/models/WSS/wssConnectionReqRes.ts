@@ -5,8 +5,6 @@ export interface IWSSMessage {
     data: IWSSDeviceConnectRequest | IWSSUserConnectRequest
 }
 
-
-
 export interface IWSSUserConnectRequest {
     authToken: string,
     frontEndType: 'web' | 'responsive-web' | 'mobileApp' | 'wearOS',

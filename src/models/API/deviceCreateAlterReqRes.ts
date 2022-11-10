@@ -1,4 +1,4 @@
-import { IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "../basicModels"
+import { IDevice, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "../basicModels"
 
 export interface IAddDeviceReq {
     deviceName: string
@@ -21,6 +21,10 @@ export interface IChangeDeviceAdminReq {
 export interface IDeleteDeviceReq {
     deviceId: number,
     authToken: string,
+}
+
+export interface IRegisterDeviceDataReq {
+    deviceData: IDevice,
 }
 
 

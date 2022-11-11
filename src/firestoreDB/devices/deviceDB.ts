@@ -72,15 +72,14 @@ export class DeviceDB {
 
         console.log('register data');
         console.log(deviceData);
-        
 
-        if (device.deviceFieldComplexGroups.length == 0 && device.deviceFieldGroups.length == 0) {
-            //register
-            console.log('simple register');
+//         if (device.deviceFieldComplexGroups.length == 0 && device.deviceFieldGroups.length == 0) {
+//             //register
+//             console.log('simple register');
             
-            await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, deviceData);
-        }
-        else {
+//             await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, deviceData);
+//         }
+//         else {
             for (let i = 0; i < deviceData.deviceFieldGroups.length; i++) {
                 let groupOld = device.deviceFieldGroups[i];
                 let groupNew = deviceData.deviceFieldGroups[i];
@@ -180,8 +179,7 @@ export class DeviceDB {
             for (let i = deviceData.deviceFieldComplexGroups.length; i < device.deviceFieldComplexGroups.length; i++) {
                 await this.deleteComplexGroup(deviceId, i);
             }
-        }
-
+//         } 
     }
 
     async getDeviceByKey(key: string) {

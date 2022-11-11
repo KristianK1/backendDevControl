@@ -67,28 +67,28 @@ export interface IDeviceFieldNumeric {
     minValue: number,
     maxValue: number,
     valueStep: number,
-    IO: 'input',
+    fieldDirection: 'input',
 }
 
 export interface IDeviceFieldText {
     fieldValue: string,
-    IO: 'input' | 'output',
+    fieldDirection: 'input' | 'output',
 }
 
 export interface IDeviceFieldButton {
     fieldValue: boolean,
-    IO: 'input' | 'output',
+    fieldDirection: 'input' | 'output',
 }
 
 export interface IDeviceFieldMultipleChoice {
     fieldValue: number,
     values: string[],
-    IO: 'input' | 'output',
+    fieldDirection: 'input' | 'output',
 }
 
 export interface IDeviceFieldRGB {
     R: number,
     G: number,
     B: number,
-    IO: 'input'
+    fieldDirection: 'input'
 }

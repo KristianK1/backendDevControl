@@ -13,7 +13,7 @@ export class Server {
     port = process.env.PORT || 8000;
 
     private app: Express.Application;
-    
+
     private wss: MyWebSocketServer = {} as MyWebSocketServer;
     private wsServer: webSocketServer;
     server: any;
@@ -52,7 +52,9 @@ export class Server {
 
         this.app.get('/update', (req: any, res: any) => {
             console.log('request:/update');
-            firestoreSingletonFactory.getInstance().updateDocumentValue('proba', 'Kristian', { name: 'L2', vrijeme: new Date() });
+            firestoreSingletonFactory.getInstance().updateDocumentValue('proba', 'Kristian', {
+                [`deviceFieldComplexGroups.${7}.fieldGroupStates.${4}.hello2`]: "JA SAM3"
+            });
             res.send('update');
         });
 

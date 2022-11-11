@@ -7,33 +7,14 @@ router.use('/addDevice', addDeviceRouter);
 var renameDeviceRouter = require('./device_subrouter/renameDevice.ts')
 router.use('/renameDevice', renameDeviceRouter);
 
-var changeDeviceRouter = require('./device_subrouter/changeDeviceAdmin.ts')
-router.use('/changeAdmin', changeDeviceRouter);
+var changeDeviceAdminRouter = require('./device_subrouter/changeDeviceAdmin.ts')
+router.use('/changeAdmin', changeDeviceAdminRouter);
 
-var deleteDevice = require('./device_subrouter/deleteDevice.ts');
-router.use('/deleteDevice', deleteDevice);
+var deleteDeviceRouter = require('./device_subrouter/deleteDevice.ts');
+router.use('/deleteDevice', deleteDeviceRouter);
 
-
-
-var addFieldGroup = require('./deviceFieldGroups_subrouter/addDeviceFieldGroup.ts');
-router.use('/addFieldGroup', addFieldGroup);
-
-var renameFieldGroup = require('./deviceFieldGroups_subrouter/renameDeviceFieldGroup.ts');
-router.use('/renameFieldGroup', renameFieldGroup);
-
-var deleteFieldGroup = require('./deviceFieldGroups_subrouter/deleteDeviceFieldGroup.ts');
-router.use('/deleteFieldGroup', deleteFieldGroup);
-
-
-
-var addField = require('./deviceField_subrouter/addDeviceField.ts');
-router.use('/addField', addField);
-
-var renameField = require('./deviceField_subrouter/renameField.ts');
-router.use('/renameField', renameField);
-
-var deleteField = require('./deviceField_subrouter/deleteDeviceField.ts');
-router.use('/deleteField', deleteField);
+var registerDeviceDataRouter = require('./device_subrouter/registerDeviceData');
+router.use('/registerDeviceData', registerDeviceDataRouter)
 
 
 

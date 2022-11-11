@@ -18,8 +18,14 @@ router.post('/', async (req: any, res: any) => {
         res.send(e.message);
         return;
     }
-    let id = await deviceDb.addDevice(addDeviceReq.deviceName, addDeviceReq.userAdminId, addDeviceReq.deviceKey);
-    res.send(`${id}`);
+    try {
+        await deviceDb.addDevice(addDeviceReq.deviceName, addDeviceReq.userAdminId, addDeviceReq.deviceKey);
+    } catch (e) {
+        res.status(400);
+        res.send(e.message);
+        return;
+    }
+    res.sendStatus(200);
 });
 
 module.exports = router;

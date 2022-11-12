@@ -9,7 +9,7 @@ let cors = require('cors');
 
 export class Server {
 
-    testPath = '/test2';
+    testPath = '/test3';
     port = process.env.PORT || 8000;
 
     private app: Express.Application;

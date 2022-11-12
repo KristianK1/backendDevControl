@@ -37,13 +37,26 @@ export class DeviceDB {
         if (!device) {
             throw ({ message: 'Device doesn\'t exist' });
         }
+        device = this.transformDeviceData(device);
+        return device;
+    }
 
+    async getDeviceByKey(key: string) {
+        const allDevices = await this.getDevices();
+        let device = allDevices.find(o => o.deviceKey === key);
+        if (!device) {
+            throw ({ message: 'Device doesn\'t exist' });
+        }
+        device = this.transformDeviceData(device);
+        return device;
+    }
+
+    transformDeviceData(device: IDevice) {
         let actualDeviceFieldGroups: IFieldGroup[] = [];
         Object.keys(device.deviceFieldGroups).forEach(key => {
             actualDeviceFieldGroups.push(this.getDeviceFieldGroup(device, Number(key)));
         })
         device.deviceFieldGroups = actualDeviceFieldGroups;
-
         let actualComplexGroups: IComplexFieldGroup[] = [];
         Object.keys(device.deviceFieldComplexGroups).forEach(key => {
             actualComplexGroups.push(this.getComplexGroup(device, Number(key)));
@@ -179,15 +192,6 @@ export class DeviceDB {
         for (let i = deviceData.deviceFieldComplexGroups.length; i < device.deviceFieldComplexGroups.length; i++) {
             await this.deleteComplexGroup(deviceId, i);
         }
-    }
-
-    async getDeviceByKey(key: string) {
-        const allDevices = await this.getDevices();
-        let device = allDevices.find(o => o.deviceKey === key);
-        if (!device) {
-            throw ({ message: 'Device doesn\'t exist' });
-        }
-        return device;
     }
 
     async renameDevice(id: number, deviceName: string) {

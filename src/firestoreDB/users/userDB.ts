@@ -109,8 +109,6 @@ export class UsersDB {
         var sameNameUser = users.find(user => user.username === username);
         if (sameNameUser) throw ({ message: 'User with same name exists' });
         var maxIDdoc = await this.getMaxIds.getMaxUserId(true);
-        console.log(maxIDdoc);
-        console.log(password);
 
         var newUser: IUser = {
             id: maxIDdoc + 1,

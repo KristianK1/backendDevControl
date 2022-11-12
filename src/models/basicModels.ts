@@ -29,6 +29,7 @@ export interface IDevice {
     deviceKey: string,
     deviceName: string,
     deviceFieldGroups: IFieldGroup[],
+    deviceFieldComplexGroups: IComplexFieldGroup[],
     userAdminId: number,
 }
 
@@ -45,7 +46,8 @@ export interface IComplexFieldGroup {
 }
 
 export interface IComplexFieldGroupState {
-    steteName: string,
+    id: number,
+    stateName: string,
     fields: IDeviceFieldBasic[],
 }
 
@@ -61,32 +63,32 @@ export interface IDeviceFieldBasic {
 
 export interface IDeviceFieldNumeric {
     fieldValue: number,
-    fieldControlType: 'slider' | 'upDownButtons',
+    // fieldControlType: 'slider' | 'upDownButtons',
     minValue: number,
     maxValue: number,
     valueStep: number,
-    IO: 'input',
+    fieldDirection: 'input',
 }
 
 export interface IDeviceFieldText {
     fieldValue: string,
-    IO: 'input'
+    fieldDirection: 'input' | 'output',
 }
 
 export interface IDeviceFieldButton {
     fieldValue: boolean,
-    IO: 'input' | 'output',
+    fieldDirection: 'input' | 'output',
 }
 
 export interface IDeviceFieldMultipleChoice {
     fieldValue: number,
     values: string[],
-    IO: 'input'
+    fieldDirection: 'input' | 'output',
 }
 
 export interface IDeviceFieldRGB {
     R: number,
     G: number,
     B: number,
-    IO: 'input'
+    fieldDirection: 'input'
 }

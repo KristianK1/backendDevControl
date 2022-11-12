@@ -7,43 +7,34 @@ router.use('/addDevice', addDeviceRouter);
 var renameDeviceRouter = require('./device_subrouter/renameDevice.ts')
 router.use('/renameDevice', renameDeviceRouter);
 
-var changeDeviceRouter = require('./device_subrouter/changeDeviceAdmin.ts')
-router.use('/changeAdmin', changeDeviceRouter);
+var changeDeviceAdminRouter = require('./device_subrouter/changeDeviceAdmin.ts')
+router.use('/changeAdmin', changeDeviceAdminRouter);
 
-var deleteDevice = require('./device_subrouter/deleteDevice.ts');
-router.use('/deleteDevice', deleteDevice);
+var deleteDeviceRouter = require('./device_subrouter/deleteDevice.ts');
+router.use('/deleteDevice', deleteDeviceRouter);
 
-
-
-var addFieldGroup = require('./deviceFieldGroups_subrouter/addDeviceFieldGroup.ts');
-router.use('/addFieldGroup', addFieldGroup);
-
-var renameFieldGroup = require('./deviceFieldGroups_subrouter/renameDeviceFieldGroup.ts');
-router.use('/renameFieldGroup', renameFieldGroup);
-
-var deleteFieldGroup = require('./deviceFieldGroups_subrouter/deleteDeviceFieldGroup.ts');
-router.use('/deleteFieldGroup', deleteFieldGroup);
+var registerDeviceDataRouter = require('./device_subrouter/registerDeviceData');
+router.use('/registerDeviceData', registerDeviceDataRouter)
 
 
 
-var addField = require('./deviceField_subrouter/addDeviceField.ts');
-router.use('/addField', addField);
-
-var renameField = require('./deviceField_subrouter/renameField.ts');
-router.use('/renameField', renameField);
-
-var deleteField = require('./deviceField_subrouter/deleteDeviceField.ts');
-router.use('/deleteField', deleteField);
-
-
-
+import { getCurrentTimeUNIX } from "../../generalStuff/timeHandlers";
 import { deviceDBSingletonFactory } from "../../firestoreDB/singletonService";
 var deviceDb = deviceDBSingletonFactory.getInstance();
 router.get('/:id', async (req: any, res: any) => {
     let id = req.params.id;
     console.log(id);
+    let device;
+    let unix1 = getCurrentTimeUNIX();
+    try {
+        device = await deviceDb.getDevicebyId(id);
+    } catch (e) {
+        res.status(400);
+        res.send(e.message);
+    }
+    let unix2 = getCurrentTimeUNIX();
+    console.log(unix2 - unix1);
 
-    let device = await deviceDb.getDevicebyId(id);
     res.json(device);
 });
 

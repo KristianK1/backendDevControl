@@ -12,8 +12,7 @@ export class FirestoreDB {
       if (!process.env.firebaseKey) throw ("");
       serviceAccount = JSON.parse(process.env.firebaseKey);
     } catch {
-      console.log('failed to get env.port.firebaseKey');
-      console.log('looking for file in firebase.json')
+      console.log('failed to get env.port.firebaseKey. Looking for file in firebase.json');
       serviceAccount = require('../../firebaseKey.json')
     }
 
@@ -30,6 +29,11 @@ export class FirestoreDB {
 
   async updateDocumentValue(collectionPath: string, documentName: string, value: any) {
     return await this.db.collection(collectionPath).doc(documentName).update(value);
+  }
+
+  async updateDocumentValueAtPath(collectionPath: string, documentName: string, path: string, value: any){
+    return await this.db.collection(collectionPath).doc(documentName).update(path,value);
+    
   }
 
   async deleteDocument(collectionPath: string, documentName: string) {

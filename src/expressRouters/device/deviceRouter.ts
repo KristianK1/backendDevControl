@@ -18,18 +18,23 @@ router.use('/registerDeviceData', registerDeviceDataRouter)
 
 
 
+import { getCurrentTimeUNIX } from "../../generalStuff/timeHandlers";
 import { deviceDBSingletonFactory } from "../../firestoreDB/singletonService";
 var deviceDb = deviceDBSingletonFactory.getInstance();
 router.get('/:id', async (req: any, res: any) => {
     let id = req.params.id;
     console.log(id);
     let device;
+    let unix1 = getCurrentTimeUNIX();
     try {
         device = await deviceDb.getDevicebyId(id);
-    }catch(e){
+    } catch (e) {
         res.status(400);
         res.send(e.message);
     }
+    let unix2 = getCurrentTimeUNIX();
+    console.log(unix2 - unix1);
+
     res.json(device);
 });
 

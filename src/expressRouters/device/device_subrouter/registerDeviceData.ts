@@ -1,8 +1,8 @@
 import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { DeviceDB } from "../../../firestoreDB/devices/deviceDB";
 import { UsersDB } from "../../../firestoreDB/users/userDB";
-import { IAddDeviceReq, IRegisterDeviceDataReq } from "../../../models/API/deviceCreateAlterReqRes";
 import { IDevice } from "models/basicModels";
+import { getCurrentTimeUNIX } from "../../../generalStuff/timeHandlers";
 
 var express = require('express');
 var router = express.Router();
@@ -12,8 +12,7 @@ var userDb: UsersDB = usersDBSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     var registerDeviceDataReq: IDevice = req.body;
-    console.log('deviceData registration');
-    
+    let time1 = getCurrentTimeUNIX();
     try {
         await deviceDb.registerDeviceData(registerDeviceDataReq);
     } catch (e) {
@@ -21,6 +20,8 @@ router.post('/', async (req: any, res: any) => {
         res.send(e.message);
         return;
     }
+    let time2 = getCurrentTimeUNIX();
+    console.log(time2 - time1);
     res.sendStatus(200);
 });
 

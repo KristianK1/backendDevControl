@@ -37,6 +37,18 @@ export class DeviceDB {
         if (!device) {
             throw ({ message: 'Device doesn\'t exist' });
         }
+
+        let actualDeviceFieldGroups: IFieldGroup[] = [];
+        Object.keys(device.deviceFieldGroups).forEach(key => {
+            actualDeviceFieldGroups.push(this.getDeviceFieldGroup(device, Number(key)));
+        })
+        device.deviceFieldGroups = actualDeviceFieldGroups;
+
+        let actualComplexGroups: IComplexFieldGroup[] = [];
+        Object.keys(device.deviceFieldComplexGroups).forEach(key => {
+            actualComplexGroups.push(this.getComplexGroup(device, Number(key)));
+        })
+        device.deviceFieldComplexGroups = actualComplexGroups;
         return device;
     }
 
@@ -122,12 +134,12 @@ export class DeviceDB {
             console.log('q0');
             for (let j = 0; j < groupNew.fieldGroupStates.length; j++) {
                 console.log('q1');
-                
+
                 let groupStateOld = groupOld?.fieldGroupStates[j];
                 let groupStateNew = groupNew.fieldGroupStates[j];
                 console.log('grouptateNew');
                 console.log(groupStateNew);
-                
+
                 if (!groupStateOld) {
                     await this.addComplexGroupState(deviceId, groupNew.id, groupStateNew.id, groupStateNew.stateName);
                 }
@@ -142,7 +154,7 @@ export class DeviceDB {
                     let fieldNew = groupStateNew.fields[k];
                     console.log("w3");
                     console.log(fieldNew);
-                    
+
                     if (!fieldOld) {
                         await this.addFieldInComplexGroup(deviceId, groupNew.id, groupStateNew.id, fieldNew);
                     }
@@ -215,9 +227,9 @@ export class DeviceDB {
         actualGroup.fields = [];
 
         Object.keys(devGroup.fields).forEach(key => {
-            actualGroup.fields.push(this.getDeviceField(devGroup, actualGroup.id));
+            actualGroup.fields.push(this.getDeviceField(devGroup, Number(key)));
         });
-        return devGroup;
+        return actualGroup;
     }
 
     async addDeviceFieldGroup(deviceId: number, groupId: number, groupName: string): Promise<void> {
@@ -319,7 +331,14 @@ export class DeviceDB {
         if (!complexGroup) {
             throw ({ message: 'Complex group doesn\'t exist' });
         }
-        return complexGroup;
+        let actualComplexGroup = {} as IComplexFieldGroup;
+        actualComplexGroup.id = complexGroup.id;
+        actualComplexGroup.groupName = complexGroup.groupName;
+        actualComplexGroup.fieldGroupStates = [];
+        Object.keys(complexGroup.fieldGroupStates).forEach(key => {
+            actualComplexGroup.fieldGroupStates.push(this.getComplexGroupState(complexGroup, Number(key)));
+        })
+        return actualComplexGroup;
     }
 
     async renameComplexGroup(deviceId: number, groupId: number, groupName: string) {
@@ -364,7 +383,16 @@ export class DeviceDB {
         if (!state) {
             throw ({ message: 'Complex group state doesn\'t exist' });
         }
-        return state;
+        let actualState = {} as IComplexFieldGroupState;
+        actualState.id = state.id;
+        actualState.stateName = state.stateName;
+        actualState.fields = [];
+        Object.keys(state.fields).forEach(key => {
+            console.log('field in comp group ' + actualState.id);
+
+            actualState.fields.push(this.getFieldInComplexGroup(state, Number(key)));
+        })
+        return actualState;
     }
 
     async renameComplexGroupState(deviceId: number, groupId: number, stateId: number, stateName: string) {
@@ -416,8 +444,8 @@ export class DeviceDB {
         console.log('compare');
         console.log(fieldNew);
         console.log(fieldOld);
-        
-        
+
+
         if (!fieldNew) throw ({ message: 'fieldNew is undefined/null' });
         if (!fieldOld) return false;
         try {
@@ -453,12 +481,12 @@ export class DeviceDB {
             //RGB takoder svedno
 
             if (fieldNew.fieldType === 'multipleChoice') {
-                console.log('compare');                
+                console.log('compare');
                 let fieldValueNew: IDeviceFieldMultipleChoice = fieldNew.fieldValue as IDeviceFieldMultipleChoice;
                 let fieldValueOld: IDeviceFieldMultipleChoice = fieldNew.fieldValue as IDeviceFieldMultipleChoice;
                 console.log(fieldValueNew);
                 console.log(fieldValueOld);
-                
+
                 if (fieldValueNew.values.length !== fieldValueOld.values.length) return false;
                 for (let i = 0; i < fieldValueNew.values.length; i++) {
                     if (fieldValueNew.values[i] !== fieldValueOld[i]) return false;

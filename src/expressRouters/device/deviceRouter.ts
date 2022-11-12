@@ -23,8 +23,13 @@ var deviceDb = deviceDBSingletonFactory.getInstance();
 router.get('/:id', async (req: any, res: any) => {
     let id = req.params.id;
     console.log(id);
-
-    let device = await deviceDb.getDevicebyId(id);
+    let device;
+    try {
+        device = await deviceDb.getDevicebyId(id);
+    }catch(e){
+        res.status(400);
+        res.send(e.message);
+    }
     res.json(device);
 });
 

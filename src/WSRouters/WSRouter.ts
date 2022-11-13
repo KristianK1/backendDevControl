@@ -22,7 +22,7 @@ export class MyWebSocketServer {
             let newConnection: IWSSBasicConnection = {} as IWSSBasicConnection;
             newConnection.connection = connection;
             newConnection.connectionUUID = uuid();
-            newConnection.startedAt = getCurrentTimeISO(); //TODO nije testirano
+            newConnection.startedAt = getCurrentTimeISO();
             this.allClients.push(newConnection);
             console.log('uuid in reqq ' + newConnection.connectionUUID);
 

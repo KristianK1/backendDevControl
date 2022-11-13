@@ -5,6 +5,7 @@ import { getMaxIds } from '../MaxIDs/MaxIDs';
 import { FieldValue } from 'firebase-admin/firestore';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 import { getCurrentTimeUNIX } from '../../generalStuff/timeHandlers';
+import { FORMERR } from 'dns';
 
 var deviceDBObj: DeviceDB;
 
@@ -38,7 +39,6 @@ export class DeviceDB {
         if (!device) {
             throw ({ message: 'Device doesn\'t exist' });
         }
-        console.log(device);
         device = this.transformDeviceData(device);
         return device;
     }
@@ -48,7 +48,7 @@ export class DeviceDB {
         let device = allDevices.find(o => o.deviceKey === key);
         if (!device) {
             throw ({ message: 'Device doesn\'t exist' });
-        }        
+        }
         device = this.transformDeviceData(device);
         return device;
     }
@@ -58,13 +58,13 @@ export class DeviceDB {
         let actualDeviceFieldGroups: IFieldGroup[] = [];
         Object.keys(device.deviceFieldGroups).forEach(key => {
             console.log(key);
-            
-            actualDeviceFieldGroups.push(this.getDeviceFieldGroup(device, Number(key)));
+
+            actualDeviceFieldGroups.push(this.transformDeviceFieldGroup(device, Number(key)));
         })
         device.deviceFieldGroups = actualDeviceFieldGroups;
         let actualComplexGroups: IComplexFieldGroup[] = [];
         Object.keys(device.deviceFieldComplexGroups).forEach(key => {
-            actualComplexGroups.push(this.getComplexGroup(device, Number(key)));
+            actualComplexGroups.push(this.transformComplexGroup(device, Number(key)));
         })
         device.deviceFieldComplexGroups = actualComplexGroups;
         let unix2 = getCurrentTimeUNIX();
@@ -106,10 +106,11 @@ export class DeviceDB {
         let oldDeviceGroups = device.deviceFieldGroups;
         let newDeviceGroups = deviceData.deviceFieldGroups;
         console.log('x1');
-        oldDeviceGroups.forEach(async oldGroup => {
+        for (let oldGroup of oldDeviceGroups) {
             try {
                 console.log('x2');
-                this.getDeviceFieldGroup(device, oldGroup.id);
+                console.log(oldGroup);
+                this.getDeviceFieldGroup(deviceData, oldGroup.id);
                 console.log('x3');
             } catch {
                 console.log('x4');
@@ -117,9 +118,9 @@ export class DeviceDB {
                 device = await this.getDevicebyId(deviceId);
                 console.log('x5');
             }
-        });
+        }
 
-        newDeviceGroups.forEach(async newGroup => {
+        for (let newGroup of newDeviceGroups) {
             let oldGroup: IFieldGroup;
             try {
                 console.log('x6');
@@ -132,22 +133,27 @@ export class DeviceDB {
                 device = await this.getDevicebyId(deviceId);
                 console.log('x9');
             }
+            oldGroup = this.getDeviceFieldGroup(device, newGroup.id);
+
+            if (oldGroup.groupName !== newGroup.groupName) {
+                await this.renameDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
+            }
 
             let oldDeviceFields = this.getDeviceFieldGroup(device, newGroup.id).fields;
             let newDeviceFields = newGroup.fields;
 
-            oldDeviceFields.forEach(async oldField => {
+            for (let oldField of oldDeviceFields) {
                 try {
                     console.log('x10');
-                    this.getDeviceField(oldGroup, oldField.id);
+                    this.getDeviceField(newGroup, oldField.id);
                     console.log('x11');
                 } catch {
                     console.log('x12');
                     await this.deleteDeviceField(deviceId, newGroup.id, oldField.id);
                 }
-            });
+            }
 
-            newDeviceFields.forEach(async newField => {
+            for (let newField of newDeviceFields) {
                 let oldField: IDeviceFieldBasic;
                 try {
                     console.log('x13');
@@ -159,7 +165,7 @@ export class DeviceDB {
                     await this.addDeviceField(deviceId, newGroup.id, newField);
                     console.log('x16');
                     device = await this.getDevicebyId(deviceId);
-                    return;
+                    continue;
                 }
                 if (newField.fieldName !== oldField.fieldName) {
                     await this.renameDeviceField(deviceId, newGroup.id, newField.id, newField.fieldName);
@@ -168,15 +174,15 @@ export class DeviceDB {
                     await this.deleteDeviceField(deviceId, newGroup.id, newField.id);
                     await this.addDeviceField(deviceId, newGroup.id, newField);
                 }
-            })
-        });
+            }
+        }
         console.log('\n\n\n');
 
         //////////////////////////////////////////////////////////////////////////
         let oldDeviceComplexGroups = device.deviceFieldComplexGroups;
         let newDeviceComplexGroups = deviceData.deviceFieldComplexGroups;
 
-        oldDeviceComplexGroups.forEach(async oldGroup => {
+        for (let oldGroup of oldDeviceComplexGroups) {
             try {
                 console.log('y1');
                 this.getComplexGroup(deviceData, oldGroup.id);
@@ -186,10 +192,10 @@ export class DeviceDB {
                 await this.deleteComplexGroup(deviceId, oldGroup.id);
                 device = await this.getDevicebyId(deviceId);
             }
-        });
+        }
         console.log('y4');
 
-        newDeviceComplexGroups.forEach(async newGroup => {
+        for (let newGroup of newDeviceComplexGroups) {
             let oldGroup: IComplexFieldGroup;
             try {
                 console.log('y5');
@@ -212,7 +218,7 @@ export class DeviceDB {
             let oldComplexGroupStates = oldGroup.fieldGroupStates;
             let newComplexGroupStates = newGroup.fieldGroupStates;
             console.log('y9');
-            oldComplexGroupStates.forEach(async oldState => {
+            for (let oldState of oldComplexGroupStates) {
                 try {
                     console.log('y10');
                     this.getComplexGroupState(newGroup, oldState.id);
@@ -221,9 +227,9 @@ export class DeviceDB {
                     console.log('y12');
                     await this.deleteComplexGroupState(deviceId, newGroup.id, oldState.id);
                 }
-            });
+            }
 
-            newComplexGroupStates.forEach(async newState => {
+            for (let newState of newComplexGroupStates) {
                 let oldState: IComplexFieldGroupState;
                 try {
                     console.log('y13');
@@ -237,6 +243,7 @@ export class DeviceDB {
                     console.log('y16');
                 }
                 oldState = this.getComplexGroupState(this.getComplexGroup(device, newGroup.id), newState.id);
+                
                 if (newState.stateName !== oldState.stateName) {
                     await this.renameComplexGroupState(deviceId, newGroup.id, newState.id, newState.stateName);
                 }
@@ -244,7 +251,7 @@ export class DeviceDB {
                 let oldComplexGroupFields = oldState.fields;
                 let newComplexGroupFields = newState.fields;
 
-                oldComplexGroupFields.forEach(async oldField => {
+                for (let oldField of oldComplexGroupFields) {
                     try {
                         console.log('y17');
                         this.getFieldInComplexGroup(newState, oldField.id);
@@ -253,9 +260,9 @@ export class DeviceDB {
                         console.log('y19');
                         await this.deleteFieldInComplexGroup(deviceId, newGroup.id, newState.id, oldField.id);
                     }
-                });
+                }
 
-                newComplexGroupFields.forEach(async newField => {
+                for (let newField of newComplexGroupFields) {
                     let oldField: IDeviceFieldBasic;
                     try {
                         console.log('y20');
@@ -277,9 +284,9 @@ export class DeviceDB {
                         await this.deleteFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField.id);
                         await this.addFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField);
                     }
-                });
-            });
-        });
+                }
+            }
+        }
         console.log('q1');
     }
 
@@ -309,12 +316,14 @@ export class DeviceDB {
 
 
 
-    getDeviceFieldGroup(device: IDevice, groupId: number): IFieldGroup {
+    transformDeviceFieldGroup(device: IDevice, groupId: number): IFieldGroup {
         let devGroup = {} as IFieldGroup;
 
         Object.keys(device.deviceFieldGroups).forEach(key => {
+
             let groupByKey: IFieldGroup = device.deviceFieldGroups[key];
             if (groupByKey.id === groupId) {
+                console.log('nasao');
                 devGroup = groupByKey;
             }
         });
@@ -327,10 +336,22 @@ export class DeviceDB {
         actualGroup.groupName = devGroup.groupName;
         actualGroup.fields = [];
 
+        console.log('c1');
+
         Object.keys(devGroup.fields).forEach(key => {
-            actualGroup.fields.push(this.getDeviceField(devGroup, Number(key)));
+            console.log('devGroup.fields keys:' + key);
+
+            actualGroup.fields.push(this.transformDeviceField(devGroup, Number(key)));
         });
+        console.log('c99');
         return actualGroup;
+    }
+
+    getDeviceFieldGroup(device: IDevice, groupId: number): IFieldGroup {
+        for (let group of device.deviceFieldGroups) {
+            if (group.id === groupId) return group;
+        }
+        throw ({ message: 'get: Device field doesn\'t exist' });
     }
 
     async addDeviceFieldGroup(deviceId: number, groupId: number, groupName: string): Promise<void> {
@@ -372,7 +393,7 @@ export class DeviceDB {
 
 
 
-    getDeviceField(fieldGroup: IFieldGroup, fieldId: number): IDeviceFieldBasic {
+    transformDeviceField(fieldGroup: IFieldGroup, fieldId: number): IDeviceFieldBasic {
         let field = {} as IDeviceFieldBasic;
 
         Object.keys(fieldGroup.fields).forEach(key => {
@@ -386,6 +407,13 @@ export class DeviceDB {
             throw ({ message: 'Field doesn\'t exist' });
         }
         return field;
+    }
+
+    getDeviceField(groupField: IFieldGroup, fieldId: number): IDeviceFieldBasic {
+        for (let field of groupField.fields) {
+            if (field.id === fieldId) return field;
+        }
+        throw ({ message: 'get: Field doesn\'t exist' });
     }
 
     async addDeviceField(deviceId: number, groupId: number, deviceField: IDeviceFieldBasic): Promise<void> {
@@ -435,7 +463,7 @@ export class DeviceDB {
         });
     }
 
-    getComplexGroup(device: IDevice, groupId: number): IComplexFieldGroup {
+    transformComplexGroup(device: IDevice, groupId: number): IComplexFieldGroup {
         let complexGroup = {} as IComplexFieldGroup;
 
         Object.keys(device.deviceFieldComplexGroups).forEach(key => {
@@ -453,9 +481,16 @@ export class DeviceDB {
         actualComplexGroup.groupName = complexGroup.groupName;
         actualComplexGroup.fieldGroupStates = [];
         Object.keys(complexGroup.fieldGroupStates).forEach(key => {
-            actualComplexGroup.fieldGroupStates.push(this.getComplexGroupState(complexGroup, Number(key)));
+            actualComplexGroup.fieldGroupStates.push(this.transformComplexGroupState(complexGroup, Number(key)));
         })
         return actualComplexGroup;
+    }
+
+    getComplexGroup(device: IDevice, groupId: number): IComplexFieldGroup {
+        for (let complexGroup of device.deviceFieldComplexGroups) {
+            if (complexGroup.id === groupId) return complexGroup;
+        }
+        throw ({ message: 'get: Complex group doesn\'t exist' });
     }
 
     async renameComplexGroup(deviceId: number, groupId: number, groupName: string) {
@@ -492,7 +527,7 @@ export class DeviceDB {
         });
     }
 
-    getComplexGroupState(complexGroup: IComplexFieldGroup, stateId: number): IComplexFieldGroupState {
+    transformComplexGroupState(complexGroup: IComplexFieldGroup, stateId: number): IComplexFieldGroupState {
         let state = {} as IComplexFieldGroupState;
 
         Object.keys(complexGroup.fieldGroupStates).forEach(key => {
@@ -510,9 +545,16 @@ export class DeviceDB {
         actualState.stateName = state.stateName;
         actualState.fields = [];
         Object.keys(state.fields).forEach(key => {
-            actualState.fields.push(this.getFieldInComplexGroup(state, Number(key)));
+            actualState.fields.push(this.transformFieldInComplexGroup(state, Number(key)));
         })
         return actualState;
+    }
+
+    getComplexGroupState(group: IComplexFieldGroup, stateId: number): IComplexFieldGroupState {
+        for (let state of group.fieldGroupStates) {
+            if (state.id === stateId) return state;
+        }
+        throw ({ message: 'get: Complex group state doesn\'t exist' });
     }
 
     async renameComplexGroupState(deviceId: number, groupId: number, stateId: number, stateName: string) {
@@ -540,7 +582,7 @@ export class DeviceDB {
         });
     }
 
-    getFieldInComplexGroup(groupState: IComplexFieldGroupState, fieldId: number): IDeviceFieldBasic {
+    transformFieldInComplexGroup(groupState: IComplexFieldGroupState, fieldId: number): IDeviceFieldBasic {
         let field = {} as IDeviceFieldBasic;//groupState.fields[fieldId]
 
         Object.keys(groupState.fields).forEach(key => {
@@ -554,6 +596,13 @@ export class DeviceDB {
             throw ({ message: 'Field in Complex group state doesn\'t exist' });
         }
         return field;
+    }
+
+    getFieldInComplexGroup(complexGroupState: IComplexFieldGroupState, fieldId: number): IDeviceFieldBasic {
+        for (let field of complexGroupState.fields) {
+            if (field.id === fieldId) return field;
+        }
+        throw ({ message: 'get: Field in complex group doesn\'t exist' });
     }
 
     async deleteFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number) {

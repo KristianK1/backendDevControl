@@ -464,6 +464,7 @@ export class DeviceDB {
         try {
             if (fieldNew.fieldType !== fieldOld.fieldType) return false;
 
+            if(fieldNew.id !== fieldOld.id) return false;
 
 
             if (fieldNew.fieldValue.fieldDirection !== fieldOld.fieldValue.fieldDirection) return false;

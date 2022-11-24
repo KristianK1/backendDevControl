@@ -41,3 +41,34 @@ export interface IChangeDeviceField_Device {
     fieldId: number,
     fieldValue: number | string | boolean | IRGB,
 }
+
+
+export interface IChangeComplexGroupState_Device {
+    deviceKey: string,
+    groupId: number,
+    state: number,
+}
+
+export interface IChangeComplexGroupState_User {
+    authToken: string,
+    deviceId: number,
+    groupId: number,
+    state: number,
+}
+
+export interface IChangeComplexGroupField_Device {
+    deviceKey: string,
+    groupId: number,
+    stateId: number,
+    fieldId: number,
+    fieldValue: number | string | boolean | IRGB,
+}
+
+export interface IChangeComplexGroupField_User {
+    authToken: string,
+    deviceId: number,
+    groupId: number,
+    stateId: number,
+    fieldId: number,
+    fieldValue: number | string | boolean | IRGB,
+}

@@ -22,6 +22,9 @@ router.use('/changeField', changeFieldValueRouter);
 var changeComplexGroupStateRouter = require('./device_subrouter/deviceComplexGroupStateChangeRouter.ts');
 router.use('/changeComplexGroupState', changeComplexGroupStateRouter);
 
+var changeFieldInComplexGroupRouter = require('./device_subrouter/deviceComplexGroupFieldChangeRouter.ts');
+router.use('/fieldInComplexGroupState', changeFieldInComplexGroupRouter);
+
 
 import { getCurrentTimeUNIX } from "../../generalStuff/timeHandlers";
 import { deviceDBSingletonFactory } from "../../firestoreDB/singletonService";

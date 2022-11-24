@@ -428,9 +428,10 @@ export class DeviceDB {
         }
         else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
             let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
-            if (multipleCField.values.length < fieldValue && fieldValue >= 0) {
+            if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
                 await this.changeDeviceFieldValue(device.id, groupId, fieldId, fieldValue);
             }
+            else throw ({ message: 'Out of range - MC field' });
         }
         else if (
             field.fieldType === 'RGB' &&
@@ -611,17 +612,26 @@ export class DeviceDB {
         });
     }
 
-    async changeComplexFieldStateFromDevice(deviceKey: string, groupId: number, state: number){
+    async changeComplexGroupStateFromDevice(deviceKey: string, groupId: number, state: number) {
         let device = await this.getDeviceByKey(deviceKey);
-        let group = this.getComplexGroup(device,groupId);
-        this.change
-
+        await this.tryToChangeComplexGroupState(device, groupId, state);
     }
 
+    async changeComplexGroupStateFromUser(deviceId: number, groupId: number, state: number) {
+        let device = await this.getDevicebyId(deviceId);
+        await this.tryToChangeComplexGroupState(device, groupId, state);
+    }
 
-
-
-
+    private async tryToChangeComplexGroupState(device: IDevice, groupId: number, state: number) {
+        let group = this.getComplexGroup(device, groupId);
+        let NofStates = group.fieldGroupStates.length;
+        if (state >= 0 && state < NofStates) {
+            await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${device.id}`, {
+                [`deviceFieldComplexGroups.${groupId}.currentState`]: state
+            });
+        }
+        else throw ({ message: 'Invalid state number' });
+    }
 
 
 
@@ -661,6 +671,67 @@ export class DeviceDB {
         await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldId}.fieldName`]: fieldName
         });
+    }
+
+
+    async changeFieldValueInComplexGroupFromDevice(deviceKey: string, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
+        let device = await this.getDeviceByKey(deviceKey);
+        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, fieldId, fieldValue);
+    }
+
+    async changeFieldValueInComplexGroupFromUser(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
+        let device = await this.getDevicebyId(deviceId);
+        //check user rights
+        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, fieldId, fieldValue);
+    }
+
+    private async tryToChangeFieldValueInComplexGroup(device: IDevice, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
+        let group = this.getComplexGroup(device, groupId);
+        let state = this.getComplexGroupState(group, stateId);
+        let field = this.getFieldInComplexGroup(state, fieldId);
+
+        if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
+            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+        }
+        else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
+            let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
+            let N = (fieldValue - numField.minValue) / numField.valueStep;
+            if (N % 1 < 0.05 || N % 1 > 0.95) {
+                await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+            }
+        }
+        else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
+            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+        }
+        else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
+            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));            
+            if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
+                await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+            }
+            else throw ({ message: 'Out of range - MC field' });
+        }
+        else if (
+            field.fieldType === 'RGB' &&
+            (!!fieldValue.R && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
+            (!!fieldValue.G && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
+            (!!fieldValue.B && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
+        ) {
+            console.log('RGB');
+            console.log(fieldValue);
+            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+        }
+        else {
+            console.log('wrong');
+            throw ({ message: 'Wrong field data type' });
+        }
+    }
+
+    private async changeDeviceFieldValueInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
+
+    }
+
+    private async changeDeviceFieldValueInComplexGroupRGB(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: IRGB) {
+
     }
 
     private compareFields(fieldNew: IDeviceFieldBasic, fieldOld: IDeviceFieldBasic): boolean {

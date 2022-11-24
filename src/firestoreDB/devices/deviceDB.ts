@@ -410,9 +410,9 @@ export class DeviceDB {
         let group = this.getDeviceFieldGroup(device, groupId);
         let field = this.getDeviceField(group, fieldId);
         //check user rights
-        
-        if(field.fieldValue.fieldDirection === 'output'){
-            throw({message: 'Field value is output only - can\'t be set by user'});
+
+        if (field.fieldValue.fieldDirection === 'output') {
+            throw ({ message: 'Field value is output only - can\'t be set by user' });
         }
         await this.tryToChangeDeviceFieldValue(deviceId, groupId, field, fieldValue);
     }
@@ -423,10 +423,14 @@ export class DeviceDB {
         }
         else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
             let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
-            let N = (fieldValue - numField.minValue) / numField.valueStep;
-            if (N % 1 < 0.05 || N % 1 > 0.95) {
-                await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+            if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
+                let N = (fieldValue - numField.minValue) / numField.valueStep;
+                if (N % 1 < 0.05 || N % 1 > 0.95) {
+                    await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+                }
+                else throw ({ message: 'Incorrect step' });
             }
+            else throw ({ message: 'Value out of interval [min,max]' });
         }
         else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
             await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
@@ -681,37 +685,49 @@ export class DeviceDB {
 
     async changeFieldValueInComplexGroupFromDevice(deviceKey: string, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
         let device = await this.getDeviceByKey(deviceKey);
-        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, fieldId, fieldValue);
+        let group = this.getComplexGroup(device, groupId);
+        let state = this.getComplexGroupState(group, stateId);
+        let field = this.getFieldInComplexGroup(state, fieldId);
+        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, field, fieldValue);
     }
 
     async changeFieldValueInComplexGroupFromUser(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
         let device = await this.getDevicebyId(deviceId);
-        //check user rights
-        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, fieldId, fieldValue);
-    }
-
-    private async tryToChangeFieldValueInComplexGroup(device: IDevice, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
         let group = this.getComplexGroup(device, groupId);
         let state = this.getComplexGroupState(group, stateId);
         let field = this.getFieldInComplexGroup(state, fieldId);
+        if(field.fieldValue.fieldDirection === 'output'){
+            throw ({ message: 'Field value is output only - can\'t be set by user' });
+        }
+        //check user rights
+        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, field, fieldValue);
+    }
+
+    private async tryToChangeFieldValueInComplexGroup(device: IDevice, groupId: number, stateId: number, field: IDeviceFieldBasic, fieldValue: any) {
+
 
         if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
-            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
         }
         else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
             let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
-            let N = (fieldValue - numField.minValue) / numField.valueStep;
-            if (N % 1 < 0.05 || N % 1 > 0.95) {
-                await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+            if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
+                let N = (fieldValue - numField.minValue) / numField.valueStep;
+                if (N % 1 < 0.05 || N % 1 > 0.95) {
+                    await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
+                }
+                else throw ({ message: 'Incorrect step' });
             }
+            else throw ({ message: 'Value out of interval [min,max]' });
+
         }
         else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
-            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
         }
         else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
-            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));            
+            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
             if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
-                await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+                await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
             }
             else throw ({ message: 'Out of range - MC field' });
         }
@@ -723,7 +739,7 @@ export class DeviceDB {
         ) {
             console.log('RGB');
             console.log(fieldValue);
-            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, fieldId, fieldValue);
+            await this.changeDeviceFieldValueInComplexGroupRGB(device.id, groupId, stateId, field.id, fieldValue);
         }
         else {
             console.log('wrong');
@@ -732,11 +748,21 @@ export class DeviceDB {
     }
 
     private async changeDeviceFieldValueInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
-
+        await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
+            [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldId}.fieldValue.fieldValue`]: fieldValue
+        });
     }
 
     private async changeDeviceFieldValueInComplexGroupRGB(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: IRGB) {
-
+        await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
+            [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldId}.fieldValue.R`]: fieldValue.R
+        });
+        await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
+            [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldId}.fieldValue.G`]: fieldValue.G
+        });
+        await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
+            [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldId}.fieldValue.B`]: fieldValue.B
+        });
     }
 
     private compareFields(fieldNew: IDeviceFieldBasic, fieldOld: IDeviceFieldBasic): boolean {
@@ -793,5 +819,3 @@ export class DeviceDB {
         return true;
     }
 }
-
-

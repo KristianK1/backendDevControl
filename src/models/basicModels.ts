@@ -42,6 +42,7 @@ export interface IFieldGroup {
 export interface IComplexFieldGroup {
     id: number,
     groupName: string,
+    currentState: number,
     fieldGroupStates: IComplexFieldGroupState[],
 }
 

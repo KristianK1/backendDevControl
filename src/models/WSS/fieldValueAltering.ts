@@ -8,21 +8,21 @@ export interface IAlterFieldValue {
     groupId: number,
     fieldId: number,
     fieldType: 'numeric' | 'text' | 'button' | 'multipleChoice' | 'RGB',
-    value: IFieldNumericValue | IFieldTextValue | IFieldButtonValue | IFieldMultipleChoiceValue | IFieldRGBValue,
+    value: IAlterFieldNumericValue | IAlterFieldTextValue | IAlterFieldButtonValue | IAlterFieldMultipleChoiceValue | IFieldRGBValue,
 }
 
-export interface IFieldNumericValue {
+export interface IAlterFieldNumericValue {
     number: number,
 }
-export interface IFieldTextValue {
+export interface IAlterFieldTextValue {
     text: string,
 }
 
-export interface IFieldButtonValue {
+export interface IAlterFieldButtonValue {
     onOff: boolean,
 }
 
-export interface IFieldMultipleChoiceValue {
+export interface IAlterFieldMultipleChoiceValue {
     choice: string,
 }
 

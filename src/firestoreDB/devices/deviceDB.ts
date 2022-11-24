@@ -1,11 +1,10 @@
 import { v4 as uuid } from 'uuid';
-import { IComplexFieldGroup, IComplexFieldGroupState, IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldText, IFieldGroup } from "../../models/basicModels";
+import { IComplexFieldGroup, IComplexFieldGroupState, IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldText, IFieldGroup, IRGB } from "../../models/basicModels";
 import { FirestoreDB } from '../firestore';
 import { getMaxIds } from '../MaxIDs/MaxIDs';
 import { FieldValue } from 'firebase-admin/firestore';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 import { getCurrentTimeUNIX } from '../../generalStuff/timeHandlers';
-import { FORMERR } from 'dns';
 
 var deviceDBObj: DeviceDB;
 
@@ -43,7 +42,7 @@ export class DeviceDB {
         return device;
     }
 
-    async getDeviceByKey(key: string) {
+    async getDeviceByKey(key: string): Promise<IDevice> {
         const allDevices = await this.getDevices();
         let device = allDevices.find(o => o.deviceKey === key);
         if (!device) {
@@ -243,7 +242,7 @@ export class DeviceDB {
                     console.log('y16');
                 }
                 oldState = this.getComplexGroupState(this.getComplexGroup(device, newGroup.id), newState.id);
-                
+
                 if (newState.stateName !== oldState.stateName) {
                     await this.renameComplexGroupState(deviceId, newGroup.id, newState.id, newState.stateName);
                 }
@@ -440,6 +439,75 @@ export class DeviceDB {
         });
     }
 
+    async changeDeviceFieldValueFromDevice(deviceKey: string, groupId: number, fieldId: number, fieldValue: any) {
+        let device = await this.getDeviceByKey(deviceKey);
+        await this.tryToChangeDeviceFieldValue(device, groupId, fieldId, fieldValue);
+    }
+
+    async changeDeviceFieldValueFromUser(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {
+        let device = await this.getDevicebyId(deviceId);
+        //check user rights
+        await this.tryToChangeDeviceFieldValue(device, groupId, fieldId, fieldValue);
+    }
+
+    private async tryToChangeDeviceFieldValue(device: IDevice, groupId: number, fieldId: number, fieldValue: any) {
+        let group = this.getDeviceFieldGroup(device, groupId);
+        let field = this.getDeviceField(group, fieldId);
+
+        if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
+            await this.changeDeviceFieldValue(device.id, groupId, fieldId, fieldValue);
+        }
+        else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
+            let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
+            let N = (fieldValue - numField.minValue) / numField.valueStep;
+            if (N % 1 < 0.05 || N % 1 > 0.95) {
+                await this.changeDeviceFieldValue(device.id, groupId, fieldId, fieldValue);
+            }
+        }
+        else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
+            await this.changeDeviceFieldValue(device.id, groupId, fieldId, fieldValue);
+        }
+        else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
+            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
+            if (multipleCField.values.length < fieldValue && fieldValue >= 0) {
+                await this.changeDeviceFieldValue(device.id, groupId, fieldId, fieldValue);
+            }
+        }
+        else if (
+            field.fieldType === 'RGB' &&
+            (!!fieldValue.R && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
+            (!!fieldValue.G && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
+            (!!fieldValue.B && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
+        ) {
+            console.log('RGB');
+            console.log(fieldValue);
+            await this.changeDeviceFieldValueRGB(device.id, groupId, fieldId, fieldValue);
+        }
+        else {
+            console.log('wrong');
+            throw ({ message: 'Wrong field data type' });
+        }
+    }
+
+    private async changeDeviceFieldValue(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {
+        await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
+            [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldValue.fieldValue`]: fieldValue
+        });
+    }
+
+    private async changeDeviceFieldValueRGB(deviceId: number, groupId: number, fieldId: number, fieldValue: IRGB) {
+        await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
+            [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldValue.R`]: fieldValue.R
+        });
+
+        await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
+            [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldValue.G`]: fieldValue.G
+        });
+
+        await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
+            [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldValue.B`]: fieldValue.B
+        });
+    }
 
 
 
@@ -581,6 +649,23 @@ export class DeviceDB {
             [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldData.id}`]: fieldData
         });
     }
+
+    async changeComplexFieldStateFromDevice(deviceKey: string, groupId: number, state: number){
+        let device = await this.getDeviceByKey(deviceKey);
+        let group = this.getComplexGroup(device,groupId);
+        this.change
+
+    }
+
+
+
+
+
+
+
+
+
+
 
     transformFieldInComplexGroup(groupState: IComplexFieldGroupState, fieldId: number): IDeviceFieldBasic {
         let field = {} as IDeviceFieldBasic;//groupState.fields[fieldId]

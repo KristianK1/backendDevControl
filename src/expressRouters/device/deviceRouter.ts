@@ -16,6 +16,11 @@ router.use('/deleteDevice', deleteDeviceRouter);
 var registerDeviceDataRouter = require('./device_subrouter/registerDeviceData');
 router.use('/registerDeviceData', registerDeviceDataRouter)
 
+var changeFieldValueRouter = require('./device_subrouter/deviceFieldChangeRouter.ts');
+router.use('/changeField', changeFieldValueRouter);
+
+var changeComplexGroupStateRouter = require('./device_subrouter/deviceComplexGroupStateChangeRouter.ts');
+router.use('/changeComplexGroupState', changeComplexGroupStateRouter);
 
 
 import { getCurrentTimeUNIX } from "../../generalStuff/timeHandlers";

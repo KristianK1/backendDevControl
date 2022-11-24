@@ -92,3 +92,9 @@ export interface IDeviceFieldRGB {
     B: number,
     fieldDirection: 'input'
 }
+
+export interface IRGB {
+    R: number,
+    G: number,
+    B: number,
+}

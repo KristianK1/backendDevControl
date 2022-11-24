@@ -400,36 +400,41 @@ export class DeviceDB {
 
     async changeDeviceFieldValueFromDevice(deviceKey: string, groupId: number, fieldId: number, fieldValue: any) {
         let device = await this.getDeviceByKey(deviceKey);
-        await this.tryToChangeDeviceFieldValue(device, groupId, fieldId, fieldValue);
+        let group = this.getDeviceFieldGroup(device, groupId);
+        let field = this.getDeviceField(group, fieldId);
+        await this.tryToChangeDeviceFieldValue(device.id, groupId, field, fieldValue);
     }
 
     async changeDeviceFieldValueFromUser(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {
         let device = await this.getDevicebyId(deviceId);
-        //check user rights
-        await this.tryToChangeDeviceFieldValue(device, groupId, fieldId, fieldValue);
-    }
-
-    private async tryToChangeDeviceFieldValue(device: IDevice, groupId: number, fieldId: number, fieldValue: any) {
         let group = this.getDeviceFieldGroup(device, groupId);
         let field = this.getDeviceField(group, fieldId);
+        //check user rights
+        
+        if(field.fieldValue.fieldDirection === 'output'){
+            throw({message: 'Field value is output only - can\'t be set by user'});
+        }
+        await this.tryToChangeDeviceFieldValue(deviceId, groupId, field, fieldValue);
+    }
 
+    private async tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any) {
         if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
-            await this.changeDeviceFieldValue(device.id, groupId, fieldId, fieldValue);
+            await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
         }
         else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
             let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
             let N = (fieldValue - numField.minValue) / numField.valueStep;
             if (N % 1 < 0.05 || N % 1 > 0.95) {
-                await this.changeDeviceFieldValue(device.id, groupId, fieldId, fieldValue);
+                await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
             }
         }
         else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
-            await this.changeDeviceFieldValue(device.id, groupId, fieldId, fieldValue);
+            await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
         }
         else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
             let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
             if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
-                await this.changeDeviceFieldValue(device.id, groupId, fieldId, fieldValue);
+                await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
             }
             else throw ({ message: 'Out of range - MC field' });
         }
@@ -441,7 +446,7 @@ export class DeviceDB {
         ) {
             console.log('RGB');
             console.log(fieldValue);
-            await this.changeDeviceFieldValueRGB(device.id, groupId, fieldId, fieldValue);
+            await this.changeDeviceFieldValueRGB(deviceId, groupId, field.id, fieldValue);
         }
         else {
             console.log('wrong');

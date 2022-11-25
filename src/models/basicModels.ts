@@ -1,9 +1,11 @@
+import { IUserRight } from "./userRightsModels";
+
 export interface IUser {
     id: number,
     username: string,
     email: string,
     password: string,
-    deviceFields: IDeviceFieldBasic[],
+    userRight: IUserRight,
     fieldViews: IUserView[],
 }
 

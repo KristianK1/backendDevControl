@@ -1,3 +1,9 @@
+export interface IUserRight{
+    rightsToDevices: IUserRightDevice[],
+    rightsToGroupFields: IUserRightGroupField[],
+    rightsToComplexGroups: IUserRightComplexGroup[],
+}
+
 export interface IUserRightDevice {
     deviceId: number,
     readOnly: boolean,

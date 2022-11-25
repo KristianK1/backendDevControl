@@ -60,7 +60,4 @@ export class UserRightsDB {
     async deleteUserRightToComplexGroup(userId: number, deviceId: number, complexGroupId: number){
 
     }
-
-    
-
 }

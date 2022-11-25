@@ -46,7 +46,7 @@ export class UsersDB {
         var users = await this.getUsers();
         const user = users.find(user => user.username === username && user.password === password);
         if (!user) {
-            throw({message: 'User doesn\'t exist'});
+            throw ({ message: 'User doesn\'t exist' });
         }
         let loginResponse = {} as ILoginResponse;
         loginResponse.user = user;
@@ -98,7 +98,7 @@ export class UsersDB {
         }
         const allAuthTokens: IAuthToken[] = await this.firestore.getCollectionData(UsersDB.authTokenCollName);
         allAuthTokens.forEach(async token => {
-            if(token.userId == authTokenDB.userId){
+            if (token.userId == authTokenDB.userId) {
                 await this.firestore.deleteDocument(UsersDB.authTokenCollName, `${token.authToken}`);
             }
         })
@@ -115,7 +115,7 @@ export class UsersDB {
             password: password,
             username: username,
             email: email,
-            deviceFields: [],
+            userRight: { rightsToDevices: [], rightsToGroupFields: [], rightsToComplexGroups: [] },
             fieldViews: [],
         }
 
@@ -152,10 +152,10 @@ export class UsersDB {
 
         let tokens = await this.getTokens();
         tokens.forEach(async token => {
-            if(token.userId === user.id){
+            if (token.userId === user.id) {
                 await this.firestore.deleteDocument(UsersDB.authTokenCollName, token.authToken);
             }
         })
     }
-    
+
 }

@@ -5,6 +5,9 @@ import { v4 as uuid } from 'uuid';
 import { addDaysToCurrentTime, hasTimePASSED } from '../../generalStuff/timeHandlers';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 import { FirestoreDB } from 'firestoreDB/firestore';
+import { IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from 'models/userRightsModels';
+import { FieldValue } from 'firebase-admin/firestore';
+import { urlencoded } from 'body-parser';
 
 
 var userDBObj: UsersDB;
@@ -29,7 +32,11 @@ export class UsersDB {
     }
 
     async getUsers(): Promise<IUser[]> {
-        return await this.firestore.getCollectionData(UsersDB.usersCollName);
+        let users = await this.firestore.getCollectionData(UsersDB.usersCollName);
+        for (let user of users) {
+            user.userRight = this.transformUserRights(user.userRight);
+        }
+        return users;
     }
 
     async getTokens(): Promise<IAuthToken[]> {
@@ -37,8 +44,9 @@ export class UsersDB {
     }
 
     async getUserbyId(id: number): Promise<IUser> {
-        let user = await this.firestore.getDocumentData(UsersDB.usersCollName, `${id}`);
+        let user: IUser = await this.firestore.getDocumentData(UsersDB.usersCollName, `${id}`);
         if (!user) throw ({ message: 'User doesn\'t exist' });
+        user.userRight = this.transformUserRights(user.userRight);
         return user;
     }
 
@@ -115,7 +123,7 @@ export class UsersDB {
             password: password,
             username: username,
             email: email,
-            userRight: { rightsToDevices: [], rightsToGroupFields: [], rightsToComplexGroups: [] },
+            userRight: { rightsToDevices: [], rightsToGroups: [], rightsToFields: [], rightsToComplexGroups: [] },
             fieldViews: [],
         }
 
@@ -156,6 +164,153 @@ export class UsersDB {
                 await this.firestore.deleteDocument(UsersDB.authTokenCollName, token.authToken);
             }
         })
+    }
+
+
+
+
+    async getUserRights(userId: number): Promise<IUserRight> {
+        let user = await this.getUserbyId(userId);
+        return user.userRight;
+    }
+
+    transformUserRights(userRights: IUserRight): IUserRight {
+        let rightsDev = userRights.rightsToDevices;
+        let actualDevRigts: IUserRightDevice[] = [];
+        Object.keys(rightsDev).forEach(deviceId => {
+            actualDevRigts.push(rightsDev[deviceId]);
+        });
+
+        let rightsGroup = userRights.rightsToGroups;
+        let actualGroupRights: IUserRightGroup[] = [];
+        Object.keys(rightsGroup).forEach(deviceId => {
+            Object.keys(rightsGroup[deviceId]).forEach(groupId => {
+                actualGroupRights.push(rightsGroup[deviceId][groupId]);
+            });
+        });
+
+        let rightsField = userRights.rightsToFields;
+        let actualFieldRights: IUserRightField[] = [];
+        Object.keys(rightsField).forEach(deviceId => {
+            Object.keys(rightsField[deviceId]).forEach(groupId => {
+                Object.keys(rightsField[deviceId][groupId]).forEach(fieldId => {
+                    actualFieldRights.push(rightsField[deviceId][groupId][fieldId]);
+                });
+            });
+        });
+
+        let complexGroupRigths = userRights.rightsToComplexGroups;
+        let actualComplexGroupRights: IUserRightComplexGroup[] = [];
+        Object.keys(complexGroupRigths).forEach(deviceId => {
+            actualComplexGroupRights.push(complexGroupRigths[deviceId]);
+        });
+
+        let actualRights: IUserRight = {
+            rightsToDevices: actualDevRigts,
+            rightsToGroups: actualGroupRights,
+            rightsToFields: actualFieldRights,
+            rightsToComplexGroups: actualComplexGroupRights,
+        };
+        return actualRights;
+    }
+
+    async checkUserRightToDevice(userId: number, deviceId: number): Promise<IUserRightDevice | undefined> {
+        let userRightsToDevices = (await this.getUserRights(userId)).rightsToDevices;
+        let hasDevice = false;
+        let butReadOnly = false;
+        for (let right of userRightsToDevices) {
+            if (right.deviceId === deviceId) {
+                return right;
+            }
+        }
+        return;
+        // if (!hasDevice) {
+        //     //add right
+        // }
+        // else if (hasDevice && butReadOnly && !readOnly) {
+        //     //add right
+        // }
+        // else if (hasDevice && !butReadOnly && readOnly) {
+        //     //stronger right exists
+        // }
+    }
+
+    // async checkUserRightToGroup(userId: number, deviceId: number, groupId: number): Promise<IUserRightGroup> {
+    //     let userRightsToGroups = (await this.getUserRights(userId)).rightsToGroups;
+    //     for (let deviceId of userRightsToGroups) {
+    //         // if ( === deviceId) {
+    //         // return right;
+    //         // }
+    //     }
+    // }
+
+    async addUserRightToDevice(userId: number, deviceId: number, readOnly: boolean) {
+        let right: IUserRightDevice = {
+            deviceId: deviceId,
+            readOnly: readOnly,
+        };
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+            [`userRight.rightsToDevices.${deviceId}`]: right,
+        });
+    }
+
+    async deleteUserRightToDevice(userId: number, deviceId: number) {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+            [`userRight.rightsToDevices.${deviceId}`]: FieldValue.delete()
+        });
+    }
+
+    async addUserRightToGroup(userId: number, deviceId: number, groupId: number, readOnly: boolean) {
+        let right: IUserRightGroup = {
+            deviceId: deviceId,
+            groupId: groupId,
+            readOnly: readOnly,
+        };
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+            [`userRight.rightsToGroups.${deviceId}.${groupId}`]: right,
+        });
+    }
+
+    async deleteUserRightToGroup(userId: number, deviceId: number, groupId: number) {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+            [`userRight.rightsToGroups.${deviceId}.${groupId}`]: FieldValue.delete()
+        });
+    }
+
+    async addUserRightToField(userId: number, deviceId: number, groupId: number, fieldId: number, readOnly: boolean) {
+        let right: IUserRightField = {
+            deviceId: deviceId,
+            groupId: groupId,
+            fieldId: fieldId,
+            readOnly: readOnly,
+        };
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+            [`userRight.rightsToFields.${deviceId}.${groupId}.${fieldId}`]: right
+        });
+    }
+
+    async deleteUserRightToField(userId: number, deviceId: number, groupId: number, fieldId: number) {
+
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+            [`userRight.rightsToFields.${deviceId}.${groupId}.${fieldId}`]: FieldValue.delete()
+        });
+    }
+
+    async addUserRightToComplexGroup(userId: number, deviceId: number, complexGroupId: number, readOnly: boolean) {
+        let right: IUserRightComplexGroup = {
+            deviceId: deviceId,
+            complexGroupId: complexGroupId,
+            readOnly: readOnly,
+        };
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+            [`userRight.rightsToComplexGroups.${deviceId}.${complexGroupId}`]: right
+        });
+    }
+
+    async deleteUserRightToComplexGroup(userId: number, deviceId: number, complexGroupId: number) {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+            [`userRight.rightsToComplexGroups.${deviceId}.${complexGroupId}`]: FieldValue.delete()
+        });
     }
 
 }

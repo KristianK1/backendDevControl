@@ -1,7 +1,6 @@
 import { DeviceDB } from "./devices/deviceDB";
 import { FirestoreDB } from "./firestore";
 import { getMaxIds } from "./MaxIDs/MaxIDs";
-import { UserRightsDB } from "./userRights/userRightsDB";
 import { UsersDB } from "./users/userDB";
 
 export const firestoreSingletonFactory = (function () {
@@ -75,23 +74,3 @@ export const getMaxIDSingletonFactory = (function () {
         }
     };
 })();
-
-
-export const getUserRightDBSingletonFactory = (function () {
-    var userRightsDB: UserRightsDB;
-
-    function createInstance(): UserRightsDB {
-        var object = new UserRightsDB();
-        return object;
-    }
-
-    return {
-        getInstance: function () {
-            if (!userRightsDB) {
-                userRightsDB = createInstance();
-            }
-            return userRightsDB;
-        }
-    };
-})();
-

@@ -1,6 +1,7 @@
 export interface IUserRight{
     rightsToDevices: IUserRightDevice[],
-    rightsToGroupFields: IUserRightGroupField[],
+    rightsToGroups: IUserRightGroup[],
+    rightsToFields: IUserRightField[],
     rightsToComplexGroups: IUserRightComplexGroup[],
 }
 
@@ -9,12 +10,19 @@ export interface IUserRightDevice {
     readOnly: boolean,
 }
 
-export interface IUserRightGroupField {
+export interface IUserRightGroup {
     deviceId: number,
     groupId: number,
-    fieldId?: number,
     readOnly: boolean,
 }
+
+export interface IUserRightField {
+    deviceId: number,
+    groupId: number,
+    fieldId: number,
+    readOnly: boolean,
+}
+
 
 export interface IUserRightComplexGroup {
     deviceId: number,

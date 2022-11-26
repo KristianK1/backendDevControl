@@ -1,5 +1,5 @@
 import { DeviceDB } from "firestoreDB/devices/deviceDB";
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from "firestoreDB/singletonService";
+import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { UsersDB } from "firestoreDB/users/userDB";
 import { IAddUserRightFieldReq } from "models/API/UserRightAlterReqRes";
 import { IDevice, IUser } from "models/basicModels";

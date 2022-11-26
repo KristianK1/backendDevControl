@@ -11,21 +11,36 @@ export interface IDeleteUserRightDeviceReq {
     deviceId: number,
 }
 
-export interface IAddUserRightGroupFieldReq {
+export interface IAddUserRightGroupReq {
     authToken: string,
     userId: number,
     deviceId: number,
     groupId: number,
-    fieldId?: number,
     readOnly: boolean,
 }
 
-export interface IDeleteUserRightGroupFieldReq {
+export interface IDeleteUserRightFieldReq {
     authToken: string,
     userId: number,
     deviceId: number,
     groupId: number,
-    fieldId?: number,
+    fieldId: number,
+}
+
+export interface IAddUserRightFieldReq {
+    authToken: string,
+    userId: number,
+    deviceId: number,
+    groupId: number,
+    fieldId: number,
+    readOnly: boolean,
+}
+
+export interface IDeleteUserRightGroupReq {
+    authToken: string,
+    userId: number,
+    deviceId: number,
+    groupId: number,
 }
 
 export interface IAddUserRightComplexGroupReq {

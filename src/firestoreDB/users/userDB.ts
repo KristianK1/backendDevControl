@@ -244,71 +244,73 @@ export class UsersDB {
     //     }
     // }
 
-    async addUserRightToDevice(userId: number, deviceId: number, readOnly: boolean) {
+    async addUserRightToDevice(user: IUser, deviceId: number, readOnly: boolean) {
         let right: IUserRightDevice = {
             deviceId: deviceId,
             readOnly: readOnly,
         };
-        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToDevices.${deviceId}`]: right,
         });
     }
 
-    async deleteUserRightToDevice(userId: number, deviceId: number) {
-        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+    async deleteUserRightToDevice(user: IUser, deviceId: number) {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToDevices.${deviceId}`]: FieldValue.delete()
         });
     }
 
-    async addUserRightToGroup(userId: number, deviceId: number, groupId: number, readOnly: boolean) {
+
+    async addUserRightToGroup(user: IUser, deviceId: number, groupId: number, readOnly: boolean) {
         let right: IUserRightGroup = {
             deviceId: deviceId,
             groupId: groupId,
             readOnly: readOnly,
         };
-        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToGroups.${deviceId}.${groupId}`]: right,
         });
     }
 
-    async deleteUserRightToGroup(userId: number, deviceId: number, groupId: number) {
-        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+    async deleteUserRightToGroup(user: IUser, deviceId: number, groupId: number) {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToGroups.${deviceId}.${groupId}`]: FieldValue.delete()
         });
     }
 
-    async addUserRightToField(userId: number, deviceId: number, groupId: number, fieldId: number, readOnly: boolean) {
+
+    async addUserRightToField(user: IUser, deviceId: number, groupId: number, fieldId: number, readOnly: boolean) {
         let right: IUserRightField = {
             deviceId: deviceId,
             groupId: groupId,
             fieldId: fieldId,
             readOnly: readOnly,
         };
-        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToFields.${deviceId}.${groupId}.${fieldId}`]: right
         });
     }
 
-    async deleteUserRightToField(userId: number, deviceId: number, groupId: number, fieldId: number) {
-
-        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+    async deleteUserRightToField(user: IUser, deviceId: number, groupId: number, fieldId: number) {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToFields.${deviceId}.${groupId}.${fieldId}`]: FieldValue.delete()
         });
     }
+    
 
-    async addUserRightToComplexGroup(userId: number, deviceId: number, complexGroupId: number, readOnly: boolean) {
+    async addUserRightToComplexGroup(user: IUser, deviceId: number, complexGroupId: number, readOnly: boolean) {
         let right: IUserRightComplexGroup = {
             deviceId: deviceId,
             complexGroupId: complexGroupId,
             readOnly: readOnly,
         };
-        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToComplexGroups.${deviceId}.${complexGroupId}`]: right
         });
     }
 
-    async deleteUserRightToComplexGroup(userId: number, deviceId: number, complexGroupId: number) {
-        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${userId}`, {
+    async deleteUserRightToComplexGroup(user: IUser, deviceId: number, complexGroupId: number) {
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToComplexGroups.${deviceId}.${complexGroupId}`]: FieldValue.delete()
         });
     }

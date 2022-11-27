@@ -285,24 +285,35 @@ export class UsersDB {
                 break;
             }
         }
-        if (rightToField === ERightType.Read || rightToGroup === ERightType.Read){
+        if (rightToField === ERightType.Read || rightToGroup === ERightType.Read) {
             return ERightType.Write
         }
         return ERightType.None;
     }
 
-
-
-    // async checkUserRightToGroup(userId: number, deviceId: number, groupId: number): Promise<IUserRightGroup> {
-    //     let userRightsToGroups = (await this.getUserRights(userId)).rightsToGroups;
-    //     for (let deviceId of userRightsToGroups) {
-    //         // if ( === deviceId) {
-    //         // return right;
-    //         // }
-    //     }
-    // }
-
     async addUserRightToDevice(user: IUser, deviceId: number, readOnly: boolean) {
+        let currUserRight = this.checkUserRightToDevice(user, deviceId);
+        if (!readOnly) { //write
+            if (currUserRight === ERightType.Write) {
+                return;
+            }
+            else if (currUserRight === ERightType.Read) {
+                await this.deleteNestedRightsForDevice(user, deviceId, false);
+            }
+            else {
+                await this.deleteNestedRightsForDevice(user, deviceId, false);
+            }
+        }
+        else { //read
+            if (currUserRight === ERightType.Write) { }
+            else if (currUserRight === ERightType.Read) {
+                return;
+            }
+            else {
+                await this.deleteNestedRightsForDevice(user, deviceId, true);
+            }
+        }
+
         let right: IUserRightDevice = {
             deviceId: deviceId,
             readOnly: readOnly,
@@ -318,8 +329,36 @@ export class UsersDB {
         });
     }
 
-
     async addUserRightToGroup(user: IUser, deviceId: number, groupId: number, readOnly: boolean) {
+        let currUserRightToDevice = this.checkUserRightToDevice(user, deviceId);
+        let currUserRightToGroup = this.checkUserRightToComplexGroup(user, deviceId, groupId);
+
+        if (!readOnly) { //write
+            if (currUserRightToDevice === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToGroup === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToGroup === ERightType.Read) {
+                await this.deleteNestedRightsForGroup(user, deviceId, groupId, false);
+            }
+            else { }
+        }
+        else { //read
+            if (currUserRightToDevice === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToDevice === ERightType.Read) {
+                return;
+            }
+            else if (currUserRightToGroup === ERightType.Write) { }
+            else if (currUserRightToGroup === ERightType.Read) {
+                return;
+            }
+            else { }
+        }
+
         let right: IUserRightGroup = {
             deviceId: deviceId,
             groupId: groupId,
@@ -336,8 +375,37 @@ export class UsersDB {
         });
     }
 
-
     async addUserRightToField(user: IUser, deviceId: number, groupId: number, fieldId: number, readOnly: boolean) {
+        let currUserRightToDevice = this.checkUserRightToDevice(user, deviceId);
+        let currUserRightToGroup = this.checkUserRightToGroup(user, deviceId, groupId);
+        let currUserRightToField = this.checkUserRightToField(user, deviceId, groupId, fieldId);
+
+        if (!readOnly) { //write
+            if (currUserRightToDevice === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToGroup === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToField === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToField === ERightType.Read) { }
+        }
+        else { //read
+            if (currUserRightToDevice === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToGroup === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToField === ERightType.Write) { }
+            else if (currUserRightToField === ERightType.Read) {
+                return;
+            }
+            else { }
+        }
+
         let right: IUserRightField = {
             deviceId: deviceId,
             groupId: groupId,
@@ -355,8 +423,34 @@ export class UsersDB {
         });
     }
 
-
     async addUserRightToComplexGroup(user: IUser, deviceId: number, complexGroupId: number, readOnly: boolean) {
+        let currUserRightToDevice = this.checkUserRightToDevice(user, deviceId);
+        let currUserRightToComplexGroup = this.checkUserRightToComplexGroup(user, deviceId, complexGroupId);
+        if (!readOnly) { //write
+            if (currUserRightToDevice === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToComplexGroup === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToComplexGroup === ERightType.Read) {
+            }
+            else { }
+        }
+        else { //read
+            if (currUserRightToDevice === ERightType.Write) {
+                return;
+            }
+            else if (currUserRightToDevice === ERightType.Read) {
+                return;
+            }
+            else if (currUserRightToComplexGroup === ERightType.Write) { }
+            else if (currUserRightToComplexGroup === ERightType.Read) {
+                return;
+            }
+            else { }
+        }
+
         let right: IUserRightComplexGroup = {
             deviceId: deviceId,
             complexGroupId: complexGroupId,
@@ -371,6 +465,40 @@ export class UsersDB {
         await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToComplexGroups.${deviceId}.${complexGroupId}`]: FieldValue.delete()
         });
+    }
+
+    async deleteNestedRightsForDevice(user: IUser, deviceId: number, onlyDeleteReadRights: boolean) {
+        for (let groupRight of user.userRight.rightsToGroups) {
+            if (groupRight.deviceId === deviceId) {
+                if (!onlyDeleteReadRights || groupRight.readOnly) {
+                    await this.deleteUserRightToGroup(user, deviceId, groupRight.groupId);
+                }
+            }
+        }
+        for (let fieldRight of user.userRight.rightsToFields) {
+            if (fieldRight.deviceId === deviceId) {
+                if (!onlyDeleteReadRights || fieldRight.readOnly) {
+                    await this.deleteUserRightToField(user, deviceId, fieldRight.groupId, fieldRight.fieldId);
+                }
+            }
+        }
+        for (let complexGroupRight of user.userRight.rightsToFields) {
+            if (complexGroupRight.deviceId === deviceId) {
+                if (!onlyDeleteReadRights || complexGroupRight.readOnly) {
+                    await this.deleteUserRightToField(user, deviceId, complexGroupRight.groupId, complexGroupRight.fieldId);
+                }
+            }
+        }
+    }
+
+    async deleteNestedRightsForGroup(user: IUser, deviceId: number, groupId: number, onlyDeleteReadRights: boolean) {
+        for (let fieldRight of user.userRight.rightsToFields) {
+            if (fieldRight.deviceId === deviceId && fieldRight.groupId === groupId) {
+                if (!onlyDeleteReadRights || fieldRight.readOnly) {
+                    await this.deleteUserRightToField(user, deviceId, groupId, fieldRight.fieldId);
+                }
+            }
+        }
     }
 
 }

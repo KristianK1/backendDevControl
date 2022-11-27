@@ -5,9 +5,8 @@ import { v4 as uuid } from 'uuid';
 import { addDaysToCurrentTime, hasTimePASSED } from '../../generalStuff/timeHandlers';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 import { FirestoreDB } from 'firestoreDB/firestore';
-import { IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from 'models/userRightsModels';
+import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from '../../models/userRightsModels';
 import { FieldValue } from 'firebase-admin/firestore';
-import { urlencoded } from 'body-parser';
 
 
 var userDBObj: UsersDB;
@@ -214,26 +213,85 @@ export class UsersDB {
         return actualRights;
     }
 
-    async checkUserRightToDevice(userId: number, deviceId: number): Promise<IUserRightDevice | undefined> {
-        let userRightsToDevices = (await this.getUserRights(userId)).rightsToDevices;
-        let hasDevice = false;
-        let butReadOnly = false;
+    checkUserRightToDevice(user: IUser, deviceId: number): ERightType {
+        let userRightsToDevices = user.userRight.rightsToDevices;
         for (let right of userRightsToDevices) {
             if (right.deviceId === deviceId) {
-                return right;
+                return right.readOnly ? ERightType.Read : ERightType.Write;
             }
         }
-        return;
-        // if (!hasDevice) {
-        //     //add right
-        // }
-        // else if (hasDevice && butReadOnly && !readOnly) {
-        //     //add right
-        // }
-        // else if (hasDevice && !butReadOnly && readOnly) {
-        //     //stronger right exists
-        // }
+        return ERightType.None;
     }
+
+    checkUserRightToComplexGroup(user: IUser, deviceId: number, complexGroupId: number): ERightType {
+        let rightToDevice = this.checkUserRightToDevice(user, deviceId);
+        if (rightToDevice === ERightType.Write) {
+            return ERightType.Write;
+        }
+
+        let rightToComplexGroup = ERightType.None;
+        let userRightsToComplexGroups = user.userRight.rightsToComplexGroups;
+        for (let right of userRightsToComplexGroups) {
+            if (right.deviceId === deviceId && right.complexGroupId === complexGroupId) {
+                if (!right.readOnly) {
+                    return ERightType.Write;
+                }
+                // else
+                rightToComplexGroup = ERightType.Read;
+                break;
+            }
+        }
+        if (rightToComplexGroup === ERightType.Read || rightToDevice === ERightType.Read) return ERightType.Read;
+        return ERightType.None;
+    }
+
+    checkUserRightToGroup(user: IUser, deviceId: number, groupId: number): ERightType {
+        let rightToDevice = this.checkUserRightToDevice(user, deviceId);
+        if (rightToDevice === ERightType.Write) {
+            return ERightType.Write;
+        }
+        let rightToGroup = ERightType.None;
+        let userRightsToGroups = user.userRight.rightsToGroups;
+        for (let right of userRightsToGroups) {
+            if (right.deviceId === deviceId && right.groupId === groupId) {
+                if (!right.readOnly) {
+                    return ERightType.Write;
+                }
+                // else
+                rightToGroup = ERightType.Read;
+                break;
+            }
+        }
+        if (rightToGroup === ERightType.Read || rightToDevice === ERightType.Read) {
+            return ERightType.Read;
+        }
+        return ERightType.None;
+    }
+
+    checkUserRightToField(user: IUser, deviceId: number, groupId: number, fieldId: number): ERightType {
+        let rightToGroup = this.checkUserRightToGroup(user, deviceId, groupId);
+        if (rightToGroup === ERightType.Write) {
+            return ERightType.Write;
+        }
+        let rightToField = ERightType.None;
+        let userRightsToField = user.userRight.rightsToFields;
+        for (let right of userRightsToField) {
+            if (right.deviceId === deviceId && right.groupId === groupId && right.fieldId === fieldId) {
+                if (!right.readOnly) {
+                    return ERightType.Write;
+                }
+                //else
+                rightToField = ERightType.Read;
+                break;
+            }
+        }
+        if (rightToField === ERightType.Read || rightToGroup === ERightType.Read){
+            return ERightType.Write
+        }
+        return ERightType.None;
+    }
+
+
 
     // async checkUserRightToGroup(userId: number, deviceId: number, groupId: number): Promise<IUserRightGroup> {
     //     let userRightsToGroups = (await this.getUserRights(userId)).rightsToGroups;
@@ -296,7 +354,7 @@ export class UsersDB {
             [`userRight.rightsToFields.${deviceId}.${groupId}.${fieldId}`]: FieldValue.delete()
         });
     }
-    
+
 
     async addUserRightToComplexGroup(user: IUser, deviceId: number, complexGroupId: number, readOnly: boolean) {
         let right: IUserRightComplexGroup = {

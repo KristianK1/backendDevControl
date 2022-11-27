@@ -29,3 +29,9 @@ export interface IUserRightComplexGroup {
     complexGroupId: number,
     readOnly: boolean,
 }
+
+export enum ERightType{
+    None,
+    Read,
+    Write,
+}

@@ -13,9 +13,9 @@ var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
 router.post('/', async (req: any, res: any) => {
     let request: IAddUserRightDeviceReq = req.body;
 
-    let user: IUser;
+    let admin: IUser;
     try {
-        user = await userDB.getUserByToken(request.authToken, true);
+        admin = await userDB.getUserByToken(request.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -31,10 +31,31 @@ router.post('/', async (req: any, res: any) => {
         return;
     }
 
-    if (device.userAdminId != user.id) {
+    if (device.userAdminId != admin.id) {
         res.status(400);
         res.send('User isn\'t admin');
         return;
+    }
+
+    let user: IUser;
+    try {
+        user = await userDB.getUserbyId(request.userId);
+    } catch (e) {
+        res.status(400);
+        res.send(e.message);
+        return;
+    }
+
+    if(user.id === admin.id){
+        res.status(400);
+        res.send('Admin can\'t set rights for himself');
+        return;
+    }
+
+    if(typeof request.readOnly !== "boolean"){
+        res.status(400);
+        res.send('readOnly property must be boolean');
+        return;    
     }
 
     try {
@@ -44,6 +65,8 @@ router.post('/', async (req: any, res: any) => {
         res.send(e.message);
         return;
     }
+
+    res.sendStatus(200);
 });
 
 module.exports = router;

@@ -104,7 +104,7 @@ export class UsersDB {
             throw ({ message: 'Couldn\'t find token' });
         }
         const allAuthTokens: IAuthToken[] = await this.firestore.getCollectionData(UsersDB.authTokenCollName);
-        allAuthTokens.forEach(async token => {
+        allAuthTokens.forEach(async token => { //TODO maybe regular for loop
             if (token.userId == authTokenDB.userId) {
                 await this.firestore.deleteDocument(UsersDB.authTokenCollName, `${token.authToken}`);
             }
@@ -201,7 +201,9 @@ export class UsersDB {
         let complexGroupRigths = userRights.rightsToComplexGroups;
         let actualComplexGroupRights: IUserRightComplexGroup[] = [];
         Object.keys(complexGroupRigths).forEach(deviceId => {
-            actualComplexGroupRights.push(complexGroupRigths[deviceId]);
+            Object.keys(complexGroupRigths[deviceId]).forEach(complexGroupId => {
+                actualComplexGroupRights.push(complexGroupRigths[deviceId][complexGroupId]);
+            });
         });
 
         let actualRights: IUserRight = {
@@ -286,7 +288,7 @@ export class UsersDB {
             }
         }
         if (rightToField === ERightType.Read || rightToGroup === ERightType.Read) {
-            return ERightType.Write
+            return ERightType.Read;
         }
         return ERightType.None;
     }
@@ -324,6 +326,7 @@ export class UsersDB {
     }
 
     async deleteUserRightToDevice(user: IUser, deviceId: number) {
+        await this.deleteNestedRightsForDevice(user, deviceId, false);
         await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToDevices.${deviceId}`]: FieldValue.delete()
         });
@@ -364,12 +367,14 @@ export class UsersDB {
             groupId: groupId,
             readOnly: readOnly,
         };
+        await this.deleteNestedRightsForGroup(user, deviceId, groupId, readOnly);
         await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToGroups.${deviceId}.${groupId}`]: right,
         });
     }
 
     async deleteUserRightToGroup(user: IUser, deviceId: number, groupId: number) {
+        await this.deleteNestedRightsForGroup(user, deviceId, groupId, false);
         await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToGroups.${deviceId}.${groupId}`]: FieldValue.delete()
         });
@@ -379,6 +384,12 @@ export class UsersDB {
         let currUserRightToDevice = this.checkUserRightToDevice(user, deviceId);
         let currUserRightToGroup = this.checkUserRightToGroup(user, deviceId, groupId);
         let currUserRightToField = this.checkUserRightToField(user, deviceId, groupId, fieldId);
+
+        console.log(currUserRightToDevice);
+        console.log(currUserRightToGroup);
+        console.log(currUserRightToField);
+
+
 
         if (!readOnly) { //write
             if (currUserRightToDevice === ERightType.Write) {
@@ -482,10 +493,12 @@ export class UsersDB {
                 }
             }
         }
-        for (let complexGroupRight of user.userRight.rightsToFields) {
+        for (let complexGroupRight of user.userRight.rightsToComplexGroups) {
+            console.log(complexGroupRight);
+
             if (complexGroupRight.deviceId === deviceId) {
                 if (!onlyDeleteReadRights || complexGroupRight.readOnly) {
-                    await this.deleteUserRightToField(user, deviceId, complexGroupRight.groupId, complexGroupRight.fieldId);
+                    await this.deleteUserRightToComplexGroup(user, deviceId, complexGroupRight.complexGroupId);
                 }
             }
         }

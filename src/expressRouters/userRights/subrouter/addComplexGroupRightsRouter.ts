@@ -13,12 +13,12 @@ var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
 router.post('/', async (req: any, res: any) => {
     let request: IAddUserRightComplexGroupReq = req.body;
 
-    if(typeof request.readOnly !== "boolean"){
+    if (typeof request.readOnly !== "boolean") {
         res.status(400);
         res.send('readOnly property must be boolean');
-        return;    
+        return;
     }
-    
+
     let admin: IUser;
     try {
         admin = await userDB.getUserByToken(request.authToken, true);
@@ -31,6 +31,14 @@ router.post('/', async (req: any, res: any) => {
     let device: IDevice;
     try {
         device = await deviceDb.getDevicebyId(request.deviceId);
+    } catch (e) {
+        res.status(400);
+        res.send(e.message);
+        return;
+    }
+
+    try {
+        deviceDb.getComplexGroup(device, request.complexGroupId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -52,7 +60,7 @@ router.post('/', async (req: any, res: any) => {
         return;
     }
 
-    if(user.id === admin.id){
+    if (user.id === admin.id) {
         res.status(400);
         res.send('Admin can\'t set rights for himself');
         return;

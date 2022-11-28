@@ -37,6 +37,14 @@ router.post('/', async (req: any, res: any) => {
         return;
     }
 
+    try {
+        deviceDb.getDeviceFieldGroup(device, request.groupId);
+    } catch (e) {
+        res.status(400);
+        res.send(e.message);
+        return;
+    }
+
     if (device.userAdminId != admin.id) {
         res.status(400);
         res.send('User isn\'t admin');

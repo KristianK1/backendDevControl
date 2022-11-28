@@ -1,4 +1,4 @@
-export interface IUserRight{
+export interface IUserRight {
     rightsToDevices: IUserRightDevice[],
     rightsToGroups: IUserRightGroup[],
     rightsToFields: IUserRightField[],
@@ -30,7 +30,7 @@ export interface IUserRightComplexGroup {
     readOnly: boolean,
 }
 
-export enum ERightType{
+export enum ERightType {
     None,
     Read,
     Write,

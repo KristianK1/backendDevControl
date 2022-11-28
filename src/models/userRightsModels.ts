@@ -23,7 +23,6 @@ export interface IUserRightField {
     readOnly: boolean,
 }
 
-
 export interface IUserRightComplexGroup {
     deviceId: number,
     complexGroupId: number,

@@ -514,4 +514,32 @@ export class UsersDB {
         }
     }
 
+    async deleteDeviceOnAllUsers(deviceId: number) {
+        const allUsers = await this.getUsers();
+        for (let user of allUsers) {
+            await this.deleteUserRightToDevice(user, deviceId);
+        }
+    }
+
+    async deleteGroupOnAllUsers(deviceId: number, groupId: number) {
+        const allUsers = await this.getUsers();
+        for (let user of allUsers) {
+            await this.deleteUserRightToGroup(user, deviceId, groupId);
+        }
+    }
+
+    async deleteFieldOnAllUsers(deviceId: number, groupId: number, fieldId: number) {
+        const allUsers = await this.getUsers();
+        for (let user of allUsers) {
+            await this.deleteUserRightToField(user, deviceId, groupId, fieldId);
+        }
+    } 
+
+    async deleteComplexGroupOnAllUsers(deviceId: number, complexGroupId: number) {
+        const allUsers = await this.getUsers();
+        for (let user of allUsers) {
+            await this.deleteUserRightToComplexGroup(user, deviceId, complexGroupId);
+        }
+    }
+
 }

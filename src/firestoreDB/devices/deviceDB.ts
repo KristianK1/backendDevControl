@@ -5,6 +5,7 @@ import { getMaxIds } from '../MaxIDs/MaxIDs';
 import { FieldValue } from 'firebase-admin/firestore';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 import { getCurrentTimeUNIX } from '../../generalStuff/timeHandlers';
+import { deleteComplexGroupOnAllUsers, deleteDeviceOnAllUsers, deleteFieldOnAllUsers, deleteGroupOnAllUsers } from 'firestoreDB/userDBdeviceDBbridge';
 
 var deviceDBObj: DeviceDB;
 
@@ -258,6 +259,7 @@ export class DeviceDB {
     async deleteDevice(id: number) {
         let device = await this.getDevicebyId(id);
         await this.firestore.deleteDocument(DeviceDB.devCollName, `${id}`);
+        await deleteDeviceOnAllUsers(id);
     }
 
     async changeDeviceAdmin(deviceId: number, userId: number) {
@@ -341,6 +343,8 @@ export class DeviceDB {
         await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}`]: FieldValue.delete()
         })
+
+        await deleteGroupOnAllUsers(deviceId, groupId);
     }
 
 
@@ -396,6 +400,8 @@ export class DeviceDB {
         await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}`]: FieldValue.delete()
         });
+
+        await deleteFieldOnAllUsers(deviceId, groupId, fieldId);
     }
 
     async changeDeviceFieldValueFromDevice(deviceKey: string, groupId: number, fieldId: number, fieldValue: any) {
@@ -543,6 +549,8 @@ export class DeviceDB {
         await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${groupId}`]: FieldValue.delete()
         });
+
+        await deleteComplexGroupOnAllUsers(deviceId, groupId);
     }
 
 
@@ -696,7 +704,7 @@ export class DeviceDB {
         let group = this.getComplexGroup(device, groupId);
         let state = this.getComplexGroupState(group, stateId);
         let field = this.getFieldInComplexGroup(state, fieldId);
-        if(field.fieldValue.fieldDirection === 'output'){
+        if (field.fieldValue.fieldDirection === 'output') {
             throw ({ message: 'Field value is output only - can\'t be set by user' });
         }
         //check user rights

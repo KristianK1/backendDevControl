@@ -7,6 +7,7 @@ import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singleto
 import { FirestoreDB } from 'firestoreDB/firestore';
 import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from '../../models/userRightsModels';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getDeviceById } from '../../firestoreDB/userDBdeviceDBbridge';
 
 
 var userDBObj: UsersDB;
@@ -215,7 +216,11 @@ export class UsersDB {
         return actualRights;
     }
 
-    checkUserRightToDevice(user: IUser, deviceId: number): ERightType {
+    async checkUserRightToDevice(user: IUser, deviceId: number): Promise<ERightType> {
+        let device = await getDeviceById(deviceId);
+        if (device.userAdminId === user.id) {
+            return ERightType.Write;
+        }
         let userRightsToDevices = user.userRight.rightsToDevices;
         for (let right of userRightsToDevices) {
             if (right.deviceId === deviceId) {
@@ -225,8 +230,8 @@ export class UsersDB {
         return ERightType.None;
     }
 
-    checkUserRightToComplexGroup(user: IUser, deviceId: number, complexGroupId: number): ERightType {
-        let rightToDevice = this.checkUserRightToDevice(user, deviceId);
+    async checkUserRightToComplexGroup(user: IUser, deviceId: number, complexGroupId: number): Promise<ERightType> {
+        let rightToDevice = await this.checkUserRightToDevice(user, deviceId);
         if (rightToDevice === ERightType.Write) {
             return ERightType.Write;
         }
@@ -247,8 +252,8 @@ export class UsersDB {
         return ERightType.None;
     }
 
-    checkUserRightToGroup(user: IUser, deviceId: number, groupId: number): ERightType {
-        let rightToDevice = this.checkUserRightToDevice(user, deviceId);
+    async checkUserRightToGroup(user: IUser, deviceId: number, groupId: number): Promise<ERightType> {
+        let rightToDevice = await this.checkUserRightToDevice(user, deviceId);
         if (rightToDevice === ERightType.Write) {
             return ERightType.Write;
         }
@@ -270,8 +275,8 @@ export class UsersDB {
         return ERightType.None;
     }
 
-    checkUserRightToField(user: IUser, deviceId: number, groupId: number, fieldId: number): ERightType {
-        let rightToGroup = this.checkUserRightToGroup(user, deviceId, groupId);
+    async checkUserRightToField(user: IUser, deviceId: number, groupId: number, fieldId: number): Promise<ERightType> {
+        let rightToGroup = await this.checkUserRightToGroup(user, deviceId, groupId);
         if (rightToGroup === ERightType.Write) {
             return ERightType.Write;
         }
@@ -294,7 +299,7 @@ export class UsersDB {
     }
 
     async addUserRightToDevice(user: IUser, deviceId: number, readOnly: boolean) {
-        let currUserRight = this.checkUserRightToDevice(user, deviceId);
+        let currUserRight = await this.checkUserRightToDevice(user, deviceId);
         if (!readOnly) { //write
             if (currUserRight === ERightType.Write) {
                 return;
@@ -333,8 +338,8 @@ export class UsersDB {
     }
 
     async addUserRightToGroup(user: IUser, deviceId: number, groupId: number, readOnly: boolean) {
-        let currUserRightToDevice = this.checkUserRightToDevice(user, deviceId);
-        let currUserRightToGroup = this.checkUserRightToComplexGroup(user, deviceId, groupId);
+        let currUserRightToDevice = await this.checkUserRightToDevice(user, deviceId);
+        let currUserRightToGroup = await this.checkUserRightToComplexGroup(user, deviceId, groupId);
 
         if (!readOnly) { //write
             if (currUserRightToDevice === ERightType.Write) {
@@ -381,9 +386,9 @@ export class UsersDB {
     }
 
     async addUserRightToField(user: IUser, deviceId: number, groupId: number, fieldId: number, readOnly: boolean) {
-        let currUserRightToDevice = this.checkUserRightToDevice(user, deviceId);
-        let currUserRightToGroup = this.checkUserRightToGroup(user, deviceId, groupId);
-        let currUserRightToField = this.checkUserRightToField(user, deviceId, groupId, fieldId);
+        let currUserRightToDevice = await this.checkUserRightToDevice(user, deviceId);
+        let currUserRightToGroup = await this.checkUserRightToGroup(user, deviceId, groupId);
+        let currUserRightToField = await this.checkUserRightToField(user, deviceId, groupId, fieldId);
 
         console.log(currUserRightToDevice);
         console.log(currUserRightToGroup);
@@ -435,8 +440,8 @@ export class UsersDB {
     }
 
     async addUserRightToComplexGroup(user: IUser, deviceId: number, complexGroupId: number, readOnly: boolean) {
-        let currUserRightToDevice = this.checkUserRightToDevice(user, deviceId);
-        let currUserRightToComplexGroup = this.checkUserRightToComplexGroup(user, deviceId, complexGroupId);
+        let currUserRightToDevice = await this.checkUserRightToDevice(user, deviceId);
+        let currUserRightToComplexGroup = await this.checkUserRightToComplexGroup(user, deviceId, complexGroupId);
         if (!readOnly) { //write
             if (currUserRightToDevice === ERightType.Write) {
                 return;
@@ -540,4 +545,13 @@ export class UsersDB {
         }
     }
 
+    async giveWriteDeviceRightsToUser(userId: number, deviceId: number) {
+        let user = await this.getUserbyId(userId);
+        await this.addUserRightToDevice(user, deviceId, false);
+    }
+
+    async deleteUserRightForNewAdmin(userId: number, deviceId: number) {
+        let user = await this.getUserbyId(userId);
+        this.deleteUserRightToDevice(user, deviceId);
+    }
 }

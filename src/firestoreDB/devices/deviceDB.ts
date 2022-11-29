@@ -5,7 +5,7 @@ import { getMaxIds } from '../MaxIDs/MaxIDs';
 import { FieldValue } from 'firebase-admin/firestore';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 import { getCurrentTimeUNIX } from '../../generalStuff/timeHandlers';
-import { deleteComplexGroupOnAllUsers, deleteDeviceOnAllUsers, deleteFieldOnAllUsers, deleteGroupOnAllUsers } from '../userDBdeviceDBbridge';
+import { deleteComplexGroupOnAllUsers, deleteDeviceOnAllUsers, deleteFieldOnAllUsers, deleteGroupOnAllUsers, deleteUserRightForNewAdmin, giveWriteDeviceRightsToUser } from '../userDBdeviceDBbridge';
 
 var deviceDBObj: DeviceDB;
 
@@ -267,9 +267,11 @@ export class DeviceDB {
         if (device.userAdminId === userId) {
             throw ({ message: 'User is already the admin' });
         }
+        await giveWriteDeviceRightsToUser(device.userAdminId, deviceId);
         await this.firestore.updateDocumentValue(DeviceDB.devCollName, `${deviceId}`, {
             userAdminId: userId,
         });
+        await deleteUserRightForNewAdmin(userId, deviceId);
     }
 
 

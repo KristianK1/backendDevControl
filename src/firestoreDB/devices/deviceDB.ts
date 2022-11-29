@@ -5,7 +5,7 @@ import { getMaxIds } from '../MaxIDs/MaxIDs';
 import { FieldValue } from 'firebase-admin/firestore';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 import { getCurrentTimeUNIX } from '../../generalStuff/timeHandlers';
-import { deleteComplexGroupOnAllUsers, deleteDeviceOnAllUsers, deleteFieldOnAllUsers, deleteGroupOnAllUsers } from 'firestoreDB/userDBdeviceDBbridge';
+import { deleteComplexGroupOnAllUsers, deleteDeviceOnAllUsers, deleteFieldOnAllUsers, deleteGroupOnAllUsers } from '../userDBdeviceDBbridge';
 
 var deviceDBObj: DeviceDB;
 

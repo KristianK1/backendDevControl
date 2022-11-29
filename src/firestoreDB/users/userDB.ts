@@ -494,8 +494,6 @@ export class UsersDB {
             }
         }
         for (let complexGroupRight of user.userRight.rightsToComplexGroups) {
-            console.log(complexGroupRight);
-
             if (complexGroupRight.deviceId === deviceId) {
                 if (!onlyDeleteReadRights || complexGroupRight.readOnly) {
                     await this.deleteUserRightToComplexGroup(user, deviceId, complexGroupRight.complexGroupId);
@@ -533,7 +531,7 @@ export class UsersDB {
         for (let user of allUsers) {
             await this.deleteUserRightToField(user, deviceId, groupId, fieldId);
         }
-    } 
+    }
 
     async deleteComplexGroupOnAllUsers(deviceId: number, complexGroupId: number) {
         const allUsers = await this.getUsers();

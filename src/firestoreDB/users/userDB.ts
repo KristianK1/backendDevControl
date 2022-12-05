@@ -1,4 +1,4 @@
-import { IAuthToken, IUser } from '../../models/basicModels';
+import { IAuthToken, IDevice, IDeviceFieldButton, IUser } from '../../models/basicModels';
 import { getMaxIds } from '../MaxIDs/MaxIDs';
 import { ILoginResponse } from '../../models/API/loginRegisterReqRes';
 import { v4 as uuid } from 'uuid';
@@ -8,6 +8,7 @@ import { FirestoreDB } from 'firestoreDB/firestore';
 import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from '../../models/userRightsModels';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getDeviceById } from '../../firestoreDB/userDBdeviceDBbridge';
+import { IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForUser, IFieldGroupForUser } from 'models/frontendModels';
 
 
 var userDBObj: UsersDB;
@@ -553,5 +554,86 @@ export class UsersDB {
     async deleteUserRightForNewAdmin(userId: number, deviceId: number) {
         let user = await this.getUserbyId(userId);
         this.deleteUserRightToDevice(user, deviceId);
+    }
+
+    async checkAnyUserRightToDevice(user: IUser, device: IDevice): Promise<boolean> {
+
+        let right = await this.checkUserRightToDevice(user, device.id);
+        if (right === ERightType.Read || right === ERightType.Write) {
+            return true;
+        }
+
+        for (let group of device.deviceFieldGroups) {
+            let right = await this.checkUserRightToGroup(user, device.id, group.id);
+            if (right === ERightType.Read || right === ERightType.Write) {
+                return true;
+            }
+            for (let field of group.fields) {
+                let right = await this.checkUserRightToField(user, device.id, group.id, field.id);
+                if (right === ERightType.Read || right === ERightType.Write) {
+                    return true;
+                }
+            }
+        }
+        for (let complexGroup of device.deviceFieldComplexGroups) {
+            let right = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.id);
+            if (right === ERightType.Read || right === ERightType.Write) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    async getDeviceForUser(user: IUser, device: IDevice): Promise<IDeviceForUser | undefined> {
+        if (! await this.checkAnyUserRightToDevice(user, device)) return;
+        let deviceReduced: IDeviceForUser = {
+            id: device.id,
+            deviceKey: device.deviceKey,
+            deviceName: device.deviceName,
+            userAdminId: device.userAdminId,
+            deviceFieldGroups: [],
+            deviceFieldComplexGroups: [],
+        }
+
+        for (let group of device.deviceFieldGroups) {
+            let groupReduced: IFieldGroupForUser = {
+                id: group.id,
+                groupName: group.groupName,
+                fields: [],
+            }
+            for (let field of group.fields) {
+                let fieldRight = await this.checkUserRightToField(user, device.id, group.id, field.id);
+                if (fieldRight === ERightType.None) continue;
+
+                let fieldReduced: IDeviceFieldBasicForUser = {
+                    deviceId: field.deviceId,
+                    groupId: field.groupId,
+                    id: field.id,
+                    fieldName: field.fieldName,
+                    fieldType: field.fieldType,
+                    fieldValue: field.fieldValue,
+                    readOnly: fieldRight === ERightType.Read,
+                }
+                groupReduced.fields.push(fieldReduced);
+            }
+            if (groupReduced.fields.length > 0) {
+                deviceReduced.deviceFieldGroups.push(groupReduced);
+            }
+        }
+
+        for (let complexGroup of device.deviceFieldComplexGroups) {
+            let complexGroupRight = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.id);
+            if (complexGroupRight === ERightType.None) continue;
+
+            let complexGroupReduced: IComplexFieldGroupForUser = {
+                id: complexGroup.id,
+                groupName: complexGroup.groupName,
+                currentState: complexGroup.currentState,
+                fieldGroupStates: complexGroup.fieldGroupStates,
+                readOnly: complexGroupRight === ERightType.Read,
+            }
+            deviceReduced.deviceFieldComplexGroups.push(complexGroupReduced);
+        }
+        return deviceReduced;
     }
 }

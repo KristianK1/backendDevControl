@@ -3,12 +3,15 @@ import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../fire
 import { UsersDB } from "firestoreDB/users/userDB";
 import { IDeleteUserRightGroupReq } from "models/API/UserRightAlterReqRes";
 import { IDevice, IUser } from "models/basicModels";
+import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
+import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 
 var express = require('express');
 var router = express.Router();
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
 var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
+var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IDeleteUserRightGroupReq = req.body;
@@ -48,6 +51,7 @@ router.post('/', async (req: any, res: any) => {
 
     try {
         await userDB.deleteUserRightToGroup(user, request.deviceId, request.groupId);
+        wsServer.emitUserRightUpdate(user, request.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message);

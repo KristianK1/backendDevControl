@@ -6,7 +6,8 @@ export interface IDeviceForUser{
     deviceName: string,
     deviceFieldGroups: IFieldGroupForUser[],
     deviceFieldComplexGroups: IComplexFieldGroupForUser[],
-    userAdminId: number
+    userAdminId: number,
+    updateTimeStamp: number,
 }
 
 

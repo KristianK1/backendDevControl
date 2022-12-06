@@ -85,6 +85,27 @@ export class MyWebSocketServer {
         });
     }
 
+    async emitDeviceRegistration(deviceKey: string) {
+        let users = await userDB.getUsers();
+        let deviceData = await deviceDb.getDeviceByKey(deviceKey);
+        for (let userClient of this.userClients) {
+            try {
+                let user = users.find(user => user.id === userClient.userId);
+                if (!user) continue;
+                console.log('one');
+                let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
+                console.log('two');
+                if (!deviceForUser) continue;
+                console.log('started sending UTF');
+                userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
+            } catch (e) {
+                console.log("Device registration emiting error");
+                console.log(e);
+            }
+        }
+        console.log('end emit');
+    }
+
     async emitFieldChanged(deviceId: number, groupId: number, fieldId: number) {
         let deviceData: IDevice = {} as IDevice;
         let allUsers: IUser[] = [];
@@ -104,7 +125,7 @@ export class MyWebSocketServer {
             }
         }
         console.log(usersWithRight);
-        
+
         await this.emitDeviceConfig(deviceData, usersWithRight);
     }
 
@@ -130,7 +151,7 @@ export class MyWebSocketServer {
         await this.emitDeviceConfig(deviceData, usersWithRight);
     }
 
-    private async emitDeviceConfig(deviceData: IDevice, users: IUser[]) {
+    async emitDeviceConfig(deviceData: IDevice, users: IUser[]) {
         for (let userClient of this.userClients) {
             try {
                 let user = users.find(user => user.id === userClient.userId);
@@ -147,7 +168,22 @@ export class MyWebSocketServer {
             }
         }
         console.log('end emit');
+    }
 
+    async emitUserRightUpdate(user: IUser, deviceId: number) {
+        let deviceData = await deviceDb.getDevicebyId(deviceId);
+        for (let userClient of this.userClients) {
+            try {
+                if (userClient.userId !== user.id) continue;
+                let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
+                if (!deviceForUser) continue;
+                userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
+            } catch (e) {
+                console.log("User right - emiting error");
+                console.log(e);
+            }
+        }
+        console.log('end emit');
     }
 
 }

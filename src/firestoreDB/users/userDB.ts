@@ -1,8 +1,8 @@
-import { IAuthToken, IDevice, IDeviceFieldButton, IUser } from '../../models/basicModels';
+import { IAuthToken, IDevice, IUser } from '../../models/basicModels';
 import { getMaxIds } from '../MaxIDs/MaxIDs';
 import { ILoginResponse } from '../../models/API/loginRegisterReqRes';
 import { v4 as uuid } from 'uuid';
-import { addDaysToCurrentTime, hasTimePASSED } from '../../generalStuff/timeHandlers';
+import { addDaysToCurrentTime, getCurrentTimeUNIX, hasTimePASSED } from '../../generalStuff/timeHandlers';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 import { FirestoreDB } from 'firestoreDB/firestore';
 import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from '../../models/userRightsModels';
@@ -595,6 +595,7 @@ export class UsersDB {
             userAdminId: device.userAdminId,
             deviceFieldGroups: [],
             deviceFieldComplexGroups: [],
+            updateTimeStamp: 0,
         }
 
         for (let group of device.deviceFieldGroups) {
@@ -636,6 +637,7 @@ export class UsersDB {
             }
             deviceReduced.deviceFieldComplexGroups.push(complexGroupReduced);
         }
+        deviceReduced.updateTimeStamp = getCurrentTimeUNIX();
         return deviceReduced;
     }
 }

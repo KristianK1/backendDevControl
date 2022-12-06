@@ -5,7 +5,7 @@ import { IChangeDeviceField_Device, IChangeDeviceField_User } from "models/API/d
 import { IUser } from "models/basicModels";
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
-import { ERightType } from "models/userRightsModels";
+import { ERightType } from "../../../models/userRightsModels";
 
 var express = require('express');
 var router = express.Router();

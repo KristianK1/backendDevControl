@@ -85,6 +85,8 @@ export class MyWebSocketServer {
     }
 
     async emitDeviceConfig(deviceId: number) {
+        console.log('start emit');
+        
         let deviceData: IDevice = {} as IDevice;
         let allUsers: IUser[] = [];
         try {
@@ -94,20 +96,24 @@ export class MyWebSocketServer {
             console.log("emit deviceRegistration event - first error");
             return;
         }
-
+        console.log('between trys');
         for (let userClient of this.userClients) {
             try {
                 let user = allUsers.find(user => userClient.userId === userClient.userId);
                 if (!user) continue;
-
+                console.log('one');
                 let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
+                console.log('two');
                 if (!deviceForUser) continue;
-                //send data to user (JSON)
+                console.log('started sending UTF');
+                userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
             } catch (e) {
                 console.log("Device registration emiting error");
                 console.log(e);
             }
         }
+        console.log('end emit');
+        
     }
 
 }

@@ -1,11 +1,11 @@
 import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { DeviceDB } from "../../../firestoreDB/devices/deviceDB";
 import { UsersDB } from "../../../firestoreDB/users/userDB";
-import { IChangeComplexGroupState_Device, IChangeComplexGroupState_User, IChangeDeviceField_Device, IChangeDeviceField_User } from "models/API/deviceCreateAlterReqRes";
+import { IChangeComplexGroupState_Device, IChangeComplexGroupState_User } from "models/API/deviceCreateAlterReqRes";
 import { IUser } from "models/basicModels";
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
-import { ERightType } from "models/userRightsModels";
+import { ERightType } from "../../../models/userRightsModels";
 
 var express = require('express');
 var router = express.Router();

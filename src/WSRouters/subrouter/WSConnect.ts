@@ -11,6 +11,7 @@ export async function addUserConnection(request: IWSSUserConnectRequest, basicCo
     let user = await userDb.getUserByToken(request.authToken, true);
 
     let connection: IWSSConnectionUser = {} as IWSSConnectionUser;
+    connection.basicConnection = {} as IWSSBasicConnection;
     connection.basicConnection.connection = basicConnection.connection;
     connection.basicConnection.connectionUUID = basicConnection.connectionUUID;
     connection.basicConnection.startedAt = basicConnection.startedAt;

@@ -22,7 +22,7 @@ router.post('/device', async (req: any, res: any) => {
     try {
         await deviceDb.changeDeviceFieldValueFromDevice(request.deviceKey, request.groupId, request.fieldId, request.fieldValue)
         let id = (await deviceDb.getDeviceByKey(request.deviceKey)).id;
-        wsServer.emitDeviceConfig(id); //bez await-a
+        wsServer.emitFieldChanged(id, request.groupId, request.fieldId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -51,7 +51,7 @@ router.post('/user', async (req: any, res: any) => {
 
     try {
         await deviceDb.changeDeviceFieldValueFromUser(request.deviceId, request.groupId, request.fieldId, request.fieldValue);
-        wsServer.emitDeviceConfig(request.deviceId); //bez await-a
+        wsServer.emitFieldChanged(request.deviceId, request.groupId, request.fieldId);
     } catch (e) {
         res.status(400);
         res.send(e.message);

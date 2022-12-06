@@ -7,6 +7,7 @@ import { IDevice, IUser } from 'models/basicModels';
 import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../firestoreDB/singletonService';
 import { UsersDB } from '../firestoreDB/users/userDB';
 import { DeviceDB } from '../firestoreDB/devices/deviceDB';
+import { ERightType } from '../models/userRightsModels';
 
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
@@ -84,9 +85,7 @@ export class MyWebSocketServer {
         });
     }
 
-    async emitDeviceConfig(deviceId: number) {
-        console.log('start emit');
-        
+    async emitFieldChanged(deviceId: number, groupId: number, fieldId: number) {
         let deviceData: IDevice = {} as IDevice;
         let allUsers: IUser[] = [];
         try {
@@ -96,10 +95,45 @@ export class MyWebSocketServer {
             console.log("emit deviceRegistration event - first error");
             return;
         }
-        console.log('between trys');
+
+        let usersWithRight: IUser[] = [];
+        for (let user of allUsers) {
+            let right = await userDB.checkUserRightToField(user, deviceId, groupId, fieldId, deviceData);
+            if (right === ERightType.Write || right === ERightType.Read) {
+                usersWithRight.push(user);
+            }
+        }
+        console.log(usersWithRight);
+        
+        await this.emitDeviceConfig(deviceData, usersWithRight);
+    }
+
+    async emitComplexGroupChanged(deviceId: number, complexGroupId: number) { //state or field
+        let deviceData: IDevice = {} as IDevice;
+        let allUsers: IUser[] = [];
+        try {
+            deviceData = await deviceDb.getDevicebyId(deviceId);
+            allUsers = await userDB.getUsers();
+        } catch {
+            console.log("emit deviceRegistration event - first error");
+            return;
+        }
+
+
+        let usersWithRight: IUser[] = [];
+        for (let user of allUsers) {
+            let right = await userDB.checkUserRightToComplexGroup(user, deviceId, complexGroupId, deviceData);
+            if (right === ERightType.Write || right === ERightType.Read) {
+                usersWithRight.push(user);
+            }
+        }
+        await this.emitDeviceConfig(deviceData, usersWithRight);
+    }
+
+    private async emitDeviceConfig(deviceData: IDevice, users: IUser[]) {
         for (let userClient of this.userClients) {
             try {
-                let user = allUsers.find(user => userClient.userId === userClient.userId);
+                let user = users.find(user => user.id === userClient.userId);
                 if (!user) continue;
                 console.log('one');
                 let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
@@ -113,7 +147,7 @@ export class MyWebSocketServer {
             }
         }
         console.log('end emit');
-        
+
     }
 
 }

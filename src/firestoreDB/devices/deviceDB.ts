@@ -417,7 +417,6 @@ export class DeviceDB {
         let device = await this.getDevicebyId(deviceId);
         let group = this.getDeviceFieldGroup(device, groupId);
         let field = this.getDeviceField(group, fieldId);
-        //check user rights
 
         if (field.fieldValue.fieldDirection === 'output') {
             throw ({ message: 'Field value is output only - can\'t be set by user' });

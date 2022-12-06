@@ -18,7 +18,7 @@ router.post('/', async (req: any, res: any) => {
     let time1 = getCurrentTimeUNIX();
     try {
         await deviceDb.registerDeviceData(registerDeviceDataReq);
-        wsServer.emitDeviceRegistrationEvent(registerDeviceDataReq.id); //bez await-a
+        wsServer.emitDeviceConfig(registerDeviceDataReq.id); //bez await-a
     } catch (e) {
         res.status(400);
         res.send(e.message);

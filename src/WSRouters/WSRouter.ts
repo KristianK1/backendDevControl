@@ -84,7 +84,7 @@ export class MyWebSocketServer {
         });
     }
 
-    async emitDeviceRegistrationEvent(deviceId: number) {
+    async emitDeviceConfig(deviceId: number) {
         let deviceData: IDevice = {} as IDevice;
         let allUsers: IUser[] = [];
         try {

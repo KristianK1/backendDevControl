@@ -8,7 +8,7 @@ import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../firestoreD
 import { UsersDB } from '../firestoreDB/users/userDB';
 import { DeviceDB } from '../firestoreDB/devices/deviceDB';
 import { ERightType } from '../models/userRightsModels';
-import { IDeviceDeleted, IDeviceForUserFailed } from 'models/frontendModels';
+import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed as LostRightsForUser, ILoggedReason } from 'models/frontendModels';
 import { FORMERR } from 'dns';
 
 
@@ -182,7 +182,7 @@ export class MyWebSocketServer {
                 if (userClient.userId !== user.id) continue;
                 let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
                 if (!deviceForUser) {
-                    let response: IDeviceForUserFailed = {
+                    let response: LostRightsForUser = {
                         lostRightsToDevice: deviceId,
                     }
                     userClient.basicConnection.connection.sendUTF(JSON.stringify(response));
@@ -190,7 +190,6 @@ export class MyWebSocketServer {
                 else {
                     userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
                 }
-                userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
             } catch (e) {
                 console.log("User right - emiting error");
                 console.log(e);
@@ -217,6 +216,28 @@ export class MyWebSocketServer {
         for (let userConn of usersWithRight) {
             console.log('senddddd');
             userConn.basicConnection.connection.sendUTF(JSON.stringify(response));
+        }
+    }
+
+    // async logoutUserSession(token: string, reason: ELogoutReasons) {
+    //     let client = this.userClients.find(client => client.authToken === token);
+    //     let logoutReason: ILoggedReason = { logoutReason: reason };
+    //     client?.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
+    // }
+
+
+    async logoutAllUsersSessions(userId: number, reason: ELogoutReasons) {
+        let clients = this.userClients.filter(client => client.userId === userId);
+        let logoutReason: ILoggedReason = { logoutReason: reason };
+        for (let client of clients) {
+            client.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
+            setTimeout(() => {
+                try {
+                    client.basicConnection.connection.close();
+                } catch {
+                    console.log('failed to close ' + client.userId);
+                }
+            }, 1000);
         }
     }
 

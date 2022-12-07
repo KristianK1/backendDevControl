@@ -53,3 +53,13 @@ export interface IDeviceFieldBasicForUser {
     fieldValue: IDeviceFieldNumeric | IDeviceFieldText | IDeviceFieldButton | IDeviceFieldMultipleChoice | IDeviceFieldRGB,
     readOnly: boolean,
 }
+
+export interface ILoggedReason {
+    logoutReason: ELogoutReasons
+}
+
+export enum ELogoutReasons {
+    DeletedUser,
+    ChangedPassword,
+    LogoutAll,
+}

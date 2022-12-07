@@ -22,6 +22,7 @@ export interface IRegisterRequest {
 
 export interface ILogoutRequest {
     authToken: string,
+    logoutOtherSessions: boolean,
 }
 
 export interface IDeleteUserRequest {

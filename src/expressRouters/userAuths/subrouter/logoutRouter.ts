@@ -9,7 +9,13 @@ var userDb: UsersDB = usersDBSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let logoutRequest: ILogoutRequest = req.body;
-    await userDb.removeToken(logoutRequest.authToken);
+    try {
+        await userDb.removeToken(logoutRequest.authToken);
+    } catch (e) {
+        res.status(400);
+        res.send(e.message);
+        return;
+    }
     res.sendStatus(200);
 })
 

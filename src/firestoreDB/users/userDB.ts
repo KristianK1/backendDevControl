@@ -8,8 +8,7 @@ import { FirestoreDB } from 'firestoreDB/firestore';
 import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from '../../models/userRightsModels';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getDeviceById } from '../../firestoreDB/userDBdeviceDBbridge';
-import { IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForUser, IFieldGroupForUser } from 'models/frontendModels';
-
+import { IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser } from 'models/frontendModels';
 
 var userDBObj: UsersDB;
 
@@ -33,7 +32,7 @@ export class UsersDB {
     }
 
     async getUsers(): Promise<IUser[]> {
-        let users = await this.firestore.getCollectionData(UsersDB.usersCollName);
+        let users: IUser[] = await this.firestore.getCollectionData(UsersDB.usersCollName);
         for (let user of users) {
             user.userRight = this.transformUserRights(user.userRight);
         }
@@ -100,14 +99,14 @@ export class UsersDB {
         await this.firestore.deleteDocument(UsersDB.authTokenCollName, token);
     }
 
-    async removeAllMyTokens(token: string) {
-        let authTokenDB: IAuthToken = await this.firestore.getDocumentData(UsersDB.authTokenCollName, token);
+    async removeAllMyTokens(dontRemoveToken: string) {
+        let authTokenDB: IAuthToken = await this.firestore.getDocumentData(UsersDB.authTokenCollName, dontRemoveToken);
         if (!authTokenDB) {
             throw ({ message: 'Couldn\'t find token' });
         }
         const allAuthTokens: IAuthToken[] = await this.firestore.getCollectionData(UsersDB.authTokenCollName);
         allAuthTokens.forEach(async token => { //TODO maybe regular for loop
-            if (token.userId == authTokenDB.userId) {
+            if (token.userId == authTokenDB.userId && token.authToken !== dontRemoveToken) {
                 await this.firestore.deleteDocument(UsersDB.authTokenCollName, `${token.authToken}`);
             }
         })
@@ -132,11 +131,8 @@ export class UsersDB {
         return newUser.id;
     }
 
-    async changeUserPassword(id: number, oldP: string, newP: string) {
+    async changeUserPassword(id: number, oldP: string, newP: string, logoutOtherSessions: boolean) {
         let user = await this.getUserbyId(id);
-        if (!user) {
-            throw ({ message: 'User doesn\'t exist in database' });
-        }
         if (user.password !== oldP) {
             throw ({ message: 'Wrong password' });
         }
@@ -164,7 +160,7 @@ export class UsersDB {
             if (token.userId === user.id) {
                 await this.firestore.deleteDocument(UsersDB.authTokenCollName, token.authToken);
             }
-        })
+        });
     }
 
 
@@ -639,5 +635,18 @@ export class UsersDB {
         }
         deviceReduced.updateTimeStamp = getCurrentTimeUNIX();
         return deviceReduced;
+    }
+
+    async getDeviceForDevice(device: IDevice) {
+        let deviceData: IDeviceForDevice = {
+            id: device.id,
+            deviceKey: device.deviceKey,
+            deviceName: device.deviceName,
+            deviceFieldGroups: device.deviceFieldGroups,
+            deviceFieldComplexGroups: device.deviceFieldComplexGroups,
+            userAdminId: device.userAdminId,
+            updateTimeStamp: getCurrentTimeUNIX(),
+        }
+        return deviceData;
     }
 }

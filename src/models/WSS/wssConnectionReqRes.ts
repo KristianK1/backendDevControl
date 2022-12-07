@@ -22,6 +22,7 @@ export interface IWSSBasicConnection {
 
 export interface IWSSConnectionUser {
     userId: number,
+    authToken: string,
     basicConnection: IWSSBasicConnection,
     frontendType: 'web' | 'responsive-web' | 'mobileApp' | 'wearOS',
 }

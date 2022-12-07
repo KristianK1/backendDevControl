@@ -1,6 +1,6 @@
-import { IComplexFieldGroupState, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "./basicModels";
+import { IComplexFieldGroup, IComplexFieldGroupState, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText, IFieldGroup } from "./basicModels";
 
-export interface IDeviceForUser{
+export interface IDeviceForUser {
     id: number,
     deviceKey: string,
     deviceName: string,
@@ -8,6 +8,20 @@ export interface IDeviceForUser{
     deviceFieldComplexGroups: IComplexFieldGroupForUser[],
     userAdminId: number,
     updateTimeStamp: number,
+}
+
+export interface IDeviceForDevice {
+    id: number,
+    deviceKey: string,
+    deviceName: string,
+    deviceFieldGroups: IFieldGroup[],
+    deviceFieldComplexGroups: IComplexFieldGroup[],
+    userAdminId: number,
+    updateTimeStamp: number,
+}
+
+export interface IDeviceForUserFailed {
+    lostRightsToDevice: number,
 }
 
 

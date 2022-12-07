@@ -8,6 +8,7 @@ import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../firestoreD
 import { UsersDB } from '../firestoreDB/users/userDB';
 import { DeviceDB } from '../firestoreDB/devices/deviceDB';
 import { ERightType } from '../models/userRightsModels';
+import { IDeviceForUserFailed } from 'models/frontendModels';
 
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
@@ -26,10 +27,11 @@ export class MyWebSocketServer {
             console.log('new r');
 
             let connection = request.accept(null, request.origin);
-            let newConnection: IWSSBasicConnection = {} as IWSSBasicConnection;
-            newConnection.connection = connection;
-            newConnection.connectionUUID = uuid();
-            newConnection.startedAt = getCurrentTimeISO();
+            let newConnection: IWSSBasicConnection = {
+                connection: connection,
+                connectionUUID: uuid(),
+                startedAt: getCurrentTimeISO(),
+            };
             this.allClients.push(newConnection);
             console.log('uuid in reqq ' + newConnection.connectionUUID);
 
@@ -40,17 +42,18 @@ export class MyWebSocketServer {
                 switch (wsMessage.messageType) {
                     case 'connectUser':
                         let connectUserRequest = wsMessage.data as IWSSUserConnectRequest;
-                        this.userClients.push(await addUserConnection(connectUserRequest, newConnection));
+                        let userConn = await addUserConnection(connectUserRequest, newConnection);
+                        if (!userConn) break;
+                        this.userClients.push(userConn);
                         break;
                     case 'connectDevice':
                         let connectDevRequest = wsMessage.data as IWSSDeviceConnectRequest;
                         console.log(connectDevRequest);
                         let devConn = await addDeviceConnection(connectDevRequest, newConnection);
-                        if (devConn) {
-                            this.deviceClients.push(devConn);
-                            console.log('new uuid: ' + devConn.basicConnection.connectionUUID);
-                            console.log("dev clients N: " + this.deviceClients.length);
-                        }
+                        if (!devConn) break;
+                        this.deviceClients.push(devConn);
+                        console.log('new uuid: ' + devConn.basicConnection.connectionUUID);
+                        console.log("dev clients N: " + this.deviceClients.length);
                         break;
                     default:
                         console.log('unprocessed message');
@@ -86,24 +89,23 @@ export class MyWebSocketServer {
     }
 
     async emitDeviceRegistration(deviceKey: string) {
-        let users = await userDB.getUsers();
-        let deviceData = await deviceDb.getDeviceByKey(deviceKey);
-        for (let userClient of this.userClients) {
-            try {
-                let user = users.find(user => user.id === userClient.userId);
-                if (!user) continue;
-                console.log('one');
-                let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
-                console.log('two');
-                if (!deviceForUser) continue;
-                console.log('started sending UTF');
-                userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
-            } catch (e) {
-                console.log("Device registration emiting error");
-                console.log(e);
+        let deviceData: IDevice;
+        let allUsers: IUser[];
+        try {
+            allUsers = await userDB.getUsers();
+            deviceData = await deviceDb.getDeviceByKey(deviceKey);
+        } catch (e) {
+            return;
+        }
+
+        let usersWithRight: IUser[] = [];
+        for (let user of allUsers) {
+            let right = await userDB.checkAnyUserRightToDevice(user, deviceData);
+            if (right) {
+                usersWithRight.push(user);
             }
         }
-        console.log('end emit');
+        await this.emitDeviceConfig(deviceData, usersWithRight);
     }
 
     async emitFieldChanged(deviceId: number, groupId: number, fieldId: number) {
@@ -156,27 +158,37 @@ export class MyWebSocketServer {
             try {
                 let user = users.find(user => user.id === userClient.userId);
                 if (!user) continue;
-                console.log('one');
                 let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
-                console.log('two');
                 if (!deviceForUser) continue;
-                console.log('started sending UTF');
                 userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
             } catch (e) {
                 console.log("Device registration emiting error");
                 console.log(e);
             }
         }
+        let thisDevConns = this.deviceClients.filter(conn => conn.deviceId === deviceData.id);
+        for (let devCon of thisDevConns) {
+            devCon.basicConnection.connection.sendUTF(JSON.stringify(deviceData));
+        }
         console.log('end emit');
     }
 
-    async emitUserRightUpdate(user: IUser, deviceId: number) {
+    async emitUserRightUpdate(userId: number, deviceId: number) {
         let deviceData = await deviceDb.getDevicebyId(deviceId);
+        let user = await userDB.getUserbyId(userId);
         for (let userClient of this.userClients) {
             try {
                 if (userClient.userId !== user.id) continue;
                 let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
-                if (!deviceForUser) continue;
+                if (!deviceForUser) {
+                    let response: IDeviceForUserFailed = {
+                        lostRightsToDevice: deviceId,
+                    }
+                    userClient.basicConnection.connection.sendUTF(JSON.stringify(response));
+                }
+                else {
+                    userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
+                }
                 userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
             } catch (e) {
                 console.log("User right - emiting error");

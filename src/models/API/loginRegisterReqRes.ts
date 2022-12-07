@@ -27,3 +27,12 @@ export interface ILogoutRequest {
 export interface IDeleteUserRequest {
     authToken: string,
 }
+
+
+export interface IChangePasswordRequest {
+    userId: number,
+    oldPassword: string,
+    newPassword: string,
+    logoutOtherSessions: boolean,
+    dontLogoutToken: string,
+}

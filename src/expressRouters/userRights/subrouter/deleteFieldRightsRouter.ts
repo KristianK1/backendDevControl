@@ -51,7 +51,7 @@ router.post('/', async (req: any, res: any) => {
     
     try {
         await userDB.deleteUserRightToField(user, request.deviceId, request.groupId, request.fieldId);
-        wsServer.emitUserRightUpdate(user, request.deviceId);
+        wsServer.emitUserRightUpdate(user.id, request.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message);

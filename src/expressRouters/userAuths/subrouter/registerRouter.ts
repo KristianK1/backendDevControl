@@ -11,7 +11,7 @@ router.post('/', async (req: any, res: any) => {
     let registerReq: IRegisterRequest = req.body;
     try {
         await userDb.addUser(registerReq.username, registerReq.password, registerReq.email);
-        let loginResponse = (await userDb.loginUserByCreds(registerReq.username, registerReq.password));
+        let loginResponse = await userDb.loginUserByCreds(registerReq.username, registerReq.password);
         res.json(loginResponse);
     }
     catch (e) {

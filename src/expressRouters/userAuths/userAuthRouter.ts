@@ -15,6 +15,7 @@ router.use('/logout', logoutUserAuthRouter);
 var deleteUserAuthRouter = require('./subrouter/deleteUserRouter');
 router.use('/delete', deleteUserAuthRouter);
 
+
 var usersDB = usersDBSingletonFactory.getInstance();
 router.get('/:id', async (req: any, res: any) => {
     let id = req.params.id;

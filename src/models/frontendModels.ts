@@ -24,6 +24,10 @@ export interface IDeviceForUserFailed {
     lostRightsToDevice: number,
 }
 
+export interface IDeviceDeleted {
+    deletedDeviceId: number,
+}
+
 
 export interface IFieldGroupForUser {
     id: number,

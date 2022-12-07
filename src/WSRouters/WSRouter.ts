@@ -8,7 +8,8 @@ import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../firestoreD
 import { UsersDB } from '../firestoreDB/users/userDB';
 import { DeviceDB } from '../firestoreDB/devices/deviceDB';
 import { ERightType } from '../models/userRightsModels';
-import { IDeviceForUserFailed } from 'models/frontendModels';
+import { IDeviceDeleted, IDeviceForUserFailed } from 'models/frontendModels';
+import { FORMERR } from 'dns';
 
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
@@ -196,6 +197,27 @@ export class MyWebSocketServer {
             }
         }
         console.log('end emit');
+    }
+
+    async emitDeviceDeleted(allUsers: IUser[], deviceData: IDevice) {
+        let usersWithRight: IWSSConnectionUser[] = [];
+        console.log(allUsers);
+        console.log(deviceData);
+        console.log(this.userClients);
+        for (let userClient of this.userClients) {
+            let user = allUsers.find(user => user.id === userClient.userId);
+            if (!user) continue;
+            if (await userDB.checkAnyUserRightToDevice(user, deviceData)) {
+                console.log('pushed' + user.id);
+                usersWithRight.push(userClient);
+            }
+        }
+
+        let response: IDeviceDeleted = { deletedDeviceId: deviceData.id };
+        for (let userConn of usersWithRight) {
+            console.log('senddddd');
+            userConn.basicConnection.connection.sendUTF(JSON.stringify(response));
+        }
     }
 
 }

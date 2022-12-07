@@ -556,25 +556,25 @@ export class UsersDB {
 
     async checkAnyUserRightToDevice(user: IUser, device: IDevice): Promise<boolean> {
 
-        let right = await this.checkUserRightToDevice(user, device.id);
+        let right = await this.checkUserRightToDevice(user, device.id, device);
         if (right === ERightType.Read || right === ERightType.Write) {
             return true;
         }
 
         for (let group of device.deviceFieldGroups) {
-            let right = await this.checkUserRightToGroup(user, device.id, group.id);
+            let right = await this.checkUserRightToGroup(user, device.id, group.id, device);
             if (right === ERightType.Read || right === ERightType.Write) {
                 return true;
             }
             for (let field of group.fields) {
-                let right = await this.checkUserRightToField(user, device.id, group.id, field.id);
+                let right = await this.checkUserRightToField(user, device.id, group.id, field.id, device);
                 if (right === ERightType.Read || right === ERightType.Write) {
                     return true;
                 }
             }
         }
         for (let complexGroup of device.deviceFieldComplexGroups) {
-            let right = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.id);
+            let right = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.id, device);
             if (right === ERightType.Read || right === ERightType.Write) {
                 return true;
             }

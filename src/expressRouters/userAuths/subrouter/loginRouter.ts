@@ -1,18 +1,19 @@
 import { UsersDB } from '../../../firestoreDB/users/userDB';
 import { ILoginByTokenRequest, ILoginRequest, ILoginResponse } from '../../../models/API/loginRegisterReqRes'
+import { usersDBSingletonFactory } from '../../../firestoreDB/singletonService';
 
 var express = require('express');
 var router = express.Router();
 
-var userDBfile = require('../../../firestoreDB/users/userDB');
-var userDB: UsersDB = userDBfile.getUserDBInstance();
+var userDb: UsersDB = usersDBSingletonFactory.getInstance();
+
 
 router.post('/creds', async (req: any, res: any) => {
     const loginReq: ILoginRequest = req.body;
 
     let loginResponse: ILoginResponse;
     try {
-        loginResponse = await userDB.loginUserByCreds(loginReq.username, loginReq.password);
+        loginResponse = await userDb.loginUserByCreds(loginReq.username, loginReq.password);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -26,7 +27,7 @@ router.post('/token', async (req: any, res: any) => {
 
     let loginResponse = {} as ILoginResponse;
     try {
-        const user = await userDB.getUserByToken(loginReq.authToken, true);
+        const user = await userDb.getUserByToken(loginReq.authToken, true);
         loginResponse.user = user;
         loginResponse.authToken = loginReq.authToken;
     } catch (e) {

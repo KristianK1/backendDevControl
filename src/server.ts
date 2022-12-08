@@ -3,6 +3,7 @@ import * as Express from 'express';
 import { firestoreSingletonFactory } from './firestoreDB/singletonService';
 import { server as webSocketServer } from 'websocket';
 import { MyWebSocketServer } from './WSRouters/WSRouter';
+import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
 let http = require('http');
 let cors = require('cors');
 
@@ -69,7 +70,7 @@ export class Server {
     }
 
     setupWSS() {
-        this.wss = new MyWebSocketServer();
+        this.wss = wsServerSingletonFactory.getInstance();
         this.wss.setupServer(this.wsServer);
     }
 

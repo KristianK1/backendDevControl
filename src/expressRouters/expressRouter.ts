@@ -9,6 +9,8 @@ router.use('/device', deviceRouter);
 
 var deviceFieldChangeRouter = require('./device/deviceRouter.ts');
 router.use('/deviceFieldChange', deviceFieldChangeRouter);
-//add more use-s
+
+var userRightsRouter = require('./userRights/userRightsRouter.ts');
+router.use('/userRights', userRightsRouter);
 
 module.exports = router;

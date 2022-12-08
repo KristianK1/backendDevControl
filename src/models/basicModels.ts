@@ -1,9 +1,11 @@
+import { IUserRight } from "./userRightsModels";
+
 export interface IUser {
     id: number,
     username: string,
     email: string,
     password: string,
-    deviceFields: IDeviceFieldBasic[],
+    userRight: IUserRight,
     fieldViews: IUserView[],
 }
 
@@ -42,6 +44,7 @@ export interface IFieldGroup {
 export interface IComplexFieldGroup {
     id: number,
     groupName: string,
+    currentState: number,
     fieldGroupStates: IComplexFieldGroupState[],
 }
 
@@ -91,4 +94,10 @@ export interface IDeviceFieldRGB {
     G: number,
     B: number,
     fieldDirection: 'input'
+}
+
+export interface IRGB {
+    R: number,
+    G: number,
+    B: number,
 }

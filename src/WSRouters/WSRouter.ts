@@ -226,7 +226,7 @@ export class MyWebSocketServer {
     // }
 
 
-    async logoutAllUsersSessions(userId: number, reason: ELogoutReasons, safeToken: string) {
+    async logoutAllUsersSessions(userId: number, reason: ELogoutReasons, safeToken?: string) {
         let clients = this.userClients.filter(client => client.userId === userId);
         let logoutReason: ILoggedReason = { logoutReason: reason };
         for (let client of clients) {

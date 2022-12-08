@@ -226,14 +226,17 @@ export class MyWebSocketServer {
     // }
 
 
-    async logoutAllUsersSessions(userId: number, reason: ELogoutReasons) {
+    async logoutAllUsersSessions(userId: number, reason: ELogoutReasons, safeToken: string) {
         let clients = this.userClients.filter(client => client.userId === userId);
         let logoutReason: ILoggedReason = { logoutReason: reason };
         for (let client of clients) {
+            if (client.authToken === safeToken) continue;
             client.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
             setTimeout(() => {
                 try {
                     client.basicConnection.connection.close();
+                    // let index = this.userClients.findIndex((value, index, obj) => value.basicConnection.connectionUUID === client.basicConnection.connectionUUID);
+                    // this.userClients.splice(index, 1);
                 } catch {
                     console.log('failed to close ' + client.userId);
                 }

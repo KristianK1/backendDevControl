@@ -70,13 +70,13 @@ export interface IDeviceRightsRequest{
 }
 
 export interface IAllDeviceRightsForAdminResponse {
-    deviceRights: IDeviceRightsForAdmin[],
+    deviceRights: ICompleteDeviceRightsForAdmin[],
     groupRights: IGroupRightsForAdmin[],
     fieldRights: IFieldRightsForAdmin[],
     complexGrouprights: IComplexGroupRightsForAdmin[],
 }
 
-export interface IDeviceRightsForAdmin {
+export interface ICompleteDeviceRightsForAdmin {
     readonly: boolean,
 }
 

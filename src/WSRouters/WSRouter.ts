@@ -11,6 +11,8 @@ import { ERightType } from '../models/userRightsModels';
 import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed as LostRightsForUser, ILoggedReason } from 'models/frontendModels';
 import { FORMERR } from 'dns';
 
+const clients = {};
+
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
 var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
@@ -21,72 +23,27 @@ export class MyWebSocketServer {
     private userClients: IWSSConnectionUser[] = [];
     private deviceClients: IWSSConnectionDevice[] = [];
 
+
     public setupServer(server: server) {
         this.wsServer = server;
 
-        this.wsServer.on('request', (request: request) => {
-            console.log('new r');
-
-            let connection = request.accept(null, request.origin);
-            let newConnection: IWSSBasicConnection = {
-                connection: connection,
-                connectionUUID: uuid(),
-                startedAt: getCurrentTimeISO(),
-            };
-            this.allClients.push(newConnection);
-            console.log('uuid in reqq ' + newConnection.connectionUUID);
-
-            newConnection.connection.on('message', async (message: Message) => {
-                if (message.type !== 'utf8') return;
-                let wsMessage: IWSSMessage = JSON.parse(message.utf8Data);
-
-                switch (wsMessage.messageType) {
-                    case 'connectUser':
-                        let connectUserRequest = wsMessage.data as IWSSUserConnectRequest;
-                        let userConn = await addUserConnection(connectUserRequest, newConnection);
-                        if (!userConn) break;
-                        this.userClients.push(userConn);
-                        break;
-                    case 'connectDevice':
-                        let connectDevRequest = wsMessage.data as IWSSDeviceConnectRequest;
-                        console.log(connectDevRequest);
-                        let devConn = await addDeviceConnection(connectDevRequest, newConnection);
-                        if (!devConn) break;
-                        this.deviceClients.push(devConn);
-                        console.log('new uuid: ' + devConn.basicConnection.connectionUUID);
-                        console.log("dev clients N: " + this.deviceClients.length);
-                        break;
-                    default:
-                        console.log('unprocessed message');
-                        console.log(wsMessage);
-                        break;
+        server.on('request', function (request) {
+            var userID = uuid();
+            console.log((new Date()) + ' Recieved a new connection from origin ' + request.origin + '.');
+            const connection = request.accept(null, request.origin);
+            clients[userID] = connection;
+            console.log('connected: ' + userID);
+            connection.on('message', function (message) {
+              if (message.type === 'utf8') {
+                console.log('Received Message: ', message.utf8Data);
+                // broadcasting message to all connected clients
+                for (let key in clients) {
+                  clients[key].sendUTF(message.utf8Data);
+                  console.log('sent Message to: ', key);
                 }
-            });
-        });
-
-        this.wsServer.on('close', (connection: connection, reason: number, desc: string) => {
-            console.log('closed conn');
-
-            for (let i = 0; i < this.allClients.length; i++) {
-                if (this.allClients[i].connection === connection) {
-                    this.allClients.splice(i, 1);
-                }
-            }
-            for (let i = 0; i < this.deviceClients.length; i++) {
-                if (this.deviceClients[i].basicConnection.connection === connection) {
-                    console.log('closed ' + this.deviceClients[i].basicConnection.connectionUUID);
-                    this.deviceClients.splice(i, 1);
-                    console.log("dev clients N: " + this.deviceClients.length);
-                    return;
-                }
-            }
-            for (let i = 0; i < this.userClients.length; i++) {
-                if (this.userClients[i].basicConnection.connection === connection) {
-                    this.userClients.splice(i, 1);
-                    return;
-                }
-            }
-        });
+              }
+            })
+          });
     }
 
     async emitDeviceRegistration(deviceKey: string) {

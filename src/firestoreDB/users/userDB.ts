@@ -57,7 +57,8 @@ export class UsersDB {
             throw ({ message: 'User doesn\'t exist' });
         }
         let loginResponse = {} as ILoginResponse;
-        loginResponse.user = user;
+        loginResponse.username = user.username;
+        loginResponse.id = user.id;
 
         const newAuthToken = uuid().replace('-', '');
         const authToken: IAuthToken = {} as IAuthToken;
@@ -131,7 +132,7 @@ export class UsersDB {
         return newUser.id;
     }
 
-    async changeUserPassword(id: number, oldP: string, newP: string, logoutOtherSessions: boolean) {
+    async changeUserPassword(id: number, oldP: string, newP: string) {
         let user = await this.getUserbyId(id);
         if (user.password !== oldP) {
             throw ({ message: 'Wrong password' });

@@ -11,7 +11,8 @@ export interface ILoginByTokenRequest {
 
 export interface ILoginResponse {
     authToken: string,
-    user: IUser,
+    id: number,
+    username: string,
 }
 
 export interface IRegisterRequest {
@@ -28,7 +29,6 @@ export interface ILogoutRequest {
 export interface IDeleteUserRequest {
     authToken: string,
 }
-
 
 export interface IChangePasswordRequest {
     userId: number,

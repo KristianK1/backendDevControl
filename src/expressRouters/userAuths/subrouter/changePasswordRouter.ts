@@ -15,7 +15,7 @@ var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 router.post('/', async (req: any, res: any) => {
     const request: IChangePasswordRequest = req.body;
     try {
-        await userDb.changeUserPassword(request.userId, request.oldPassword, request.newPassword, request.logoutOtherSessions);
+        await userDb.changeUserPassword(request.userId, request.oldPassword, request.newPassword);
         if (request.logoutOtherSessions) {
             await userDb.removeAllMyTokens(request.dontLogoutToken);
             wsServer.logoutAllUsersSessions(request.userId, ELogoutReasons.ChangedPassword, request.dontLogoutToken);

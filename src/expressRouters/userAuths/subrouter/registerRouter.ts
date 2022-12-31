@@ -8,7 +8,9 @@ var router = express.Router();
 var userDb: UsersDB = usersDBSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
+    console.log('reggg');
     let registerReq: IRegisterRequest = req.body;
+    console.log(registerReq);
     try {
         await userDb.addUser(registerReq.username, registerReq.password, registerReq.email);
         let loginResponse = await userDb.loginUserByCreds(registerReq.username, registerReq.password);

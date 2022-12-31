@@ -10,7 +10,8 @@ var userDb: UsersDB = usersDBSingletonFactory.getInstance();
 
 router.post('/creds', async (req: any, res: any) => {
     const loginReq: ILoginRequest = req.body;
-
+    console.log('/login/creds');
+    console.log(loginReq);
     let loginResponse: ILoginResponse;
     try {
         loginResponse = await userDb.loginUserByCreds(loginReq.username, loginReq.password);
@@ -19,6 +20,7 @@ router.post('/creds', async (req: any, res: any) => {
         res.send(e.message);
         return;
     }
+    console.log(loginResponse);
     res.json(loginResponse);
 });
 
@@ -28,7 +30,8 @@ router.post('/token', async (req: any, res: any) => {
     let loginResponse = {} as ILoginResponse;
     try {
         const user = await userDb.getUserByToken(loginReq.authToken, true);
-        loginResponse.user = user;
+        loginResponse.username = user.username;
+        loginResponse.id = user.id;
         loginResponse.authToken = loginReq.authToken;
     } catch (e) {
         res.status(400);

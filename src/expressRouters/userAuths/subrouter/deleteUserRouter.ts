@@ -37,16 +37,16 @@ router.post('/', async (req: any, res: any) => {
         res.send('User is admin');
         return;
     }
-    let loginResponse;
+
     try {
-        loginResponse = await userDb.deleteUser(deleteReq.authToken);
+        await userDb.deleteUser(deleteReq.authToken);
         await wsServer.logoutAllUsersSessions(user.id, ELogoutReasons.DeletedUser);
     } catch (e) {
         res.status(400);
         res.send(e.message);
         return;
     }
-    res.json(loginResponse);
+    res.sendStatus(200);
 });
 
 module.exports = router;

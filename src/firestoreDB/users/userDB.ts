@@ -8,7 +8,7 @@ import { FirestoreDB } from 'firestoreDB/firestore';
 import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from '../../models/userRightsModels';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getDeviceById } from '../../firestoreDB/userDBdeviceDBbridge';
-import { IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser } from 'models/frontendModels';
+import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser } from 'models/frontendModels';
 
 var userDBObj: UsersDB;
 
@@ -57,7 +57,8 @@ export class UsersDB {
             throw ({ message: 'User doesn\'t exist' });
         }
         let loginResponse = {} as ILoginResponse;
-        loginResponse.user = user;
+        loginResponse.username = user.username;
+        loginResponse.id = user.id;
 
         const newAuthToken = uuid().replace('-', '');
         const authToken: IAuthToken = {} as IAuthToken;
@@ -131,7 +132,7 @@ export class UsersDB {
         return newUser.id;
     }
 
-    async changeUserPassword(id: number, oldP: string, newP: string, logoutOtherSessions: boolean) {
+    async changeUserPassword(id: number, oldP: string, newP: string) {
         let user = await this.getUserbyId(id);
         if (user.password !== oldP) {
             throw ({ message: 'Wrong password' });
@@ -648,5 +649,111 @@ export class UsersDB {
             updateTimeStamp: getCurrentTimeUNIX(),
         }
         return deviceData;
+    }
+
+
+    async getUsersRightsToDevice(device: IDevice): Promise<IAllDeviceRightsForAdminResponse> {
+        let users = await this.getUsers();
+        let result: IAllDeviceRightsForAdminResponse = {
+            deviceRights: [],
+            groupRights: [],
+            fieldRights: [],
+            complexGrouprights: [],
+        };
+        for (let user of users) {
+            let right = await this.getUserRightsToDevice(user, device);
+            result.deviceRights.push(...right.deviceRights);
+            result.groupRights.push(...right.groupRights);
+            result.fieldRights.push(...right.fieldRights);
+            result.complexGrouprights.push(...right.complexGrouprights);
+        }
+        return result;
+    }
+
+    async getUserRightsToDevice(user: IUser, device: IDevice): Promise<IAllDeviceRightsForAdminResponse> {
+        let result: IAllDeviceRightsForAdminResponse = {
+            deviceRights: [],
+            groupRights: [],
+            fieldRights: [],
+            complexGrouprights: [],
+        };
+        let deviceRight = await this.checkUserRightToDevice(user, device.id, device);
+        if (deviceRight === ERightType.Write) {
+            result.deviceRights.push(
+                {
+                    readonly: false,
+                }
+            )
+            return result;
+        }
+        else if (deviceRight === ERightType.Read) {
+            result.deviceRights.push(
+                {
+                    readonly: true,
+                }
+            )
+        }
+
+        for (let group of device.deviceFieldGroups) {
+            let groupRight = await this.checkUserRightToGroup(user, device.id, group.id, device);
+            if (groupRight === ERightType.Write) {
+                result.groupRights.push(
+                    {
+                        readOnly: false,
+                        groupId: group.id
+                    }
+                );
+                continue;
+            }
+            else if (groupRight === ERightType.Read && deviceRight !== ERightType.Read) {
+                result.groupRights.push(
+                    {
+                        readOnly: true,
+                        groupId: group.id
+                    }
+                );
+            }
+            for (let field of group.fields) {
+                let fieldRight = await this.checkUserRightToField(user, device.id, group.id, field.id, device);
+                if (fieldRight === ERightType.Write) {
+                    result.fieldRights.push(
+                        {
+                            readOnly: false,
+                            groupId: group.id,
+                            fieldId: field.id,
+                        }
+                    )
+                }
+                else if (fieldRight === ERightType.Read && groupRight !== ERightType.Read) {
+                    result.fieldRights.push(
+                        {
+                            readOnly: true,
+                            groupId: group.id,
+                            fieldId: field.id,
+                        }
+                    )
+                }
+            }
+        }
+        for (let complexGroup of device.deviceFieldComplexGroups) {
+            let complexGroupRight = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.id);
+            if (complexGroupRight === ERightType.Write) {
+                result.complexGrouprights.push(
+                    {
+                        readOnly: false,
+                        complexGroupId: complexGroup.id,
+                    }
+                )
+            }
+            else if (complexGroupRight === ERightType.Read) {
+                result.complexGrouprights.push(
+                    {
+                        readOnly: true,
+                        complexGroupId: complexGroup.id,
+                    }
+                )
+            }
+        }
+        return result;
     }
 }

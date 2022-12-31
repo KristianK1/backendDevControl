@@ -63,3 +63,35 @@ export enum ELogoutReasons {
     ChangedPassword,
     LogoutAll,
 }
+
+export interface IDeviceRightsRequest{
+    adminToken: string,
+    deviceId: number,
+}
+
+export interface IAllDeviceRightsForAdminResponse {
+    deviceRights: ICompleteDeviceRightsForAdmin[],
+    groupRights: IGroupRightsForAdmin[],
+    fieldRights: IFieldRightsForAdmin[],
+    complexGrouprights: IComplexGroupRightsForAdmin[],
+}
+
+export interface ICompleteDeviceRightsForAdmin {
+    readonly: boolean,
+}
+
+export interface IGroupRightsForAdmin {
+    groupId: number,
+    readOnly: boolean,
+}
+
+export interface IComplexGroupRightsForAdmin {
+    complexGroupId: number,
+    readOnly: boolean,
+}
+
+export interface IFieldRightsForAdmin {
+    groupId: number,
+    fieldId: number,
+    readOnly: boolean,
+}

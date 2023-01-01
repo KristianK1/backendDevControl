@@ -11,7 +11,7 @@ import { ERightType } from '../models/userRightsModels';
 import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed as LostRightsForUser, ILoggedReason } from 'models/frontendModels';
 import { FORMERR } from 'dns';
 
-const clients = {};
+let clients = {};
 
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
@@ -34,18 +34,25 @@ export class MyWebSocketServer {
             clients[userID] = connection;
             console.log('connected: ' + userID);
             connection.on('message', function (message) {
-              if (message.type === 'utf8') {
-                console.log('Received Message: ', message.utf8Data);
-                // broadcasting message to all connected clients
-                for (let key in clients) {
-                  clients[key].sendUTF(message.utf8Data);
-                  console.log('sent Message to: ', key);
+                if (message.type === 'utf8') {
+                    console.log('Received Message: ', message.utf8Data);
+                    if (message.utf8Data.includes("clear")) {
+                        for (let key in clients) {
+                            clients[key].close()
+                        }
+                        clients = {};
+                    }
+                    else {
+                        // broadcasting message to all connected clients
+                        for (let key in clients) {
+                            clients[key].sendUTF(message.utf8Data);
+                            console.log('sent Message to: ', key);
+                        }
+                    }
                 }
-              }
-            })
-          });
+            });
+        });
     }
-
     async emitDeviceRegistration(deviceKey: string) {
         let deviceData: IDevice;
         let allUsers: IUser[];

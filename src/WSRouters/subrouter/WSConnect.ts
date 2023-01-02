@@ -21,7 +21,7 @@ export async function addUserConnection(request: IWSSUserConnectRequest, basicCo
             connectionUUID: basicConnection.connectionUUID,
             startedAt: basicConnection.startedAt,
         },
-        frontendType: request.frontEndType,
+        frontendType: request.frontendType,
         userId: user.id,
         authToken: request.authToken,
     };

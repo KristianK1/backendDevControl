@@ -8,8 +8,7 @@ import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../firestoreD
 import { UsersDB } from '../firestoreDB/users/userDB';
 import { DeviceDB } from '../firestoreDB/devices/deviceDB';
 import { ERightType } from '../models/userRightsModels';
-import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed as LostRightsForUser, ILoggedReason } from 'models/frontendModels';
-import { FORMERR } from 'dns';
+import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed, ILoggedReason } from '../models/frontendModels';
 
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
@@ -38,7 +37,7 @@ export class MyWebSocketServer {
 
             newConnection.connection.on('message', async (message: Message) => {
                 if (message.type !== 'utf8') return;
-                
+
                 if (message.utf8Data.includes("clear")) {
                     for (let client of this.allClients) {
                         client.connection.close()
@@ -47,20 +46,27 @@ export class MyWebSocketServer {
                     this.userClients = []
                     this.deviceClients = []
                 }
-                
+
                 let wsMessage: IWSSMessage;
                 try {
                     wsMessage = JSON.parse(message.utf8Data);
                 } catch {
                     return;
                 }
-                
+
                 console.log(wsMessage)
                 switch (wsMessage.messageType) {
                     case 'connectUser':
                         let connectUserRequest = wsMessage.data as IWSSUserConnectRequest;
                         let userConn = await addUserConnection(connectUserRequest, newConnection);
-                        if (!userConn) break;
+                        if (!userConn) {
+                            let logoutData: ILoggedReason = { logoutReason: ELogoutReasons.LogoutMyself }
+                            newConnection.connection.sendUTF(JSON.stringify(logoutData));
+                            await setInterval(() => {
+                                newConnection.connection.close();
+                            }, 500);
+                            return
+                        }
                         this.userClients.push(userConn);
                         console.log('user connected')
                         break;
@@ -200,7 +206,7 @@ export class MyWebSocketServer {
                 if (userClient.userId !== user.id) continue;
                 let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
                 if (!deviceForUser) {
-                    let response: LostRightsForUser = {
+                    let response: IDeviceForUserFailed = {
                         lostRightsToDevice: deviceId,
                     }
                     userClient.basicConnection.connection.sendUTF(JSON.stringify(response));
@@ -260,10 +266,10 @@ export class MyWebSocketServer {
         }
     }
 
-    async logoutUserSession(token: string, reason: ELogoutReasons){
+    async logoutUserSession(token: string, reason: ELogoutReasons) {
         let clients = this.userClients.filter(client => client.authToken === token);
         let logoutReason: ILoggedReason = { logoutReason: reason };
-        
+
         for (let client of clients) {
             client.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
             setTimeout(() => {

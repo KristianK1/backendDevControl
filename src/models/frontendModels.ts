@@ -62,6 +62,7 @@ export enum ELogoutReasons {
     DeletedUser,
     ChangedPassword,
     LogoutAll,
+    LogoutMyself //no toast on frontend
 }
 
 export interface IDeviceRightsRequest{

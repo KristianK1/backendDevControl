@@ -38,14 +38,31 @@ export class MyWebSocketServer {
 
             newConnection.connection.on('message', async (message: Message) => {
                 if (message.type !== 'utf8') return;
-                let wsMessage: IWSSMessage = JSON.parse(message.utf8Data);
-
+                
+                if (message.utf8Data.includes("clear")) {
+                    for (let client of this.allClients) {
+                        client.connection.close()
+                    }
+                    this.allClients = []
+                    this.userClients = []
+                    this.deviceClients = []
+                }
+                
+                let wsMessage: IWSSMessage;
+                try {
+                    wsMessage = JSON.parse(message.utf8Data);
+                } catch {
+                    return;
+                }
+                
+                console.log(wsMessage)
                 switch (wsMessage.messageType) {
                     case 'connectUser':
                         let connectUserRequest = wsMessage.data as IWSSUserConnectRequest;
                         let userConn = await addUserConnection(connectUserRequest, newConnection);
                         if (!userConn) break;
                         this.userClients.push(userConn);
+                        console.log('user connected')
                         break;
                     case 'connectDevice':
                         let connectDevRequest = wsMessage.data as IWSSDeviceConnectRequest;
@@ -82,6 +99,7 @@ export class MyWebSocketServer {
             }
             for (let i = 0; i < this.userClients.length; i++) {
                 if (this.userClients[i].basicConnection.connection === connection) {
+                    console.log(this.userClients[i].authToken)
                     this.userClients.splice(i, 1);
                     return;
                 }
@@ -235,8 +253,22 @@ export class MyWebSocketServer {
             setTimeout(() => {
                 try {
                     client.basicConnection.connection.close();
-                    // let index = this.userClients.findIndex((value, index, obj) => value.basicConnection.connectionUUID === client.basicConnection.connectionUUID);
-                    // this.userClients.splice(index, 1);
+                } catch {
+                    console.log('failed to close ' + client.userId);
+                }
+            }, 1000);
+        }
+    }
+
+    async logoutUserSession(token: string, reason: ELogoutReasons){
+        let clients = this.userClients.filter(client => client.authToken === token);
+        let logoutReason: ILoggedReason = { logoutReason: reason };
+        
+        for (let client of clients) {
+            client.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
+            setTimeout(() => {
+                try {
+                    client.basicConnection.connection.close();
                 } catch {
                     console.log('failed to close ' + client.userId);
                 }

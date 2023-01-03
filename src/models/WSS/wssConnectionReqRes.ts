@@ -7,7 +7,7 @@ export interface IWSSMessage {
 
 export interface IWSSUserConnectRequest {
     authToken: string,
-    frontEndType: 'web' | 'responsive-web' | 'mobileApp' | 'wearOS',
+    frontendType: EFrontendType,
 }
 
 export interface IWSSDeviceConnectRequest {
@@ -24,7 +24,7 @@ export interface IWSSConnectionUser {
     userId: number,
     authToken: string,
     basicConnection: IWSSBasicConnection,
-    frontendType: 'web' | 'responsive-web' | 'mobileApp' | 'wearOS',
+    frontendType: EFrontendType,
 }
 
 export interface IWSSConnectionDevice {
@@ -32,3 +32,9 @@ export interface IWSSConnectionDevice {
     basicConnection: IWSSBasicConnection,
 }
 
+export enum EFrontendType {
+    Web,
+    ResponsiveWeb,
+    AndroidApp,
+    WearOs,
+}

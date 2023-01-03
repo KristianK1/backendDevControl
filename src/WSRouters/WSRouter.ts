@@ -8,10 +8,7 @@ import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../firestoreD
 import { UsersDB } from '../firestoreDB/users/userDB';
 import { DeviceDB } from '../firestoreDB/devices/deviceDB';
 import { ERightType } from '../models/userRightsModels';
-import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed as LostRightsForUser, ILoggedReason } from 'models/frontendModels';
-import { FORMERR } from 'dns';
-
-const clients = {};
+import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed, ILoggedReason } from '../models/frontendModels';
 
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
@@ -23,27 +20,98 @@ export class MyWebSocketServer {
     private userClients: IWSSConnectionUser[] = [];
     private deviceClients: IWSSConnectionDevice[] = [];
 
-
     public setupServer(server: server) {
         this.wsServer = server;
 
-        server.on('request', function (request) {
-            var userID = uuid();
-            console.log((new Date()) + ' Recieved a new connection from origin ' + request.origin + '.');
-            const connection = request.accept(null, request.origin);
-            clients[userID] = connection;
-            console.log('connected: ' + userID);
-            connection.on('message', function (message) {
-              if (message.type === 'utf8') {
-                console.log('Received Message: ', message.utf8Data);
-                // broadcasting message to all connected clients
-                for (let key in clients) {
-                  clients[key].sendUTF(message.utf8Data);
-                  console.log('sent Message to: ', key);
+        this.wsServer.on('request', (request: request) => {
+            console.log('new r');
+
+            let connection = request.accept(null, request.origin);
+            let newConnection: IWSSBasicConnection = {
+                connection: connection,
+                connectionUUID: uuid(),
+                startedAt: getCurrentTimeISO(),
+            };
+            this.allClients.push(newConnection);
+            console.log('uuid in reqq ' + newConnection.connectionUUID);
+
+            newConnection.connection.on('message', async (message: Message) => {
+                if (message.type !== 'utf8') return;
+
+                if (message.utf8Data.includes("clear")) {
+                    for (let client of this.allClients) {
+                        client.connection.close()
+                    }
+                    this.allClients = []
+                    this.userClients = []
+                    this.deviceClients = []
                 }
-              }
-            })
-          });
+
+                let wsMessage: IWSSMessage;
+                try {
+                    wsMessage = JSON.parse(message.utf8Data);
+                } catch {
+                    return;
+                }
+
+                console.log(wsMessage)
+                switch (wsMessage.messageType) {
+                    case 'connectUser':
+                        let connectUserRequest = wsMessage.data as IWSSUserConnectRequest;
+                        let userConn = await addUserConnection(connectUserRequest, newConnection);
+                        if (!userConn) {
+                            let logoutData: ILoggedReason = { logoutReason: ELogoutReasons.LogoutMyself }
+                            newConnection.connection.sendUTF(JSON.stringify(logoutData));
+                            await setInterval(() => {
+                                newConnection.connection.close();
+                            }, 5000);
+                            return
+                        }
+                        this.userClients.push(userConn);
+                        console.log('user connected')
+                        break;
+                    case 'connectDevice':
+                        let connectDevRequest = wsMessage.data as IWSSDeviceConnectRequest;
+                        console.log(connectDevRequest);
+                        let devConn = await addDeviceConnection(connectDevRequest, newConnection);
+                        if (!devConn) break;
+                        this.deviceClients.push(devConn);
+                        console.log('new uuid: ' + devConn.basicConnection.connectionUUID);
+                        console.log("dev clients N: " + this.deviceClients.length);
+                        break;
+                    default:
+                        console.log('unprocessed message');
+                        console.log(wsMessage);
+                        break;
+                }
+            });
+        });
+
+        this.wsServer.on('close', (connection: connection, reason: number, desc: string) => {
+            console.log('closed conn');
+
+            for (let i = 0; i < this.allClients.length; i++) {
+                if (this.allClients[i].connection === connection) {
+                    this.allClients.splice(i, 1);
+                }
+            }
+            for (let i = 0; i < this.deviceClients.length; i++) {
+                if (this.deviceClients[i].basicConnection.connection === connection) {
+                    console.log('closed ' + this.deviceClients[i].basicConnection.connectionUUID);
+                    this.deviceClients.splice(i, 1);
+                    console.log("dev clients N: " + this.deviceClients.length);
+                    return;
+                }
+            }
+            for (let i = 0; i < this.userClients.length; i++) {
+                if (this.userClients[i].basicConnection.connection === connection) {
+                    console.log(this.userClients[i].authToken)
+                    console.log("closed " + this.userClients[i].basicConnection.connectionUUID);
+                    this.userClients.splice(i, 1);                    
+                    return;
+                }
+            }
+        });
     }
 
     async emitDeviceRegistration(deviceKey: string) {
@@ -139,7 +207,7 @@ export class MyWebSocketServer {
                 if (userClient.userId !== user.id) continue;
                 let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
                 if (!deviceForUser) {
-                    let response: LostRightsForUser = {
+                    let response: IDeviceForUserFailed = {
                         lostRightsToDevice: deviceId,
                     }
                     userClient.basicConnection.connection.sendUTF(JSON.stringify(response));
@@ -192,8 +260,22 @@ export class MyWebSocketServer {
             setTimeout(() => {
                 try {
                     client.basicConnection.connection.close();
-                    // let index = this.userClients.findIndex((value, index, obj) => value.basicConnection.connectionUUID === client.basicConnection.connectionUUID);
-                    // this.userClients.splice(index, 1);
+                } catch {
+                    console.log('failed to close ' + client.userId);
+                }
+            }, 5000);
+        }
+    }
+
+    async logoutUserSession(token: string, reason: ELogoutReasons) {
+        let clients = this.userClients.filter(client => client.authToken === token);
+        let logoutReason: ILoggedReason = { logoutReason: reason };
+
+        for (let client of clients) {
+            client.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
+            setTimeout(() => {
+                try {
+                    client.basicConnection.connection.close();
                 } catch {
                     console.log('failed to close ' + client.userId);
                 }

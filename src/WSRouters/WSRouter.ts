@@ -64,7 +64,7 @@ export class MyWebSocketServer {
                             newConnection.connection.sendUTF(JSON.stringify(logoutData));
                             await setInterval(() => {
                                 newConnection.connection.close();
-                            }, 500);
+                            }, 5000);
                             return
                         }
                         this.userClients.push(userConn);
@@ -106,7 +106,8 @@ export class MyWebSocketServer {
             for (let i = 0; i < this.userClients.length; i++) {
                 if (this.userClients[i].basicConnection.connection === connection) {
                     console.log(this.userClients[i].authToken)
-                    this.userClients.splice(i, 1);
+                    console.log("closed " + this.userClients[i].basicConnection.connectionUUID);
+                    this.userClients.splice(i, 1);                    
                     return;
                 }
             }
@@ -262,7 +263,7 @@ export class MyWebSocketServer {
                 } catch {
                     console.log('failed to close ' + client.userId);
                 }
-            }, 1000);
+            }, 5000);
         }
     }
 

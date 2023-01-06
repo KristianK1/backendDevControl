@@ -21,7 +21,7 @@ router.post('/', async (req: any, res: any) => {
     let user: IUser;
 
     try {
-        devices = await deviceDb.getDevices()
+        devices = await deviceDb.getTransformedDevices()
         user = await userDb.getUserByToken(deleteReq.authToken, false);
     } catch (e) {
         res.status(400);

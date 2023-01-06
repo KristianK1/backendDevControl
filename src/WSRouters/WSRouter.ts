@@ -8,7 +8,8 @@ import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../firestoreD
 import { UsersDB } from '../firestoreDB/users/userDB';
 import { DeviceDB } from '../firestoreDB/devices/deviceDB';
 import { ERightType } from '../models/userRightsModels';
-import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed, ILoggedReason } from '../models/frontendModels';
+import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed, ILoggedReason, IWSSMessageForUser } from '../models/frontendModels';
+import { getDeviceById } from 'firestoreDB/userDBdeviceDBbridge';
 
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
@@ -62,13 +63,14 @@ export class MyWebSocketServer {
                         if (!userConn) {
                             let logoutData: ILoggedReason = { logoutReason: ELogoutReasons.LogoutMyself }
                             newConnection.connection.sendUTF(JSON.stringify(logoutData));
-                            await setInterval(() => {
+                            setInterval(() => {
                                 newConnection.connection.close();
                             }, 5000);
                             return
                         }
                         this.userClients.push(userConn);
                         console.log('user connected')
+                        await this.sendAllDeviceDataToUser(userConn.userId, newConnection.connection);
                         break;
                     case 'connectDevice':
                         let connectDevRequest = wsMessage.data as IWSSDeviceConnectRequest;
@@ -78,6 +80,7 @@ export class MyWebSocketServer {
                         this.deviceClients.push(devConn);
                         console.log('new uuid: ' + devConn.basicConnection.connectionUUID);
                         console.log("dev clients N: " + this.deviceClients.length);
+                        this.emitDeviceRegistration(connectDevRequest.deviceKey)
                         break;
                     default:
                         console.log('unprocessed message');
@@ -98,8 +101,10 @@ export class MyWebSocketServer {
             for (let i = 0; i < this.deviceClients.length; i++) {
                 if (this.deviceClients[i].basicConnection.connection === connection) {
                     console.log('closed ' + this.deviceClients[i].basicConnection.connectionUUID);
+                    let deviceId = this.deviceClients[i].deviceId
                     this.deviceClients.splice(i, 1);
                     console.log("dev clients N: " + this.deviceClients.length);
+                    this.emitDeviceRegistrationById(deviceId)
                     return;
                 }
             }
@@ -107,11 +112,15 @@ export class MyWebSocketServer {
                 if (this.userClients[i].basicConnection.connection === connection) {
                     console.log(this.userClients[i].authToken)
                     console.log("closed " + this.userClients[i].basicConnection.connectionUUID);
-                    this.userClients.splice(i, 1);                    
+                    this.userClients.splice(i, 1);
                     return;
                 }
             }
         });
+    }
+    async emitDeviceRegistrationById(deviceId: number) {
+        let device = await deviceDb.getDevicebyId(deviceId)
+        await this.emitDeviceRegistration(device.deviceKey)
     }
 
     async emitDeviceRegistration(deviceKey: string) {
@@ -180,13 +189,18 @@ export class MyWebSocketServer {
     }
 
     async emitDeviceConfig(deviceData: IDevice, users: IUser[]) {
+        let isActive = this.isDeviceActive(deviceData.id)
         for (let userClient of this.userClients) {
             try {
                 let user = users.find(user => user.id === userClient.userId);
                 if (!user) continue;
-                let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
+                let deviceForUser = await userDB.getDeviceForUser(user, deviceData, isActive);
                 if (!deviceForUser) continue;
-                userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
+                let message: IWSSMessageForUser = {
+                    messageType: "deviceData",
+                    data: deviceForUser,
+                }
+                userClient.basicConnection.connection.sendUTF(JSON.stringify(message));
             } catch (e) {
                 console.log("Device registration emiting error");
                 console.log(e);
@@ -205,15 +219,24 @@ export class MyWebSocketServer {
         for (let userClient of this.userClients) {
             try {
                 if (userClient.userId !== user.id) continue;
-                let deviceForUser = await userDB.getDeviceForUser(user, deviceData);
+                let isActive = this.isDeviceActive(deviceData.id)
+                let deviceForUser = await userDB.getDeviceForUser(user, deviceData, isActive);
                 if (!deviceForUser) {
                     let response: IDeviceForUserFailed = {
                         lostRightsToDevice: deviceId,
                     }
-                    userClient.basicConnection.connection.sendUTF(JSON.stringify(response));
+                    let message: IWSSMessageForUser = {
+                        messageType: "lostRightsToDevice",
+                        data: response,
+                    }
+                    userClient.basicConnection.connection.sendUTF(JSON.stringify(message));
                 }
                 else {
-                    userClient.basicConnection.connection.sendUTF(JSON.stringify(deviceForUser));
+                    let message: IWSSMessageForUser = {
+                        messageType: "deviceData",
+                        data: deviceForUser,
+                    }
+                    userClient.basicConnection.connection.sendUTF(JSON.stringify(message));
                 }
             } catch (e) {
                 console.log("User right - emiting error");
@@ -240,7 +263,11 @@ export class MyWebSocketServer {
         let response: IDeviceDeleted = { deletedDeviceId: deviceData.id };
         for (let userConn of usersWithRight) {
             console.log('senddddd');
-            userConn.basicConnection.connection.sendUTF(JSON.stringify(response));
+            let message: IWSSMessageForUser = {
+                messageType: 'deviceDeleted',
+                data: response,
+            }
+            userConn.basicConnection.connection.sendUTF(JSON.stringify(message));
         }
     }
 
@@ -283,4 +310,28 @@ export class MyWebSocketServer {
         }
     }
 
+    async sendAllDeviceDataToUser(userId: number, connection: connection) {
+        try {
+            let user = await userDB.getUserbyId(userId);
+            let devices = await deviceDb.getTransformedDevices()
+            for (let device of devices) {
+                let isActive = this.isDeviceActive(device.id)
+                let deviceForUser = await userDB.getDeviceForUser(user, device, isActive)
+                if (deviceForUser) {
+                    let message: IWSSMessageForUser = {
+                        messageType: "deviceData",
+                        data: deviceForUser,
+                    }
+                    connection.sendUTF(JSON.stringify(message))
+                }
+            }
+        } catch {
+            console.log("error in sending all device data");
+
+        }
+    }
+
+    isDeviceActive(deviceId: number): boolean {
+        return !!this.deviceClients.find(o => o.deviceId == deviceId)
+    }
 }

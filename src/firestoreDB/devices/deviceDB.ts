@@ -30,8 +30,18 @@ export class DeviceDB {
         this.getMaxIds = getMaxIDSingletonFactory.getInstance();
     }
 
-    async getDevices(): Promise<IDevice[]> {
+    private async getDevices(): Promise<IDevice[]> {
         return await this.firestore.getCollectionData(DeviceDB.devCollName);
+    }
+
+    async getTransformedDevices(): Promise<IDevice[]> {
+        let devices = await this.getDevices();
+        let transformedDevices: IDevice[] = [];
+        for(let device of devices){
+            let transformedDevice = this.transformDeviceData(device)
+            transformedDevices.push(transformedDevice)
+        }
+        return transformedDevices
     }
 
     async getDevicebyId(id: number): Promise<IDevice> {

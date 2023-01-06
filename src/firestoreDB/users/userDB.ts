@@ -583,7 +583,7 @@ export class UsersDB {
         return false;
     }
 
-    async getDeviceForUser(user: IUser, device: IDevice): Promise<IDeviceForUser | undefined> {
+    async getDeviceForUser(user: IUser, device: IDevice, isActive: boolean): Promise<IDeviceForUser | undefined> {
         if (! await this.checkAnyUserRightToDevice(user, device)) return;
         let deviceReduced: IDeviceForUser = {
             id: device.id,
@@ -593,6 +593,7 @@ export class UsersDB {
             deviceFieldGroups: [],
             deviceFieldComplexGroups: [],
             updateTimeStamp: 0,
+            isActive: isActive,
         }
 
         for (let group of device.deviceFieldGroups) {

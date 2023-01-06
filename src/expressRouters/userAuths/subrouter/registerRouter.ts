@@ -1,6 +1,6 @@
 import { usersDBSingletonFactory } from '../../../firestoreDB/singletonService';
 import { UsersDB } from 'firestoreDB/users/userDB';
-import { IRegisterRequest } from '../../../models/API/loginRegisterReqRes'
+import { ILoginResponse, IRegisterRequest } from '../../../models/API/loginRegisterReqRes'
 
 var express = require('express');
 var router = express.Router();
@@ -11,15 +11,19 @@ router.post('/', async (req: any, res: any) => {
     console.log('reggg');
     let registerReq: IRegisterRequest = req.body;
     console.log(registerReq);
+
+    let loginResponse: ILoginResponse;
     try {
         await userDb.addUser(registerReq.username, registerReq.password, registerReq.email);
-        let loginResponse = await userDb.loginUserByCreds(registerReq.username, registerReq.password);
+        loginResponse = await userDb.loginUserByCreds(registerReq.username, registerReq.password);
         res.json(loginResponse);
+    } catch (e) {
+        res.status(400);
+        res.send(e.message);
+        return;
     }
-    catch (e) {
-        console.log(e);
-        res.send(e['message']);
-    }
+    console.log(loginResponse);
+    res.json(loginResponse);
 })
 
 

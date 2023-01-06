@@ -8,6 +8,7 @@ export interface IDeviceForUser {
     deviceFieldComplexGroups: IComplexFieldGroupForUser[],
     userAdminId: number,
     updateTimeStamp: number,
+    isActive: boolean
 }
 
 export interface IDeviceForDevice {
@@ -54,6 +55,11 @@ export interface IDeviceFieldBasicForUser {
     readOnly: boolean,
 }
 
+export interface IWSSMessageForUser {
+    messageType: 'userMessage' | 'deviceData' | 'deviceDeleted' | 'lostRightsToDevice',
+    data: ILoggedReason | IDeviceForUser | IDeviceDeleted | IDeviceForUserFailed
+}
+
 export interface ILoggedReason {
     logoutReason: ELogoutReasons
 }
@@ -65,7 +71,7 @@ export enum ELogoutReasons {
     LogoutMyself //no toast on frontend
 }
 
-export interface IDeviceRightsRequest{
+export interface IDeviceRightsRequest {
     adminToken: string,
     deviceId: number,
 }

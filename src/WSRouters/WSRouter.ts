@@ -103,9 +103,9 @@ export class MyWebSocketServer {
                     console.log('closed ' + this.deviceClients[i].basicConnection.connectionUUID);
                     let deviceId = this.deviceClients[i].deviceId
                     this.deviceClients.splice(i, 1);
+                    i--;
                     console.log("dev clients N: " + this.deviceClients.length);
                     this.emitDeviceRegistrationById(deviceId)
-                    return;
                 }
             }
             for (let i = 0; i < this.userClients.length; i++) {

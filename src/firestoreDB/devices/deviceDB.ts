@@ -37,7 +37,7 @@ export class DeviceDB {
     async getTransformedDevices(): Promise<IDevice[]> {
         let devices = await this.getDevices();
         let transformedDevices: IDevice[] = [];
-        for(let device of devices){
+        for (let device of devices) {
             let transformedDevice = this.transformDeviceData(device)
             transformedDevices.push(transformedDevice)
         }
@@ -435,6 +435,9 @@ export class DeviceDB {
     }
 
     private async tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any) {
+        console.log(field);
+        console.log(fieldValue);
+
         if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
             await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
         }
@@ -461,9 +464,9 @@ export class DeviceDB {
         }
         else if (
             field.fieldType === 'RGB' &&
-            (!!fieldValue.R && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
-            (!!fieldValue.G && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
-            (!!fieldValue.B && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
+            ((!!fieldValue.R || fieldValue.R === 0) && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
+            ((!!fieldValue.G || fieldValue.R === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
+            ((!!fieldValue.B || fieldValue.R === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
         ) {
             console.log('RGB');
             console.log(fieldValue);
@@ -752,9 +755,9 @@ export class DeviceDB {
         }
         else if (
             field.fieldType === 'RGB' &&
-            (!!fieldValue.R && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
-            (!!fieldValue.G && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
-            (!!fieldValue.B && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
+            ((!!fieldValue.R || fieldValue.R === 0) && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
+            ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
+            ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
         ) {
             console.log('RGB');
             console.log(fieldValue);

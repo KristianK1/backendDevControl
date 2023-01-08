@@ -34,8 +34,11 @@ router.post('/device', async (req: any, res: any) => {
 });
 
 router.post('/user', async (req: any, res: any) => {
+    console.log(req.body);
     let request: IChangeComplexGroupState_User = req.body;
     let user: IUser;
+    console.log(request);
+    
     try {
         user = await userDb.getUserByToken(request.authToken, false);
     } catch (e) {

@@ -2,29 +2,40 @@ import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../fire
 import { DeviceDB } from "../../../firestoreDB/devices/deviceDB";
 import { UsersDB } from "../../../firestoreDB/users/userDB";
 import { IAddDeviceReq } from "../../../models/API/deviceCreateAlterReqRes";
+import { IUser } from "models/basicModels";
+import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
+import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 
 var express = require('express');
 var router = express.Router();
 
 var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
 var userDb: UsersDB = usersDBSingletonFactory.getInstance();
+var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     var addDeviceReq: IAddDeviceReq = req.body;
+    console.log("add new device request");
+    console.log(addDeviceReq);
+    
+    let user: IUser
     try {
-        await userDb.getUserbyId(addDeviceReq.userAdminId);
+        user = await userDb.getUserByToken(addDeviceReq.authToken, false);
     } catch (e) {
         res.status(400);
         res.send(e.message);
         return;
     }
+
     try {
-        await deviceDb.addDevice(addDeviceReq.deviceName, addDeviceReq.userAdminId, addDeviceReq.deviceKey);
+        let id = await deviceDb.addDevice(addDeviceReq.deviceName, user.id, addDeviceReq.deviceKey);
+        wsServer.emitDeviceRegistrationById(id);
     } catch (e) {
         res.status(400);
         res.send(e.message);
         return;
     }
+
     res.sendStatus(200);
 });
 

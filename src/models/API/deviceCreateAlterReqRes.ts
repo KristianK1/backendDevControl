@@ -3,7 +3,7 @@ import { IDevice, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNu
 export interface IAddDeviceReq {
     deviceName: string
     deviceKey?: string,
-    userAdminId: number,
+    authToken: string,
 }
 
 export interface IRenameDeviceReq {

@@ -18,6 +18,9 @@ router.use('/delete', deleteUserAuthRouter);
 var changePasswordRouter = require('./subrouter/changePasswordRouter.ts');
 router.use('/changePassword', changePasswordRouter);
 
+var getUsersRouter = require('./subrouter/getUserListRouter.ts');
+router.use('/getUsers', getUsersRouter);
+
 var usersDB = usersDBSingletonFactory.getInstance();
 router.get('/:id', async (req: any, res: any) => {
     let id = req.params.id;

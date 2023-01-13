@@ -80,6 +80,7 @@ export class MyWebSocketServer {
                         this.deviceClients.push(devConn);
                         console.log('new uuid: ' + devConn.basicConnection.connectionUUID);
                         console.log("dev clients N: " + this.deviceClients.length);
+                        console.log("emited data to device")
                         this.emitDeviceRegistration(connectDevRequest.deviceKey)
                         break;
                     default:
@@ -161,8 +162,6 @@ export class MyWebSocketServer {
                 usersWithRight.push(user);
             }
         }
-        console.log(usersWithRight);
-
         await this.emitDeviceConfig(deviceData, usersWithRight);
     }
 
@@ -188,7 +187,7 @@ export class MyWebSocketServer {
         await this.emitDeviceConfig(deviceData, usersWithRight);
     }
 
-    async emitDeviceConfig(deviceData: IDevice, users: IUser[]) {
+    private async emitDeviceConfig(deviceData: IDevice, users: IUser[]) {
         let isActive = this.isDeviceActive(deviceData.id)
         for (let userClient of this.userClients) {
             try {

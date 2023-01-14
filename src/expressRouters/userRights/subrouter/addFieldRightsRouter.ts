@@ -15,7 +15,8 @@ var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IAddUserRightFieldReq = req.body;
-
+    console.log("field rights router");
+    
     if (typeof request.readOnly !== "boolean") {
         res.status(400);
         res.send('readOnly property must be boolean');

@@ -8,7 +8,7 @@ import { FirestoreDB } from 'firestoreDB/firestore';
 import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from '../../models/userRightsModels';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getDeviceById } from '../../firestoreDB/userDBdeviceDBbridge';
-import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser } from 'models/frontendModels';
+import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from 'models/frontendModels';
 
 var userDBObj: UsersDB;
 
@@ -653,107 +653,114 @@ export class UsersDB {
     }
 
 
-    async getUsersRightsToDevice(device: IDevice): Promise<IAllDeviceRightsForAdminResponse> {
+    async getUsersRightsToDevice(adminId: number, device: IDevice): Promise<IAllDeviceRightsForAdminResponse> {
+        let result = this.setupBasicDeviceStructureForUserPermissionsDataforAdmin(device);
         let users = await this.getUsers();
-        let result: IAllDeviceRightsForAdminResponse = {
-            deviceRights: [],
-            groupRights: [],
-            fieldRights: [],
-            complexGrouprights: [],
-        };
         for (let user of users) {
-            let right = await this.getUserRightsToDevice(user, device);
-            result.deviceRights.push(...right.deviceRights);
-            result.groupRights.push(...right.groupRights);
-            result.fieldRights.push(...right.fieldRights);
-            result.complexGrouprights.push(...right.complexGrouprights);
+            if (user.id === adminId) continue;
+
+            let deviceRight = await this.checkUserRightToDevice(user, device.id, device);
+            if (deviceRight === ERightType.Write) {
+                result.userPermissions.push({
+                    userId: user.id,
+                    username: user.username,
+                    readOnly: false,
+                });
+                continue;
+            }
+            else if (deviceRight === ERightType.Read) {
+                result.userPermissions.push({
+                    userId: user.id,
+                    username: user.username,
+                    readOnly: true,
+                });
+            }
+            for (let group of result.groups) {
+                let groupRight = await this.checkUserRightToGroup(user, device.id, group.groupId, device);
+                if (groupRight === ERightType.Write) {
+                    group.userPermissions.push({
+                        userId: user.id,
+                        username: user.username,
+                        readOnly: false,
+                    });
+                    continue;
+                }
+                else if (groupRight === ERightType.Read && deviceRight !== ERightType.Read) {
+                    group.userPermissions.push({
+                        userId: user.id,
+                        username: user.username,
+                        readOnly: true,
+                    });
+                }
+                for (let field of group.fields) {
+                    let fieldRight = await this.checkUserRightToField(user, device.id, group.groupId, field.fieldId, device);
+                    if (fieldRight === ERightType.Write) {
+                        field.userPermissions.push({
+                            userId: user.id,
+                            username: user.username,
+                            readOnly: false,
+                        });
+                    }
+                    else if (fieldRight === ERightType.Read && groupRight !== ERightType.Read) {
+                        field.userPermissions.push({
+                            userId: user.id,
+                            username: user.username,
+                            readOnly: true,
+                        });
+                    }
+                }
+            }
+            for (let complexGroup of result.complexGroups) {
+                let complexGroupRight = await this.checkUserRightToGroup(user, device.id, complexGroup.complexGroupId, device);
+                if (complexGroupRight === ERightType.Write) {
+                    complexGroup.userPermissions.push({
+                        userId: user.id,
+                        username: user.username,
+                        readOnly: false,
+                    });
+                    continue;
+                }
+                else if (complexGroupRight === ERightType.Read  && deviceRight !== ERightType.Read) {
+                    complexGroup.userPermissions.push({
+                        userId: user.id,
+                        username: user.username,
+                        readOnly: true,
+                    });
+                }
+            }
         }
         return result;
     }
 
-    async getUserRightsToDevice(user: IUser, device: IDevice): Promise<IAllDeviceRightsForAdminResponse> {
+    setupBasicDeviceStructureForUserPermissionsDataforAdmin(device: IDevice): IAllDeviceRightsForAdminResponse {
         let result: IAllDeviceRightsForAdminResponse = {
-            deviceRights: [],
-            groupRights: [],
-            fieldRights: [],
-            complexGrouprights: [],
+            userPermissions: [],
+            groups: [],
+            complexGroups: [],
         };
-        let deviceRight = await this.checkUserRightToDevice(user, device.id, device);
-        if (deviceRight === ERightType.Write) {
-            result.deviceRights.push(
-                {
-                    readonly: false,
-                }
-            )
-            return result;
-        }
-        else if (deviceRight === ERightType.Read) {
-            result.deviceRights.push(
-                {
-                    readonly: true,
-                }
-            )
-        }
-
         for (let group of device.deviceFieldGroups) {
-            let groupRight = await this.checkUserRightToGroup(user, device.id, group.id, device);
-            if (groupRight === ERightType.Write) {
-                result.groupRights.push(
-                    {
-                        readOnly: false,
-                        groupId: group.id
-                    }
-                );
-                continue;
-            }
-            else if (groupRight === ERightType.Read && deviceRight !== ERightType.Read) {
-                result.groupRights.push(
-                    {
-                        readOnly: true,
-                        groupId: group.id
-                    }
-                );
+            let thisGroup: IGroupRightsForAdmin = {
+                groupId: group.id,
+                groupName: group.groupName,
+                fields: [],
+                userPermissions: [],
             }
             for (let field of group.fields) {
-                let fieldRight = await this.checkUserRightToField(user, device.id, group.id, field.id, device);
-                if (fieldRight === ERightType.Write) {
-                    result.fieldRights.push(
-                        {
-                            readOnly: false,
-                            groupId: group.id,
-                            fieldId: field.id,
-                        }
-                    )
-                }
-                else if (fieldRight === ERightType.Read && groupRight !== ERightType.Read) {
-                    result.fieldRights.push(
-                        {
-                            readOnly: true,
-                            groupId: group.id,
-                            fieldId: field.id,
-                        }
-                    )
-                }
+                thisGroup.fields.push({
+                    fieldId: field.id,
+                    fieldType: field.fieldType,
+                    fieldName: field.fieldName,
+                    userPermissions: [],
+                });
             }
+            result.groups.push(thisGroup);
         }
         for (let complexGroup of device.deviceFieldComplexGroups) {
-            let complexGroupRight = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.id);
-            if (complexGroupRight === ERightType.Write) {
-                result.complexGrouprights.push(
-                    {
-                        readOnly: false,
-                        complexGroupId: complexGroup.id,
-                    }
-                )
-            }
-            else if (complexGroupRight === ERightType.Read) {
-                result.complexGrouprights.push(
-                    {
-                        readOnly: true,
-                        complexGroupId: complexGroup.id,
-                    }
-                )
-            }
+            result.complexGroups.push({
+                complexGroupId: complexGroup.id,
+                complexGroupName: complexGroup.groupName,
+                userPermissions: [],
+            });
         }
         return result;
     }

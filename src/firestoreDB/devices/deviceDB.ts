@@ -435,9 +435,6 @@ export class DeviceDB {
     }
 
     private async tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any) {
-        console.log(field);
-        console.log(fieldValue);
-
         if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
             await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
         }

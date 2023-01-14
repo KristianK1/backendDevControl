@@ -1,5 +1,3 @@
-import { IUser } from "../basicModels";
-
 export interface ILoginRequest {
     username: string,
     password: string,
@@ -36,4 +34,17 @@ export interface IChangePasswordRequest {
     newPassword: string,
     logoutOtherSessions: boolean,
     dontLogoutToken: string,
+}
+
+export interface IGetUsersRequest {
+    authToken: string,
+}
+
+export interface IGetUsersResponse { 
+    users: IFrontendUser[],
+}
+
+export interface IFrontendUser {
+    id: number,
+    username: string,
 }

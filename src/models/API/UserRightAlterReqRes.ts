@@ -19,12 +19,11 @@ export interface IAddUserRightGroupReq {
     readOnly: boolean,
 }
 
-export interface IDeleteUserRightFieldReq {
+export interface IDeleteUserRightGroupReq {
     authToken: string,
     userId: number,
     deviceId: number,
     groupId: number,
-    fieldId: number,
 }
 
 export interface IAddUserRightFieldReq {
@@ -36,11 +35,12 @@ export interface IAddUserRightFieldReq {
     readOnly: boolean,
 }
 
-export interface IDeleteUserRightGroupReq {
+export interface IDeleteUserRightFieldReq {
     authToken: string,
     userId: number,
     deviceId: number,
     groupId: number,
+    fieldId: number,
 }
 
 export interface IAddUserRightComplexGroupReq {

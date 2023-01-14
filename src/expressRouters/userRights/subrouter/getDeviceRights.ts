@@ -13,10 +13,11 @@ var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IDeviceRightsRequest = req.body;
-
+    console.log('get user perms');
+    
     let admin: IUser;
     try {
-        admin = await userDB.getUserByToken(request.adminToken, true);
+        admin = await userDB.getUserByToken(request.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -39,14 +40,15 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try{
-        let result = await userDB.getUsersRightsToDevice(device);
+        let result = await userDB.getUsersRightsToDevice(admin.id, device);
+        console.log(JSON.stringify(result));
+        
         res.json(result);
     } catch (e) {
         res.status(400);
         res.send(e.message);
         return;
     }
+});
 
-
-
-})
+module.exports = router;

@@ -77,28 +77,32 @@ export interface IDeviceRightsRequest {
 }
 
 export interface IAllDeviceRightsForAdminResponse {
-    deviceRights: ICompleteDeviceRightsForAdmin[],
-    groupRights: IGroupRightsForAdmin[],
-    fieldRights: IFieldRightsForAdmin[],
-    complexGrouprights: IComplexGroupRightsForAdmin[],
-}
-
-export interface ICompleteDeviceRightsForAdmin {
-    readonly: boolean,
+    userPermissions: IUserRight[],
+    groups: IGroupRightsForAdmin[],
+    complexGroups: IComplexGroupRightsForAdmin[],
 }
 
 export interface IGroupRightsForAdmin {
     groupId: number,
-    readOnly: boolean,
+    groupName: string,
+    userPermissions: IUserRight[],
+    fields: IFieldRightsForAdmin[],
 }
 
 export interface IComplexGroupRightsForAdmin {
     complexGroupId: number,
-    readOnly: boolean,
+    complexGroupName: string,
+    userPermissions: IUserRight[],
 }
 
 export interface IFieldRightsForAdmin {
-    groupId: number,
     fieldId: number,
+    fieldName: string,
+    userPermissions: IUserRight[],
+}
+
+export interface IUserRight {
+    userId: number,
+    username: string,
     readOnly: boolean,
 }

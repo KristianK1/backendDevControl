@@ -653,10 +653,12 @@ export class UsersDB {
     }
 
 
-    async getUsersRightsToDevice(device: IDevice): Promise<IAllDeviceRightsForAdminResponse> {
+    async getUsersRightsToDevice(adminId: number, device: IDevice): Promise<IAllDeviceRightsForAdminResponse> {
         let result = this.setupBasicDeviceStructureForUserPermissionsDataforAdmin(device);
         let users = await this.getUsers();
         for (let user of users) {
+            if (user.id === adminId) continue;
+
             let deviceRight = await this.checkUserRightToDevice(user, device.id, device);
             if (deviceRight === ERightType.Write) {
                 result.userPermissions.push({
@@ -683,7 +685,7 @@ export class UsersDB {
                     });
                     continue;
                 }
-                else if (groupRight === ERightType.Read) {
+                else if (groupRight === ERightType.Read && deviceRight !== ERightType.Read) {
                     group.userPermissions.push({
                         userId: user.id,
                         username: user.username,
@@ -698,9 +700,8 @@ export class UsersDB {
                             username: user.username,
                             readOnly: false,
                         });
-                        continue;
                     }
-                    else if (fieldRight === ERightType.Read) {
+                    else if (fieldRight === ERightType.Read && groupRight !== ERightType.Read) {
                         field.userPermissions.push({
                             userId: user.id,
                             username: user.username,
@@ -709,8 +710,8 @@ export class UsersDB {
                     }
                 }
             }
-            for (let complexGroup of result.groups) {
-                let complexGroupRight = await this.checkUserRightToGroup(user, device.id, complexGroup.groupId, device);
+            for (let complexGroup of result.complexGroups) {
+                let complexGroupRight = await this.checkUserRightToGroup(user, device.id, complexGroup.complexGroupId, device);
                 if (complexGroupRight === ERightType.Write) {
                     complexGroup.userPermissions.push({
                         userId: user.id,
@@ -719,7 +720,7 @@ export class UsersDB {
                     });
                     continue;
                 }
-                else if (complexGroupRight === ERightType.Read) {
+                else if (complexGroupRight === ERightType.Read  && deviceRight !== ERightType.Read) {
                     complexGroup.userPermissions.push({
                         userId: user.id,
                         username: user.username,
@@ -747,6 +748,7 @@ export class UsersDB {
             for (let field of group.fields) {
                 thisGroup.fields.push({
                     fieldId: field.id,
+                    fieldType: field.fieldType,
                     fieldName: field.fieldName,
                     userPermissions: [],
                 });

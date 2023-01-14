@@ -28,5 +28,8 @@ router.use('/addComplexGroupRight', addComplexGroupRightsRouter);
 var deleteComplexGroupRightsRouter = require('./subrouter/deleteComplexGroupRightsRouter');
 router.use('/deleteComplexGroupRight', deleteComplexGroupRightsRouter);
 
+var getUserRights = require('./subrouter/getDeviceRights.ts');
+router.use('/getUserPermissions', getUserRights);
+
 
 module.exports = router;

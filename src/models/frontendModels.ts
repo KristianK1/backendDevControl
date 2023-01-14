@@ -72,7 +72,7 @@ export enum ELogoutReasons {
 }
 
 export interface IDeviceRightsRequest {
-    adminToken: string,
+    authToken: string,
     deviceId: number,
 }
 
@@ -98,6 +98,7 @@ export interface IComplexGroupRightsForAdmin {
 export interface IFieldRightsForAdmin {
     fieldId: number,
     fieldName: string,
+    fieldType: 'numeric' | 'text' | 'button' | 'multipleChoice' | 'RGB',
     userPermissions: IUserRight[],
 }
 

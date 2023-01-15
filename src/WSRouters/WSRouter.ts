@@ -228,6 +228,8 @@ export class MyWebSocketServer {
                         messageType: "lostRightsToDevice",
                         data: response,
                     }
+                    console.log('lost rights emit');
+                    
                     userClient.basicConnection.connection.sendUTF(JSON.stringify(message));
                 }
                 else {
@@ -266,6 +268,7 @@ export class MyWebSocketServer {
                 messageType: 'deviceDeleted',
                 data: response,
             }
+            console.log('device delete emit');
             userConn.basicConnection.connection.sendUTF(JSON.stringify(message));
         }
     }
@@ -280,9 +283,13 @@ export class MyWebSocketServer {
     async logoutAllUsersSessions(userId: number, reason: ELogoutReasons, safeToken?: string) {
         let clients = this.userClients.filter(client => client.userId === userId);
         let logoutReason: ILoggedReason = { logoutReason: reason };
+        let message: IWSSMessageForUser= {
+            messageType: "userMessage",
+            data: logoutReason,           
+        }
         for (let client of clients) {
             if (client.authToken === safeToken) continue;
-            client.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
+            client.basicConnection.connection.sendUTF(JSON.stringify(message));
             setTimeout(() => {
                 try {
                     client.basicConnection.connection.close();
@@ -296,9 +303,12 @@ export class MyWebSocketServer {
     async logoutUserSession(token: string, reason: ELogoutReasons) {
         let clients = this.userClients.filter(client => client.authToken === token);
         let logoutReason: ILoggedReason = { logoutReason: reason };
-
+        let message: IWSSMessageForUser= {
+            messageType: "userMessage",
+            data: logoutReason,           
+        }
         for (let client of clients) {
-            client.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
+            client.basicConnection.connection.sendUTF(JSON.stringify(message));
             setTimeout(() => {
                 try {
                     client.basicConnection.connection.close();

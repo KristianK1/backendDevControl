@@ -34,13 +34,13 @@ router.post('/', async (req: any, res: any) => {
     });
     if (isAdmin) {
         res.status(400);
-        res.send('User is admin');
+        res.send('Transfer your devices to other users or delete them.');        
         return;
     }
 
     try {
         await userDb.deleteUser(deleteReq.authToken);
-        await wsServer.logoutAllUsersSessions(user.id, ELogoutReasons.DeletedUser);
+        await wsServer.logoutAllUsersSessions(user.id, ELogoutReasons.DeletedUser, deleteReq.authToken);
     } catch (e) {
         res.status(400);
         res.send(e.message);

@@ -331,7 +331,7 @@ export class UsersDB {
     }
 
     async deleteUserRightToDevice(user: IUser, deviceId: number) {
-        await this.deleteNestedRightsForDevice(user, deviceId, false);
+        // await this.deleteNestedRightsForDevice(user, deviceId, false);
         await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToDevices.${deviceId}`]: FieldValue.delete()
         });
@@ -379,7 +379,7 @@ export class UsersDB {
     }
 
     async deleteUserRightToGroup(user: IUser, deviceId: number, groupId: number) {
-        await this.deleteNestedRightsForGroup(user, deviceId, groupId, false);
+        // await this.deleteNestedRightsForGroup(user, deviceId, groupId, false);
         await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${user.id}`, {
             [`userRight.rightsToGroups.${deviceId}.${groupId}`]: FieldValue.delete()
         });

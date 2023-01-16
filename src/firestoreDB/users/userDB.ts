@@ -711,16 +711,21 @@ export class UsersDB {
                 }
             }
             for (let complexGroup of result.complexGroups) {
-                let complexGroupRight = await this.checkUserRightToGroup(user, device.id, complexGroup.complexGroupId, device);
+                let complexGroupRight = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.complexGroupId, device);
+                console.log('we2');
+                console.log(complexGroupRight);
+                
                 if (complexGroupRight === ERightType.Write) {
+                    console.log('we4');
                     complexGroup.userPermissions.push({
                         userId: user.id,
                         username: user.username,
                         readOnly: false,
                     });
-                    continue;
                 }
                 else if (complexGroupRight === ERightType.Read  && deviceRight !== ERightType.Read) {
+                    console.log('we3');
+                    
                     complexGroup.userPermissions.push({
                         userId: user.id,
                         username: user.username,
@@ -728,6 +733,7 @@ export class UsersDB {
                     });
                 }
             }
+            
         }
         return result;
     }

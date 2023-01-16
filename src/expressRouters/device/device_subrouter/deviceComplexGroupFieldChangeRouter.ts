@@ -38,7 +38,6 @@ router.post('/user', async (req: any, res: any) => {
     let user: IUser;
     try {
         user = await userDb.getUserByToken(request.authToken, false);
-        wsServer.emitComplexGroupChanged(request.deviceId, request.groupId); //bez await-a
     } catch (e) {
         res.status(400);
         res.send(e.message)
@@ -54,6 +53,7 @@ router.post('/user', async (req: any, res: any) => {
 
     try {
         await deviceDb.changeFieldValueInComplexGroupFromUser(request.deviceId, request.groupId, request.stateId, request.fieldId, request.fieldValue);
+        wsServer.emitComplexGroupChanged(request.deviceId, request.groupId); //bez await-a
     } catch (e) {
         res.status(400);
         res.send(e.message);

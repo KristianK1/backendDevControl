@@ -52,9 +52,12 @@ export class UsersDB {
 
     async loginUserByCreds(username: string, password: string): Promise<ILoginResponse> {
         var users = await this.getUsers();
-        const user = users.find(user => user.username === username && user.password === password);
+        const user = users.find(user => user.username === username);
         if (!user) {
             throw ({ message: 'User doesn\'t exist' });
+        }
+        if(user.password !== password){
+            throw ({ message: 'Wrong password' });
         }
         let loginResponse = {} as ILoginResponse;
         loginResponse.username = user.username;

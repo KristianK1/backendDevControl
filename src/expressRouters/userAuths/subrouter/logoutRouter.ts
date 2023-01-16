@@ -29,7 +29,7 @@ router.post('/', async (req: any, res: any) => {
         if (logoutRequest.logoutOtherSessions) {
             await userDb.removeAllMyTokens(logoutRequest.authToken)
             await userDb.removeToken(logoutRequest.authToken);
-            wsServer.logoutAllUsersSessions(user.id, ELogoutReasons.LogoutAll);
+            wsServer.logoutAllUsersSessions(user.id, ELogoutReasons.LogoutAll, logoutRequest.authToken);
         }
         else{
             await userDb.removeToken(logoutRequest.authToken);

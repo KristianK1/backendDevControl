@@ -22,8 +22,6 @@ router.post('/', async (req: any, res: any) => {
         res.send(e.message);
         return;
     }
-    console.log(loginResponse);
-    res.json(loginResponse);
 })
 
 

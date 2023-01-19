@@ -462,8 +462,8 @@ export class DeviceDB {
         else if (
             field.fieldType === 'RGB' &&
             ((!!fieldValue.R || fieldValue.R === 0) && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
-            ((!!fieldValue.G || fieldValue.R === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
-            ((!!fieldValue.B || fieldValue.R === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
+            ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
+            ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
         ) {
             console.log('RGB');
             console.log(fieldValue);

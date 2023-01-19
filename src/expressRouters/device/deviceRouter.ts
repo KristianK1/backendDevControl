@@ -13,7 +13,7 @@ router.use('/changeAdmin', changeDeviceAdminRouter);
 var deleteDeviceRouter = require('./device_subrouter/deleteDevice.ts');
 router.use('/deleteDevice', deleteDeviceRouter);
 
-var registerDeviceDataRouter = require('./device_subrouter/registerDeviceData');
+var registerDeviceDataRouter = require('./device_subrouter/registerDeviceData.ts');
 router.use('/registerDeviceData', registerDeviceDataRouter)
 
 var changeFieldValueRouter = require('./device_subrouter/deviceFieldChangeRouter.ts');

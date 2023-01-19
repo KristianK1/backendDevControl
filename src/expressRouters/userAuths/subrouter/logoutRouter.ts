@@ -33,7 +33,7 @@ router.post('/', async (req: any, res: any) => {
         }
         else{
             await userDb.removeToken(logoutRequest.authToken);
-            wsServer.logoutUserSession(logoutRequest.authToken, ELogoutReasons.LogoutMyself)
+            // wsServer.logoutUserSession(logoutRequest.authToken, ELogoutReasons.LogoutMyself)
         }
     } catch (e) {
         res.status(400);

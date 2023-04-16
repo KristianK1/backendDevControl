@@ -128,7 +128,7 @@ export class MyWebSocketServer {
         });
 
         setInterval(() => {
-            console.log("wsRouter Queue check. Size: " + this.deviceDataEmitQueue.length + "                        " + getCurrentTimeISO());
+            // console.log("wsRouter Queue check. Size: " + this.deviceDataEmitQueue.length + "                        " + getCurrentTimeISO());
             for(let i = 0; i < this.deviceDataEmitQueue.length; i++){
                 let connection = this.deviceDataEmitQueue[i];
                 console.log(i + ": fromLastEmit: " + (getCurrentTimeUNIX() - connection.lastEmited));

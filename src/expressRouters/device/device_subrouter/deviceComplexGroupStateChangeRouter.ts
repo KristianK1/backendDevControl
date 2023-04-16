@@ -38,7 +38,15 @@ router.post('/user', async (req: any, res: any) => {
     let request: IChangeComplexGroupState_User = req.body;
     let user: IUser;
     console.log(request);
-    
+
+    try{
+        await deviceDb.getDevicebyId(request.deviceId);
+    }catch (e){
+        res.status(400);
+        res.send(e.message);
+        return;
+    }
+
     try {
         user = await userDb.getUserByToken(request.authToken, false);
     } catch (e) {
@@ -47,14 +55,13 @@ router.post('/user', async (req: any, res: any) => {
         return;
     }
 
-
     let right = await userDb.checkUserRightToComplexGroup(user, request.deviceId, request.groupId);
     if (right !== ERightType.Write) {
         res.status(400);
         res.send('User doesn\'t have write rights to this complex group');
         return;
     }
-
+    
     try {
         await deviceDb.changeComplexGroupStateFromUser(request.deviceId, request.groupId, request.state);
         wsServer.emitComplexGroupChanged(request.deviceId, request.groupId); //bez await-a

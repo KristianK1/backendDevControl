@@ -219,7 +219,11 @@ export class UsersDB {
 
     async checkUserRightToDevice(user: IUser, deviceId: number, device?: IDevice): Promise<ERightType> {
         if (!device) {
-            device = await getDeviceById(deviceId);
+            try{
+                device = await getDeviceById(deviceId);
+            } catch{
+                return ERightType.None;
+            }
         }
         if (device.userAdminId === user.id) {
             return ERightType.Write;
@@ -392,11 +396,6 @@ export class UsersDB {
         let currUserRightToDevice = await this.checkUserRightToDevice(user, deviceId);
         let currUserRightToGroup = await this.checkUserRightToGroup(user, deviceId, groupId);
         let currUserRightToField = await this.checkUserRightToField(user, deviceId, groupId, fieldId);
-
-        console.log(currUserRightToDevice);
-        console.log(currUserRightToGroup);
-        console.log(currUserRightToField);
-
 
 
         if (!readOnly) { //write
@@ -715,11 +714,8 @@ export class UsersDB {
             }
             for (let complexGroup of result.complexGroups) {
                 let complexGroupRight = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.complexGroupId, device);
-                console.log('we2');
-                console.log(complexGroupRight);
                 
                 if (complexGroupRight === ERightType.Write) {
-                    console.log('we4');
                     complexGroup.userPermissions.push({
                         userId: user.id,
                         username: user.username,
@@ -727,8 +723,6 @@ export class UsersDB {
                     });
                 }
                 else if (complexGroupRight === ERightType.Read  && deviceRight !== ERightType.Read) {
-                    console.log('we3');
-                    
                     complexGroup.userPermissions.push({
                         userId: user.id,
                         username: user.username,
@@ -770,6 +764,17 @@ export class UsersDB {
                 complexGroupName: complexGroup.groupName,
                 userPermissions: [],
             });
+        }
+        return result;
+    }
+
+    async getAllUsersWithRightToDevice(deviceData: IDevice): Promise<IUser[]>{
+        let users = await this.getUsers();
+        let result: IUser[] = [];
+        for(let user of users){
+            if(await this.checkAnyUserRightToDevice(user, deviceData)){
+                result.push(user);
+            }
         }
         return result;
     }

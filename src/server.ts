@@ -4,6 +4,7 @@ import { firestoreSingletonFactory } from './firestoreDB/singletonService';
 import { server as webSocketServer } from 'websocket';
 import { MyWebSocketServer } from './WSRouters/WSRouter';
 import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
+import { emailServiceSingletonFactory } from './emailService/emailService';
 let http = require('http');
 let cors = require('cors');
 
@@ -25,6 +26,7 @@ export class Server {
         this.setupRoutes();
         this.setupWSS();
         this.startServer();
+        this.startEmailService();
         // this.startTimeout();
     }
 
@@ -59,6 +61,11 @@ export class Server {
             res.send('update');
         });
 
+        this.app.get('/emailTest', (req: any, res: any) => {
+            console.log("emailSendTest");
+            emailServiceSingletonFactory.getInstance().sendEmail("kristiankliskovic@gmail.com", [], [], "title of email", "payload of email.");
+        });
+
         var mainRouter = require('./expressRouters/expressRouter.ts');
         this.app.use('/API', mainRouter);
     }
@@ -79,5 +86,9 @@ export class Server {
         const timeout = setInterval(() => {
             let x = 3;
         }, 5 * 1000);
+    }
+
+    startEmailService(){
+        emailServiceSingletonFactory.getInstance();
     }
 }

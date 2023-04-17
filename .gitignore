@@ -1,2 +1,3 @@
 *node_modules
 firebaseKey.json
+src/emailService/emailKeys.ts

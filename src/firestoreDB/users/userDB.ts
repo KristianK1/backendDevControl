@@ -9,7 +9,9 @@ import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUser
 import { FieldValue } from 'firebase-admin/firestore';
 import { getDeviceById } from '../../firestoreDB/userDBdeviceDBbridge';
 import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from 'models/frontendModels';
-
+import { EmailService, emailServiceSingletonFactory } from '../../emailService/emailService';
+import { IEmailConfirmationData } from 'emailService/emailModels';
+import { serverLink } from '../../serverData'
 var userDBObj: UsersDB;
 
 export function createUserDBInstance() {
@@ -23,12 +25,15 @@ export class UsersDB {
 
     static usersCollName = 'users';
     static authTokenCollName = 'authTokens';
+    static emailConfirmationsCollName = 'emailConfirmations';
 
     firestore: FirestoreDB;
     getMaxIds: getMaxIds;
+    emailService: EmailService;
     constructor() {
         this.firestore = firestoreSingletonFactory.getInstance();
         this.getMaxIds = getMaxIDSingletonFactory.getInstance();
+        this.emailService = emailServiceSingletonFactory.getInstance();
     }
 
     async getUsers(): Promise<IUser[]> {
@@ -126,9 +131,13 @@ export class UsersDB {
             id: maxIDdoc + 1,
             password: password,
             username: username,
-            email: email,
+            email: "",
             userRight: { rightsToDevices: [], rightsToGroups: [], rightsToFields: [], rightsToComplexGroups: [] },
             fieldViews: [],
+        }
+
+        if(email !== ""){
+            await this.sendEmailConfirmation(newUser.id, newUser.username, email);
         }
 
         await this.firestore.setDocumentValue(UsersDB.usersCollName, `${newUser.id}`, newUser);
@@ -777,5 +786,37 @@ export class UsersDB {
             }
         }
         return result;
+    }
+    
+    private async sendEmailConfirmation(id: number, username: String, email: string) {
+        let hashCode = uuid();
+        await this.emailService.sendRegistrationEmail(username, email, hashCode);
+
+        let emailConfirmationData: IEmailConfirmationData = {
+            userId: id,
+            hashCode: hashCode,
+            email: email,
+        }
+        await this.firestore.setDocumentValue(UsersDB.emailConfirmationsCollName, hashCode, emailConfirmationData);        
+    }
+
+    async confirmEmail(hashCode: string){
+        let data: IEmailConfirmationData[] = await this.firestore.getCollectionData(UsersDB.emailConfirmationsCollName);
+        console.log(data);
+
+        let findCode = data.find(o => o.hashCode === hashCode);
+        if(findCode){
+            if(await this.getUserbyId(findCode.userId)){
+                await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${findCode.userId}`, { email: findCode.email });
+                await this.firestore.deleteDocument(UsersDB.emailConfirmationsCollName, findCode.hashCode);    
+            }
+            else{
+                throw({message: 'User doesn\'t exist'});
+            }
+        }
+        else{
+            throw({message: ''});
+
+        }
     }
 }

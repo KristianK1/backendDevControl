@@ -63,7 +63,8 @@ export class Server {
 
         this.app.get('/emailTest', (req: any, res: any) => {
             console.log("emailSendTest");
-            emailServiceSingletonFactory.getInstance().sendEmail("kristiankliskovic@gmail.com", [], [], "title of email", "payload of email.");
+            emailServiceSingletonFactory.getInstance().sendEmail("devControlService@gmail.com", [], [], "Thank you for mentioning us", "We hope you are doing great.");
+            res.sendStatus(200);
         });
 
         var mainRouter = require('./expressRouters/expressRouter.ts');

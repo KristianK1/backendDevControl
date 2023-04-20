@@ -33,12 +33,18 @@ export class EmailService{
         console.log(this.myHiddenEmailPassword);
         
         let transporter = nodemailer.createTransport({
-            service: 'gmail',
-            secure: true,
+            service: 'hotmail',
+            // secure: true,
             auth: {
               user: this.myHiddenEmail,
               pass: this.myHiddenEmailPassword,
-            }
+            },
+            tls: {
+              ciphers:'SSLv3'
+            },
+            port: 587,
+            host: 'smtp.office365.com',
+            secureConnection: true,
         });
 
         var mailOptions = {

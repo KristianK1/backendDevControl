@@ -41,8 +41,6 @@ router.post('/', async (req: any, res: any) => {
 
     try{
         let result = await userDB.getUsersRightsToDevice(admin.id, device);
-        console.log(JSON.stringify(result));
-        
         res.json(result);
     } catch (e) {
         res.status(400);

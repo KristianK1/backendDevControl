@@ -2,24 +2,32 @@ import { IWSSMessage, IWSSBasicConnection, IWSSConnectionDevice, IWSSConnectionU
 import { server, request, connection, Message } from 'websocket';
 import { addDeviceConnection, addUserConnection } from './subrouter/WSConnect';
 import { v4 as uuid } from 'uuid';
-import { getCurrentTimeISO } from '../generalStuff/timeHandlers';
+import { getCurrentTimeISO, getCurrentTimeUNIX } from '../generalStuff/timeHandlers';
 import { IDevice, IUser } from 'models/basicModels';
 import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../firestoreDB/singletonService';
 import { UsersDB } from '../firestoreDB/users/userDB';
 import { DeviceDB } from '../firestoreDB/devices/deviceDB';
 import { ERightType } from '../models/userRightsModels';
-import { ELogoutReasons, IDeviceDeleted, IDeviceForUserFailed, ILoggedReason, IWSSMessageForUser } from '../models/frontendModels';
+import { ELogoutReasons, IDeviceDeleted, IDeviceForUser, IDeviceForUserFailed, ILoggedReason, IWSSMessageForUser } from '../models/frontendModels';
 import { getDeviceById } from 'firestoreDB/userDBdeviceDBbridge';
+import { log } from 'console';
 
 
 var userDB: UsersDB = usersDBSingletonFactory.getInstance();
 var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
+
+const WSRouterEmitCheckInterval = 200;
+const WSRouterSlowTapInterval = 1000;
+const WSRouterSlowTapOverrideInterval = WSRouterSlowTapInterval + WSRouterEmitCheckInterval + 5; //avoid collision from slowTap emit and a "normal" emit
+
 export class MyWebSocketServer {
     private wsServer: server;
 
     private allClients: IWSSBasicConnection[] = [];
     private userClients: IWSSConnectionUser[] = [];
     private deviceClients: IWSSConnectionDevice[] = [];
+
+    private deviceDataEmitQueue: IWSSConnectionUser[] = [];
 
     public setupServer(server: server) {
         this.wsServer = server;
@@ -70,7 +78,7 @@ export class MyWebSocketServer {
                         }
                         this.userClients.push(userConn);
                         console.log('user connected')
-                        await this.sendAllDeviceDataToUser(userConn.userId, newConnection.connection);
+                        this.emitDeviceDataToConnection(userConn);
                         break;
                     case 'connectDevice':
                         let connectDevRequest = wsMessage.data as IWSSDeviceConnectRequest;
@@ -118,168 +126,27 @@ export class MyWebSocketServer {
                 }
             }
         });
-    }
-    async emitDeviceRegistrationById(deviceId: number) {
-        let device = await deviceDb.getDevicebyId(deviceId)
-        await this.emitDeviceRegistration(device.deviceKey)
-    }
 
-    async emitDeviceRegistration(deviceKey: string) {
-        let deviceData: IDevice;
-        let allUsers: IUser[];
-        try {
-            allUsers = await userDB.getUsers();
-            deviceData = await deviceDb.getDeviceByKey(deviceKey);
-        } catch (e) {
-            return;
-        }
-
-        let usersWithRight: IUser[] = [];
-        for (let user of allUsers) {
-            let right = await userDB.checkAnyUserRightToDevice(user, deviceData);
-            if (right) {
-                usersWithRight.push(user);
-            }
-        }
-        await this.emitDeviceConfig(deviceData, usersWithRight);
-    }
-
-    async emitFieldChanged(deviceId: number, groupId: number, fieldId: number) {
-        let deviceData: IDevice = {} as IDevice;
-        let allUsers: IUser[] = [];
-        try {
-            deviceData = await deviceDb.getDevicebyId(deviceId);
-            allUsers = await userDB.getUsers();
-        } catch {
-            console.log("emit deviceRegistration event - first error");
-            return;
-        }
-
-        let usersWithRight: IUser[] = [];
-        for (let user of allUsers) {
-            let right = await userDB.checkUserRightToField(user, deviceId, groupId, fieldId, deviceData);
-            if (right === ERightType.Write || right === ERightType.Read) {
-                usersWithRight.push(user);
-            }
-        }
-        await this.emitDeviceConfig(deviceData, usersWithRight);
-    }
-
-    async emitComplexGroupChanged(deviceId: number, complexGroupId: number) { //state or field
-        let deviceData: IDevice = {} as IDevice;
-        let allUsers: IUser[] = [];
-        try {
-            deviceData = await deviceDb.getDevicebyId(deviceId);
-            allUsers = await userDB.getUsers();
-        } catch {
-            console.log("emit deviceRegistration event - first error");
-            return;
-        }
-
-
-        let usersWithRight: IUser[] = [];
-        for (let user of allUsers) {
-            let right = await userDB.checkUserRightToComplexGroup(user, deviceId, complexGroupId, deviceData);
-            if (right === ERightType.Write || right === ERightType.Read) {
-                usersWithRight.push(user);
-            }
-        }
-        await this.emitDeviceConfig(deviceData, usersWithRight);
-    }
-
-    private async emitDeviceConfig(deviceData: IDevice, users: IUser[]) {
-        let isActive = this.isDeviceActive(deviceData.id)
-        for (let userClient of this.userClients) {
-            try {
-                let user = users.find(user => user.id === userClient.userId);
-                if (!user) continue;
-                let deviceForUser = await userDB.getDeviceForUser(user, deviceData, isActive);
-                if (!deviceForUser) continue;
-                let message: IWSSMessageForUser = {
-                    messageType: "deviceData",
-                    data: deviceForUser,
-                }
-                userClient.basicConnection.connection.sendUTF(JSON.stringify(message));
-            } catch (e) {
-                console.log("Device registration emiting error");
-                console.log(e);
-            }
-        }
-        let thisDevConns = this.deviceClients.filter(conn => conn.deviceId === deviceData.id);
-        for (let devCon of thisDevConns) {
-            devCon.basicConnection.connection.sendUTF(JSON.stringify(deviceData));
-        }
-        console.log('end emit');
-    }
-
-    async emitUserRightUpdate(userId: number, deviceId: number) {
-        let deviceData = await deviceDb.getDevicebyId(deviceId);
-        let user = await userDB.getUserbyId(userId);
-        for (let userClient of this.userClients) {
-            try {
-                if (userClient.userId !== user.id) continue;
-                let isActive = this.isDeviceActive(deviceData.id)
-                let deviceForUser = await userDB.getDeviceForUser(user, deviceData, isActive);
-                if (!deviceForUser) {
-                    let response: IDeviceForUserFailed = {
-                        lostRightsToDevice: deviceId,
-                    }
-                    let message: IWSSMessageForUser = {
-                        messageType: "lostRightsToDevice",
-                        data: response,
-                    }
-                    console.log('lost rights emit');
+        setInterval(() => {
+            // console.log("wsRouter Queue check. Size: " + this.deviceDataEmitQueue.length + "                        " + getCurrentTimeISO());
+            for(let i = 0; i < this.deviceDataEmitQueue.length; i++){
+                let connection = this.deviceDataEmitQueue[i];
+                console.log(i + ": fromLastEmit: " + (getCurrentTimeUNIX() - connection.lastEmited));
+                if(getCurrentTimeUNIX() - connection.lastEmited > WSRouterSlowTapInterval){
+                    console.log("emit " + i);
                     
-                    userClient.basicConnection.connection.sendUTF(JSON.stringify(message));
+                    this.emitDeviceDataToConnection(connection).then(() => {
+                        connection.lastEmited = getCurrentTimeUNIX();
+                    });
+                    this.deviceDataEmitQueue.splice(i,1);
+                    i--;
                 }
-                else {
-                    let message: IWSSMessageForUser = {
-                        messageType: "deviceData",
-                        data: deviceForUser,
-                    }
-                    userClient.basicConnection.connection.sendUTF(JSON.stringify(message));
-                }
-            } catch (e) {
-                console.log("User right - emiting error");
-                console.log(e);
+                console.log();
             }
-        }
-        console.log('end emit');
+        }, WSRouterEmitCheckInterval)
     }
 
-    async emitDeviceDeleted(allUsers: IUser[], deviceData: IDevice) {
-        let usersWithRight: IWSSConnectionUser[] = [];
-        console.log(allUsers);
-        console.log(deviceData);
-        console.log(this.userClients);
-        for (let userClient of this.userClients) {
-            let user = allUsers.find(user => user.id === userClient.userId);
-            if (!user) continue;
-            if (await userDB.checkAnyUserRightToDevice(user, deviceData)) {
-                console.log('pushed' + user.id);
-                usersWithRight.push(userClient);
-            }
-        }
-
-        let response: IDeviceDeleted = { deletedDeviceId: deviceData.id };
-        for (let userConn of usersWithRight) {
-            console.log('senddddd');
-            let message: IWSSMessageForUser = {
-                messageType: 'deviceDeleted',
-                data: response,
-            }
-            console.log('device delete emit');
-            userConn.basicConnection.connection.sendUTF(JSON.stringify(message));
-        }
-    }
-
-    // async logoutUserSession(token: string, reason: ELogoutReasons) {
-    //     let client = this.userClients.find(client => client.authToken === token);
-    //     let logoutReason: ILoggedReason = { logoutReason: reason };
-    //     client?.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
-    // }
-
-
+    //<logout>
     async logoutAllUsersSessions(userId: number, reason: ELogoutReasons, safeToken?: string) {
         let clients = this.userClients.filter(client => client.userId === userId);
         let logoutReason: ILoggedReason = { logoutReason: reason };
@@ -318,29 +185,183 @@ export class MyWebSocketServer {
             }, 1000);
         }
     }
+    //</logout>
 
-    async sendAllDeviceDataToUser(userId: number, connection: connection) {
+    //<reasons to emit data>
+    async emitDeviceRegistrationById(deviceId: number) {
+        let device = await deviceDb.getDevicebyId(deviceId)
+        await this.emitDeviceRegistration(device.deviceKey)
+    }
+
+    async emitDeviceRegistration(deviceKey: string) {
+        let deviceData: IDevice;
+        let allUsers: IUser[];
         try {
-            let user = await userDB.getUserbyId(userId);
-            let devices = await deviceDb.getTransformedDevices()
-            for (let device of devices) {
-                let isActive = this.isDeviceActive(device.id)
-                let deviceForUser = await userDB.getDeviceForUser(user, device, isActive)
-                if (deviceForUser) {
-                    let message: IWSSMessageForUser = {
-                        messageType: "deviceData",
-                        data: deviceForUser,
-                    }
-                    connection.sendUTF(JSON.stringify(message))
-                }
-            }
-        } catch {
-            console.log("error in sending all device data");
+            allUsers = await userDB.getUsers();
+            deviceData = await deviceDb.getDeviceByKey(deviceKey);
+        } catch (e) {
+            return;
+        }
 
+        let usersWithRight: IUser[] = [];
+        for (let user of allUsers) {
+            let right = await userDB.checkAnyUserRightToDevice(user, deviceData);
+            if (right) {
+                usersWithRight.push(user);
+            }
+        }
+        // await this.emitDeviceConfig(deviceData, usersWithRight);
+        await this.sendAllDataToUsers(usersWithRight);
+    }
+
+    async emitFieldChanged(deviceId: number, groupId: number, fieldId: number) {
+        let deviceData: IDevice = {} as IDevice;
+        let allUsers: IUser[] = [];
+        try {
+            deviceData = await deviceDb.getDevicebyId(deviceId);
+            allUsers = await userDB.getUsers();
+        } catch {
+            return;
+        }
+
+        let usersWithRight: IUser[] = [];
+        for (let user of allUsers) {
+            let right = await userDB.checkUserRightToField(user, deviceId, groupId, fieldId, deviceData);
+            if (right === ERightType.Write || right === ERightType.Read) {
+                usersWithRight.push(user);
+            }
+        }
+        // await this.emitDeviceConfig(deviceData, usersWithRight);
+        await this.sendAllDataToUsers(usersWithRight);
+    }
+
+    async emitComplexGroupChanged(deviceId: number, complexGroupId: number) { //state or field
+        let deviceData: IDevice = {} as IDevice;
+        let allUsers: IUser[] = [];
+        try {
+            deviceData = await deviceDb.getDevicebyId(deviceId);
+            allUsers = await userDB.getUsers();
+        } catch {
+            return;
+        }
+
+
+        let usersWithRight: IUser[] = [];
+        for (let user of allUsers) {
+            let right = await userDB.checkUserRightToComplexGroup(user, deviceId, complexGroupId, deviceData);
+            if (right === ERightType.Write || right === ERightType.Read) {
+                usersWithRight.push(user);
+            }
+        }
+        // await this.emitDeviceConfig(deviceData, usersWithRight);
+        await this.sendAllDataToUsers(usersWithRight);
+    }
+
+    async emitUserRightUpdate(userId: number, deviceId: number) {
+        let deviceData = await deviceDb.getDevicebyId(deviceId);
+        let user = await userDB.getUserbyId(userId);
+        for (let userClient of this.userClients) {
+            if (userClient.userId !== user.id) continue;
+            // try {
+                // let isActive = this.isDeviceActive(deviceData.id)
+                // let deviceForUser = await userDB.getDeviceForUser(user, deviceData, isActive);
+                // if (!deviceForUser) {
+                //     let response: IDeviceForUserFailed = {
+                //         lostRightsToDevice: deviceId,
+                //     }
+                //     let message: IWSSMessageForUser = {
+                //         messageType: "lostRightsToDevice",
+                //         data: response,
+                //     }
+                    
+                //     userClient.basicConnection.connection.sendUTF(JSON.stringify(message));
+                // }
+                // else {
+                this.sendAllDataToUsers([user]);
+                // }
+            // } catch (e) {
+            //     console.log(e);
+            // }
         }
     }
 
-    isDeviceActive(deviceId: number): boolean {
+    async emitDeviceDeleted(users: IUser[], deviceId: number) {
+        await this.sendAllDataToUsers(users);
+    }
+    //</reasons to emit data>
+
+    //<single connection emit>
+    private async emitDeviceDataToConnection(userConnection: IWSSConnectionUser) {
+        let devices = await deviceDb.getTransformedDevices();
+        let user = await userDB.getUserbyId(userConnection.userId);
+        
+        let userData = JSON.stringify(await this.getAllDeviceDataMessageForUser(devices, user));
+        this.sendDataToUserConnection(userData, userConnection);
+    }
+    //<single connection emit>
+    
+
+    //<collect data>
+    private async getAllDeviceDataMessageForUser(allDeviceData: IDevice[], user: IUser): Promise<IWSSMessageForUser>{
+        let devices: IDeviceForUser[] = [];
+        for(let device of allDeviceData){
+       
+            let  isActive = this.isDeviceActive(device.id);
+            let deviceForUser = await userDB.getDeviceForUser(user, device, isActive);
+            if (deviceForUser){
+                devices.push(deviceForUser);
+            }
+        }
+        let message: IWSSMessageForUser = {
+            messageType: "deviceData",
+            data: devices,
+        }
+        return message;
+    }
+    //</collect data>
+
+
+    //<send>
+    private async sendAllDataToUsers(users: IUser[]){
+        let devices = await deviceDb.getTransformedDevices();
+        for(let user of users){
+            let userData = JSON.stringify(await this.getAllDeviceDataMessageForUser(devices, user));
+            
+            let userConnections = this.userClients.filter(o => o.userId === user.id)
+            for(let connection of userConnections){
+                this.sendDataToUserConnection(userData, connection);
+            }
+        }
+    }
+
+    private async sendDataToUserConnection(data: string, userConnection: IWSSConnectionUser, urgent?: boolean){
+        if(urgent){
+            userConnection.basicConnection.connection.sendUTF(data);
+        }else{
+            let currentTime = getCurrentTimeUNIX();
+            if(currentTime - userConnection.lastEmited > WSRouterSlowTapOverrideInterval){
+                //enough time has passed from some old emit to this connection
+                userConnection.basicConnection.connection.sendUTF(data);
+                userConnection.lastEmited = getCurrentTimeUNIX();
+            }
+            else{
+                let exists = !!this.deviceDataEmitQueue.find(o => o.basicConnection === userConnection.basicConnection );
+                if(!exists){
+                    this.deviceDataEmitQueue.push(userConnection);
+                }
+            }
+        }
+    }
+    //<send>
+
+    private isDeviceActive(deviceId: number): boolean {
         return !!this.deviceClients.find(o => o.deviceId == deviceId)
     }
+
+
+        // async logoutUserSession(token: string, reason: ELogoutReasons) {
+    //     let client = this.userClients.find(client => client.authToken === token);
+    //     let logoutReason: ILoggedReason = { logoutReason: reason };
+    //     client?.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
+    // }
 }

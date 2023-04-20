@@ -54,10 +54,9 @@ export interface IDeviceFieldBasicForUser {
     fieldValue: IDeviceFieldNumeric | IDeviceFieldText | IDeviceFieldButton | IDeviceFieldMultipleChoice | IDeviceFieldRGB,
     readOnly: boolean,
 }
-
 export interface IWSSMessageForUser {
     messageType: 'userMessage' | 'deviceData' | 'deviceDeleted' | 'lostRightsToDevice',
-    data: ILoggedReason | IDeviceForUser | IDeviceDeleted | IDeviceForUserFailed
+    data: ILoggedReason | IDeviceForUser[] | IDeviceDeleted | IDeviceForUserFailed
 }
 
 export interface ILoggedReason {

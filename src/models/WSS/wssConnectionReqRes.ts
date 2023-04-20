@@ -25,6 +25,7 @@ export interface IWSSConnectionUser {
     authToken: string,
     basicConnection: IWSSBasicConnection,
     frontendType: EFrontendType,
+    lastEmited: number,
 }
 
 export interface IWSSConnectionDevice {

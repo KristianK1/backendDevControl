@@ -64,7 +64,6 @@ export class DeviceDB {
     }
 
     transformDeviceData(device: IDevice) {
-        let unix1 = getCurrentTimeUNIX();
         let actualDeviceFieldGroups: IFieldGroup[] = [];
         Object.keys(device.deviceFieldGroups).forEach(key => {
             actualDeviceFieldGroups.push(this.transformDeviceFieldGroup(device, Number(key)));
@@ -75,7 +74,6 @@ export class DeviceDB {
             actualComplexGroups.push(this.transformComplexGroup(device, Number(key)));
         })
         device.deviceFieldComplexGroups = actualComplexGroups;
-        let unix2 = getCurrentTimeUNIX();
 
         return device;
     }
@@ -114,7 +112,6 @@ export class DeviceDB {
         let newDeviceGroups = deviceData.deviceFieldGroups;
         for (let oldGroup of oldDeviceGroups) {
             try {
-                console.log(oldGroup);
                 this.getDeviceFieldGroup(deviceData, oldGroup.id);
             } catch {
                 await this.deleteDeviceFieldGroup(deviceId, oldGroup.id);
@@ -199,7 +196,6 @@ export class DeviceDB {
 
             let oldComplexGroupStates = oldGroup.fieldGroupStates;
             let newComplexGroupStates = newGroup.fieldGroupStates;
-            // console.log('y9');
             for (let oldState of oldComplexGroupStates) {
                 try {
                     this.getComplexGroupState(newGroup, oldState.id);
@@ -256,7 +252,6 @@ export class DeviceDB {
                 }
             }
         }
-        // console.log('q1');
     }
 
     async renameDevice(id: number, deviceName: string) {
@@ -267,7 +262,6 @@ export class DeviceDB {
     }
 
     async deleteDevice(id: number) {
-        let device = await this.getDevicebyId(id);
         await this.firestore.deleteDocument(DeviceDB.devCollName, `${id}`);
         await deleteDeviceOnAllUsers(id);
     }
@@ -295,7 +289,6 @@ export class DeviceDB {
 
             let groupByKey: IFieldGroup = device.deviceFieldGroups[key];
             if (groupByKey.id === groupId) {
-                // console.log('nasao');
                 devGroup = groupByKey;
             }
         });
@@ -308,14 +301,9 @@ export class DeviceDB {
         actualGroup.groupName = devGroup.groupName;
         actualGroup.fields = [];
 
-        // console.log('c1');
-
         Object.keys(devGroup.fields).forEach(key => {
-            // console.log('devGroup.fields keys:' + key);
-
             actualGroup.fields.push(this.transformDeviceField(devGroup, Number(key)));
         });
-        // console.log('c99');
         return actualGroup;
     }
 
@@ -756,12 +744,10 @@ export class DeviceDB {
             ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
             ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
         ) {
-            console.log('RGB');
             console.log(fieldValue);
             await this.changeDeviceFieldValueInComplexGroupRGB(device.id, groupId, stateId, field.id, fieldValue);
         }
         else {
-            console.log('wrong');
             throw ({ message: 'Wrong field data type' });
         }
     }

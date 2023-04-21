@@ -11,7 +11,6 @@ import { getDeviceById } from '../../firestoreDB/userDBdeviceDBbridge';
 import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from 'models/frontendModels';
 import { EmailService, emailServiceSingletonFactory } from '../../emailService/emailService';
 import { IEmailConfirmationData } from 'emailService/emailModels';
-import { serverLink } from '../../serverData'
 var userDBObj: UsersDB;
 
 export function createUserDBInstance() {

@@ -27,7 +27,7 @@ export class EmailService{
     private server: string; //= serverLink || process.env.serverLink;
 
     constructor(){
-      this.myHiddenEmail = process.env.emailService_emailemailService_email || require("../emailService/emailKey_email.ts");
+      this.myHiddenEmail = process.env.emailService_email || require("../emailService/emailKey_email.ts");
       this.myHiddenEmailPassword = process.env.emailService_password || require("../emailService/emailKey_password.ts");
       this.server = process.env.serverLink || require("../serverData.ts");
     }

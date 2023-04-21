@@ -1,8 +1,5 @@
 var nodemailer = require('nodemailer');
-import { emailService_email, emailService_password } from './emailKeys';
-import { v4 as uuid } from 'uuid';
 import { IEmailData } from './emailModels';
-import { serverLink } from '../serverData';
 import { emailConfirmationPath } from './emailPaths';
 
 export const emailServiceSingletonFactory = (function () {
@@ -25,10 +22,15 @@ export const emailServiceSingletonFactory = (function () {
 
 
 export class EmailService{
-    
-    private myHiddenEmail = emailService_email || process.env.emailService_email;
-    private myHiddenEmailPassword = emailService_password || process.env.emailService_password;
-    private server = serverLink || process.env.serverLink;
+    private myHiddenEmail: string;
+    private myHiddenEmailPassword: string;
+    private server: string; //= serverLink || process.env.serverLink;
+
+    constructor(){
+      this.myHiddenEmail = process.env.emailService_emailemailService_email || require("../emailService/emailKey_email.ts");
+      this.myHiddenEmailPassword = process.env.emailService_password || require("../emailService/emailKey_password.ts");
+      this.server = process.env.serverLink || require("../serverData.ts");
+    }
 
     async sendRegistrationEmail(username: String, email: String, hashCode: String){
       let emailData = this.getRegistrationEmail(username, email, hashCode);

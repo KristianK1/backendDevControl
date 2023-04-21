@@ -35,10 +35,28 @@ export class EmailService{
       await this.sendEmail(emailData);
     }
 
+    async sendAddEmailEmail(username: String, email: String, hashCode: String){
+      let emailData = this.getAddEmailEmail(username, email, hashCode);
+      await this.sendEmail(emailData);
+    }
+
     private getRegistrationEmail(username: String, email: String, hashCode: String): IEmailData{
       let link = this.server + emailConfirmationPath + "/" + hashCode;
 
-      let payload: String = `<h2>Dear ${username},</h2>\nThank you for registrating to devControl platform.\nPlease confirm your e-mail address by visiting this link: <h3>${link}</h3>`;
+      let payload: String = `Dear ${username},\nThank you for registrating to devControl platform.\nPlease confirm your e-mail address by visiting this link: ${link}`;
+      
+      let data: IEmailData = {
+        reciver: email,
+        title: 'Please confirm your e-mail address',
+        payload: payload,
+      }
+      return data;
+    }
+
+    private getAddEmailEmail(username: String, email: String, hashCode: String): IEmailData{
+      let link = this.server + emailConfirmationPath + "/" + hashCode;
+
+      let payload: String = `Hello,\nYour email address has been entered to the devControl platform under the username \'${username}\'.\nPlease confirm your e-mail address by visiting this link: ${link}`;
       
       let data: IEmailData = {
         reciver: email,

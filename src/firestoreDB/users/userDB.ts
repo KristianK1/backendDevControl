@@ -125,6 +125,9 @@ export class UsersDB {
         var users = await this.getUsers();
         var sameNameUser = users.find(user => user.username === username);
         if (sameNameUser) throw ({ message: 'User with same name exists' });
+        
+        let sameEmailUser = users.find(user => user.email === email);
+        if(sameEmailUser) throw ({ message: 'User with same email exists' });
         var maxIDdoc = await this.getMaxIds.getMaxUserId(true);
 
         var newUser: IUser = {
@@ -137,7 +140,7 @@ export class UsersDB {
         }
 
         if(email !== ""){
-            await this.sendEmailConfirmation(newUser.id, newUser.username, email);
+            await this.sendEmailConfirmation_registration(newUser.id, newUser.username, email);
         }
 
         await this.firestore.setDocumentValue(UsersDB.usersCollName, `${newUser.id}`, newUser);
@@ -788,7 +791,7 @@ export class UsersDB {
         return result;
     }
     
-    private async sendEmailConfirmation(id: number, username: String, email: string) {
+    private async sendEmailConfirmation_registration(id: number, username: String, email: string) {
         let hashCode = uuid();
         await this.emailService.sendRegistrationEmail(username, email, hashCode);
 
@@ -800,23 +803,51 @@ export class UsersDB {
         await this.firestore.setDocumentValue(UsersDB.emailConfirmationsCollName, hashCode, emailConfirmationData);        
     }
 
+    async sendEmailConfirmation_addEmail(id: number, username: String, email: string) {
+        let hashCode = uuid();
+        await this.emailService.sendRegistrationEmail(username, email, hashCode);
+
+        let emailConfirmationData: IEmailConfirmationData = {
+            userId: id,
+            hashCode: hashCode,
+            email: email,
+        }
+        let confirmations: IEmailConfirmationData[] = await this.firestore.getCollectionData(UsersDB.emailConfirmationsCollName);
+        for(let confirmation of confirmations){
+            if(confirmation.email === email){
+                await this.firestore.deleteDocument(UsersDB.emailConfirmationsCollName, confirmation.hashCode);
+            }
+        }
+        await this.firestore.setDocumentValue(UsersDB.emailConfirmationsCollName, hashCode, emailConfirmationData);   
+    }
+
     async confirmEmail(hashCode: string){
         let data: IEmailConfirmationData[] = await this.firestore.getCollectionData(UsersDB.emailConfirmationsCollName);
         console.log(data);
 
         let findCode = data.find(o => o.hashCode === hashCode);
         if(findCode){
+
+            let users = await this.getUsers();
+            let sameEmailUser = users.find(user => user.email === findCode?.email);
+            if(sameEmailUser) throw({message: 'Email was already confirmed for a different user'});
+
             if(await this.getUserbyId(findCode.userId)){
                 await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${findCode.userId}`, { email: findCode.email });
-                await this.firestore.deleteDocument(UsersDB.emailConfirmationsCollName, findCode.hashCode);    
+                await this.firestore.deleteDocument(UsersDB.emailConfirmationsCollName, findCode.hashCode);
+
+                for(let confirmation of data){
+                    if(confirmation.email === findCode.email){
+                        await this.firestore.deleteDocument(UsersDB.emailConfirmationsCollName, confirmation.hashCode);
+                    }
+                }
             }
             else{
                 throw({message: 'User doesn\'t exist'});
             }
         }
         else{
-            throw({message: ''});
-
+            throw({message: 'Invalid email confirmation code'});
         }
     }
 }

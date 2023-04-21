@@ -76,7 +76,7 @@ export class Server {
             catch (e) {
                 console.log(e.message);
                 res.status(200);
-                res.send('Error at confirming email.');
+                res.send('Error at confirming email. ' + e.message);
             }
 
             res.status(200);

@@ -48,3 +48,8 @@ export interface IFrontendUser {
     id: number,
     username: string,
 }
+
+export interface IAddEmailRequest {
+    authToken: string,
+    email: string,
+}

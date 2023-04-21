@@ -1,9 +1,11 @@
 // import * as BodyParser from 'body-parser';
 import * as Express from 'express';
-import { firestoreSingletonFactory } from './firestoreDB/singletonService';
+import { firestoreSingletonFactory, usersDBSingletonFactory } from './firestoreDB/singletonService';
 import { server as webSocketServer } from 'websocket';
 import { MyWebSocketServer } from './WSRouters/WSRouter';
 import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
+import { emailServiceSingletonFactory } from './emailService/emailService';
+import { emailConfirmationPath } from '../src/emailService/emailPaths';
 let http = require('http');
 let cors = require('cors');
 
@@ -25,6 +27,7 @@ export class Server {
         this.setupRoutes();
         this.setupWSS();
         this.startServer();
+        this.startEmailService();
         // this.startTimeout();
     }
 
@@ -59,6 +62,27 @@ export class Server {
             res.send('update');
         });
 
+        this.app.get('/emailTest', (req: any, res: any) => {
+            console.log("emailSendTest");
+            // emailServiceSingletonFactory.getInstance().sendEmail("devControlService@gmail.com", [], [], "Thank you for mentioning us", "We hope you are doing great.");
+            res.sendStatus(200);
+        });
+
+        this.app.get(emailConfirmationPath + "/:hashCode", async (req: any, res: any) => {
+            // res.send(req.params.hashCode);
+            try{
+                await usersDBSingletonFactory.getInstance().confirmEmail(req.params.hashCode);
+            }
+            catch (e) {
+                console.log(e.message);
+                res.status(200);
+                res.send('Error at confirming email. ' + e.message);
+            }
+
+            res.status(200);
+            res.send("Email has been confirmed.");
+        });
+
         var mainRouter = require('./expressRouters/expressRouter.ts');
         this.app.use('/API', mainRouter);
     }
@@ -79,5 +103,9 @@ export class Server {
         const timeout = setInterval(() => {
             let x = 3;
         }, 5 * 1000);
+    }
+
+    startEmailService(){
+        emailServiceSingletonFactory.getInstance();
     }
 }

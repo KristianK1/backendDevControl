@@ -1,5 +1,5 @@
 export interface ILoginRequest {
-    username: string,
+    username: string, //or email
     password: string,
 }
 
@@ -47,4 +47,9 @@ export interface IGetUsersResponse {
 export interface IFrontendUser {
     id: number,
     username: string,
+}
+
+export interface IAddEmailRequest {
+    authToken: string,
+    email: string,
 }

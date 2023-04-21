@@ -21,6 +21,11 @@ router.use('/changePassword', changePasswordRouter);
 var getUsersRouter = require('./subrouter/getUserListRouter.ts');
 router.use('/getUsers', getUsersRouter);
 
+var addEmailRouter = require('./subrouter/addEmailRouter.ts');
+router.use('/addEmail', addEmailRouter);
+
+
+
 var usersDB = usersDBSingletonFactory.getInstance();
 router.get('/:id', async (req: any, res: any) => {
     let id = req.params.id;

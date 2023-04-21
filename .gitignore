@@ -2,3 +2,5 @@
 firebaseKey.json
 src/emailService/emailKeys.ts
 src/serverData.ts
+src/emailService/emailKey_email.ts
+src/emailService/emailKey_password.ts

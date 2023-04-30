@@ -6,6 +6,7 @@ import { MyWebSocketServer } from './WSRouters/WSRouter';
 import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
 import { emailServiceSingletonFactory } from './emailService/emailService';
 import { emailConfirmationPath } from '../src/emailService/emailPaths';
+import * as path from 'path';
 let http = require('http');
 let cors = require('cors');
 
@@ -41,6 +42,8 @@ export class Server {
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.use(bodyParser.json());
         this.app.use(cors());
+        this.app.set('view engine', 'ejs');
+        this.app.set('views', path.join(__dirname, '/views'));
     }
 
     setupRoutes() {
@@ -77,10 +80,15 @@ export class Server {
                 console.log(e.message);
                 res.status(200);
                 res.send('Error at confirming email. ' + e.message);
+                return;
             }
 
             res.status(200);
             res.send("Email has been confirmed.");
+        });
+
+        this.app.get("/forgotPassword", (req: any,res: any) => {
+            res.render("forgotPassword");
         });
 
         var mainRouter = require('./expressRouters/expressRouter.ts');

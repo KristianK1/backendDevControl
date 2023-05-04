@@ -7,6 +7,8 @@ import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
 import { emailServiceSingletonFactory } from './emailService/emailService';
 import { emailConfirmationPath } from '../src/emailService/emailPaths';
 import * as path from 'path';
+import { IEmailConfirmationData } from 'emailService/emailModels';
+import { IUser } from 'models/basicModels';
 let http = require('http');
 let cors = require('cors');
 
@@ -57,14 +59,6 @@ export class Server {
             res.send('dummy');
         });
 
-        this.app.get('/update', (req: any, res: any) => {
-            console.log('request:/update');
-            firestoreSingletonFactory.getInstance().updateDocumentValue('proba', 'Kristian', {
-                [`deviceFieldComplexGroups.${7}.fieldGroupStates.${4}.hello2`]: "JA SAM3"
-            });
-            res.send('update');
-        });
-
         this.app.get('/emailTest', (req: any, res: any) => {
             console.log("emailSendTest");
             // emailServiceSingletonFactory.getInstance().sendEmail("devControlService@gmail.com", [], [], "Thank you for mentioning us", "We hope you are doing great.");
@@ -73,8 +67,12 @@ export class Server {
 
         this.app.get(emailConfirmationPath + "/:hashCode", async (req: any, res: any) => {
             // res.send(req.params.hashCode);
+
+            let data: IEmailConfirmationData;
+            let user: IUser;
             try{
-                await usersDBSingletonFactory.getInstance().confirmEmail(req.params.hashCode);
+                data = await usersDBSingletonFactory.getInstance().getEmailConfirmationData(req.params.hashCode);
+                user = await usersDBSingletonFactory.getInstance().getUserbyId(data.userId);
             }
             catch (e) {
                 console.log(e.message);
@@ -83,8 +81,10 @@ export class Server {
                 return;
             }
 
-            res.status(200);
-            res.send("Email has been confirmed.");
+            res.render('confirmEmail', {email: data.email, username: user.username, submitF: function() {
+                console.log("onClick worked")
+                usersDBSingletonFactory.getInstance().confirmEmail(data.hashCode);
+            }});
         });
 
         this.app.get("/forgotPassword", (req: any,res: any) => {

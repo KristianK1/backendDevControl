@@ -126,6 +126,7 @@ export class UsersDB {
         if (sameNameUser) throw ({ message: 'User with same name exists' });
         
         let sameEmailUser = users.find(user => user.email === email);
+        console.log(sameEmailUser);
         if(sameEmailUser) throw ({ message: 'User with same email exists' });
         var maxIDdoc = await this.getMaxIds.getMaxUserId(true);
 
@@ -818,6 +819,13 @@ export class UsersDB {
             }
         }
         await this.firestore.setDocumentValue(UsersDB.emailConfirmationsCollName, hashCode, emailConfirmationData);   
+    }
+
+    async getEmailConfirmationData(hashCode: string): Promise<IEmailConfirmationData>{
+        let data: IEmailConfirmationData[] = await this.firestore.getCollectionData(UsersDB.emailConfirmationsCollName);
+        let findCode = data.find(o => o.hashCode === hashCode);
+        if(findCode) return findCode;
+        throw {message: 'Can\'t find email confirmation'};
     }
 
     async confirmEmail(hashCode: string){

@@ -12,6 +12,7 @@ import { IUser } from 'models/basicModels';
 let http = require('http');
 let cors = require('cors');
 
+let emailRouter = require('./expressRouters/email/emailRouter.ts');
 
 export class Server {
 
@@ -59,37 +60,7 @@ export class Server {
             res.send('dummy');
         });
 
-        this.app.get('/emailTest', (req: any, res: any) => {
-            console.log("emailSendTest");
-            // emailServiceSingletonFactory.getInstance().sendEmail("devControlService@gmail.com", [], [], "Thank you for mentioning us", "We hope you are doing great.");
-            res.sendStatus(200);
-        });
-
-        this.app.get(emailConfirmationPath + "/:hashCode", async (req: any, res: any) => {
-            // res.send(req.params.hashCode);
-
-            let data: IEmailConfirmationData;
-            let user: IUser;
-            try{
-                data = await usersDBSingletonFactory.getInstance().getEmailConfirmationData(req.params.hashCode);
-                user = await usersDBSingletonFactory.getInstance().getUserbyId(data.userId);
-            }
-            catch (e) {
-                console.log(e.message);
-                res.status(200);
-                res.send('Error at confirming email. ' + e.message);
-                return;
-            }
-
-            res.render('confirmEmail', {email: data.email, username: user.username, submitF: function() {
-                console.log("onClick worked")
-                usersDBSingletonFactory.getInstance().confirmEmail(data.hashCode);
-            }});
-        });
-
-        this.app.get("/forgotPassword", (req: any,res: any) => {
-            res.render("forgotPassword");
-        });
+        this.app.use('/email', emailRouter)
 
         var mainRouter = require('./expressRouters/expressRouter.ts');
         this.app.use('/API', mainRouter);

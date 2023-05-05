@@ -1,5 +1,6 @@
+import { Hash } from "crypto";
 import { IEmailConfirmationData } from "../../emailService/emailModels";
-import { emailConfirmationPath } from "../../emailService/emailPaths";
+import { emailConfirmationPath, emailConfirmation_formHandlerPath } from "../../emailService/emailPaths";
 import { usersDBSingletonFactory } from "../../firestoreDB/singletonService";
 import { IUser } from "models/basicModels";
 
@@ -13,12 +14,28 @@ router.get('/emailTest', (req: any, res: any) => {
 });
 
 
+router.post(emailConfirmation_formHandlerPath + "/:hashCode", async (req: any, res: any) => {
+    console.log("tu saaaaaaaaaam");
+    console.log(req.params.hashCode);
+    try {
+         await usersDBSingletonFactory.getInstance().confirmEmail(req.params.hashCode);
+         res.render("emailConfirmed");
+    }
+    catch (e) {
+        console.log(e.message);
+        res.status(200);
+        res.send('Error at confirming email. ' + e.message);
+        return;
+    }
+});
+
+
 router.get(emailConfirmationPath + "/:hashCode", async (req: any, res: any) => {
     // res.send(req.params.hashCode);
 
     let data: IEmailConfirmationData;
     let user: IUser;
-    try{
+    try {
         data = await usersDBSingletonFactory.getInstance().getEmailConfirmationData(req.params.hashCode);
         user = await usersDBSingletonFactory.getInstance().getUserbyId(data.userId);
     }
@@ -29,13 +46,14 @@ router.get(emailConfirmationPath + "/:hashCode", async (req: any, res: any) => {
         return;
     }
 
-    res.render('confirmEmail', {email: data.email, username: user.username, submitF: function() {
-        console.log("onClick worked")
-        usersDBSingletonFactory.getInstance().confirmEmail(data.hashCode);
-    }});
+    res.render('confirmEmail', {
+        email: data.email,
+        username: user.username,
+        formHandlerPath: "../../email" + emailConfirmation_formHandlerPath + "/" + data.hashCode
+    });
 });
 
-router.get("/forgotPassword", (req: any,res: any) => {
+router.get("/forgotPassword", (req: any, res: any) => {
     res.render("forgotPassword");
 });
 

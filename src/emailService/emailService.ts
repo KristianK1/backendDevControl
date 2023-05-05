@@ -1,6 +1,9 @@
 var nodemailer = require('nodemailer');
 import { IEmailData } from './emailModels';
 import { emailConfirmationPath } from './emailPaths';
+import { secretEmail } from './emailKey_email';
+import { secretPassword } from './emailKey_password';
+import { serverLink } from '../serverData';
 
 export const emailServiceSingletonFactory = (function () {
     var emailServiceInstance: EmailService;
@@ -27,9 +30,11 @@ export class EmailService{
     private server: string; //= serverLink || process.env.serverLink;
 
     constructor(){
-      this.myHiddenEmail = process.env.emailService_email || require("../emailService/emailKey_email.ts");
-      this.myHiddenEmailPassword = process.env.emailService_password || require("../emailService/emailKey_password.ts");
-      this.server = process.env.serverLink || require("../serverData.ts");
+      this.myHiddenEmail = process.env.emailService_email || secretEmail;
+      this.myHiddenEmailPassword = process.env.emailService_password || secretPassword;
+      this.server = process.env.serverLink || serverLink;
+      console.log(require("../emailService/emailKey_email"));
+      
     }
 
     async sendRegistrationEmail(username: String, email: String, hashCode: String){
@@ -43,7 +48,7 @@ export class EmailService{
     }
 
     private getRegistrationEmail(username: String, email: String, hashCode: String): IEmailData{
-      let link = this.server + emailConfirmationPath + "/" + hashCode;
+      let link = this.server + "/email" + emailConfirmationPath + "/" + hashCode;
 
       let payload: String = `Dear ${username},\nThank you for registrating to devControl platform.\nPlease confirm your e-mail address by visiting this link: ${link}`;
       
@@ -69,6 +74,8 @@ export class EmailService{
     }
 
     private async sendEmail(data: IEmailData){
+      console.log("dataaa");
+      
       console.log(this.myHiddenEmail);
       console.log(this.myHiddenEmailPassword);
       

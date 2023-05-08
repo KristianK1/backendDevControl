@@ -19,13 +19,11 @@ router.post(emailConfirmation_formHandlerPath + "/:hashCode", async (req: any, r
     console.log(req.params.hashCode);
     try {
          await usersDBSingletonFactory.getInstance().confirmEmail(req.params.hashCode);
-         res.render("emailConfirmed");
+         res.render("successConfirmingEmail");
     }
     catch (e) {
         console.log(e.message);
-        res.status(200);
-        res.send('Error at confirming email. ' + e.message);
-        return;
+        res.render('errorConfirmingEmail');
     }
 });
 
@@ -41,8 +39,7 @@ router.get(emailConfirmationPath + "/:hashCode", async (req: any, res: any) => {
     }
     catch (e) {
         console.log(e.message);
-        res.status(200);
-        res.send('Error at confirming email. ' + e.message);
+        res.render('errorConfirmingEmail');
         return;
     }
 

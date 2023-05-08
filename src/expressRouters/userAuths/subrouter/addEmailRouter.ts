@@ -30,7 +30,7 @@ router.post('/', async (req: any, res: any) => {
 
     if(user.email !== ""){
         res.status(400);
-        res.send('Email exist\'s for the user');
+        res.send('User already has an email address.');
         return;
     }
 

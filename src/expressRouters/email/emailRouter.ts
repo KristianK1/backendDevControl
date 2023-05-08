@@ -1,6 +1,6 @@
 import { Hash } from "crypto";
 import { IEmailConfirmationData } from "../../emailService/emailModels";
-import { emailConfirmationPath, emailConfirmation_formHandlerPath } from "../../emailService/emailPaths";
+import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath, emailConfirmation_formHandlerPath } from "../../emailService/emailPaths";
 import { usersDBSingletonFactory } from "../../firestoreDB/singletonService";
 import { IUser } from "models/basicModels";
 
@@ -28,7 +28,29 @@ router.post(emailConfirmation_formHandlerPath + "/:hashCode", async (req: any, r
 });
 
 
-router.get(emailConfirmationPath + "/:hashCode", async (req: any, res: any) => {
+router.get(emailConfirmationRegisterPath + "/:hashCode", async (req: any, res: any) => {
+    // res.send(req.params.hashCode);
+
+    let data: IEmailConfirmationData;
+    let user: IUser;
+    try {
+        data = await usersDBSingletonFactory.getInstance().getEmailConfirmationData(req.params.hashCode);
+        user = await usersDBSingletonFactory.getInstance().getUserbyId(data.userId);
+    }
+    catch (e) {
+        console.log(e.message);
+        res.render('errorConfirmingEmail');
+        return;
+    }
+
+    res.render('confirmEmail', {
+        email: data.email,
+        username: user.username,
+        formHandlerPath: "../../email" + emailConfirmation_formHandlerPath + "/" + data.hashCode
+    });
+});
+
+router.get(emailConfirmationAddEmailPath + "/:hashCode", async (req: any, res: any) => {
     // res.send(req.params.hashCode);
 
     let data: IEmailConfirmationData;

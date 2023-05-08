@@ -1,9 +1,9 @@
 var nodemailer = require('nodemailer');
 import { IEmailData } from './emailModels';
-import { emailConfirmationPath } from './emailPaths';
 import { secretEmail } from './emailKey_email';
 import { secretPassword } from './emailKey_password';
 import { serverLink } from '../serverData';
+import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath } from './emailPaths';
 
 export const emailServiceSingletonFactory = (function () {
     var emailServiceInstance: EmailService;
@@ -48,7 +48,7 @@ export class EmailService{
     }
 
     private getRegistrationEmail(username: String, email: String, hashCode: String): IEmailData{
-      let link = this.server + "/email" + emailConfirmationPath + "/" + hashCode;
+      let link = this.server + "/email" + emailConfirmationRegisterPath + "/" + hashCode;
 
       let payload: String = `Dear ${username},\nThank you for registrating to devControl platform.\nPlease confirm your e-mail address by visiting this link: ${link}`;
       
@@ -61,7 +61,7 @@ export class EmailService{
     }
 
     private getAddEmailEmail(username: String, email: String, hashCode: String): IEmailData{
-      let link = this.server + emailConfirmationPath + "/" + hashCode;
+      let link = this.server + "/email" + emailConfirmationAddEmailPath + "/" + hashCode;
 
       let payload: String = `Hello,\nYour email address has been entered to the devControl platform under the username \'${username}\'.\nPlease confirm your e-mail address by visiting this link: ${link}`;
       

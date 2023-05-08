@@ -125,10 +125,12 @@ export class UsersDB {
         var sameNameUser = users.find(user => user.username === username);
         if (sameNameUser) throw ({ message: 'User with same name exists' });
         
-        let sameEmailUser = users.find(user => user.email === email);
-        console.log(sameEmailUser);
-        if(sameEmailUser) throw ({ message: 'User with same email exists' });
-        var maxIDdoc = await this.getMaxIds.getMaxUserId(true);
+        if(email){
+            let sameEmailUser = users.find(user => user.email === email);
+            console.log(sameEmailUser);
+            if(sameEmailUser) throw ({ message: 'User with same email exists' });
+        }
+    var maxIDdoc = await this.getMaxIds.getMaxUserId(true);
 
         var newUser: IUser = {
             id: maxIDdoc + 1,
@@ -805,7 +807,7 @@ export class UsersDB {
 
     async sendEmailConfirmation_addEmail(id: number, username: String, email: string) {
         let hashCode = uuid();
-        await this.emailService.sendRegistrationEmail(username, email, hashCode);
+        await this.emailService.sendAddEmailEmail(username, email, hashCode);
 
         let emailConfirmationData: IEmailConfirmationData = {
             userId: id,

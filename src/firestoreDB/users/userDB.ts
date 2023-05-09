@@ -99,6 +99,20 @@ export class UsersDB {
         return user;
     }
 
+    async getUserbyEmail(email: string): Promise<IUser> {
+        let users: IUser[] = await this.getUsers();
+        let user = users.find(user => user.email === email);
+        if (!user) throw ({ message: 'User doesn\'t exist' });
+        return user;
+    }
+
+    async getUserbyName(username: string): Promise<IUser> {
+        let users: IUser[] = await this.getUsers();
+        let user = users.find(user => user.username === username);
+        if (!user) throw ({ message: 'User doesn\'t exist' });
+        return user;
+    }
+
     async removeToken(token: string) {
         let authTokenDB: IAuthToken = await this.firestore.getDocumentData(UsersDB.authTokenCollName, token);
         if (!authTokenDB) {

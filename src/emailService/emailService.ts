@@ -73,6 +73,10 @@ export class EmailService{
       return data;
     }
 
+    private getForgotPasswordEmail(username: String, email: String, hashCode: String){
+      
+    }
+
     private async sendEmail(data: IEmailData){
       console.log("dataaa");
       

@@ -3,6 +3,9 @@ import { IEmailConfirmationData } from "../../emailService/emailModels";
 import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath, emailConfirmation_formHandlerPath } from "../../emailService/emailPaths";
 import { usersDBSingletonFactory } from "../../firestoreDB/singletonService";
 import { IUser } from "models/basicModels";
+import { validate } from "uuid";
+
+var validator = require("email-validator");
 
 var express = require('express');
 var router = express.Router();
@@ -18,8 +21,8 @@ router.post(emailConfirmation_formHandlerPath + "/:hashCode", async (req: any, r
     console.log("tu saaaaaaaaaam");
     console.log(req.params.hashCode);
     try {
-         await usersDBSingletonFactory.getInstance().confirmEmail(req.params.hashCode);
-         res.render("successConfirmingEmail");
+        await usersDBSingletonFactory.getInstance().confirmEmail(req.params.hashCode);
+        res.render("successConfirmingEmail");
     }
     catch (e) {
         console.log(e.message);
@@ -74,6 +77,35 @@ router.get(emailConfirmationAddEmailPath + "/:hashCode", async (req: any, res: a
 
 router.get("/forgotPassword", (req: any, res: any) => {
     res.render("forgotPassword");
+});
+
+router.post("/forgotPasswordForm", async (req: any, res: any) => {
+    let emailORpassword = req.body.emailORpassword;
+    console.log(emailORpassword);
+
+    let user: IUser;
+    let emailTyped = validator.validate(emailORpassword) 
+    if (emailTyped) {
+        try {
+            console.log("email");
+            user = await usersDBSingletonFactory.getInstance().getUserbyEmail(emailORpassword);
+        } catch (e) {
+            console.log(e.message);
+            res.render('fp_wrongEmail');
+            return;
+        }
+    } else {
+        try {
+            console.log("not email");
+            user = await usersDBSingletonFactory.getInstance().getUserbyName(emailORpassword);
+        } catch (e) {
+            console.log(e.message);
+            res.render('fp_wrongUsername');
+            return;
+        }
+    }
+
+    
 });
 
 module.exports = router;

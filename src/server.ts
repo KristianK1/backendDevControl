@@ -5,7 +5,6 @@ import { server as webSocketServer } from 'websocket';
 import { MyWebSocketServer } from './WSRouters/WSRouter';
 import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
 import { emailServiceSingletonFactory } from './emailService/emailService';
-import { emailConfirmationPath } from '../src/emailService/emailPaths';
 import * as path from 'path';
 import { IEmailConfirmationData } from 'emailService/emailModels';
 import { IUser } from 'models/basicModels';

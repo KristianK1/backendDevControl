@@ -3,7 +3,7 @@ import { IEmailData } from './emailModels';
 import { secretEmail } from './emailKey_email';
 import { secretPassword } from './emailKey_password';
 import { serverLink } from '../serverData';
-import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath } from './emailPaths';
+import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath, setupNewPasswordPath } from './emailPaths';
 
 export const emailServiceSingletonFactory = (function () {
     var emailServiceInstance: EmailService;
@@ -47,6 +47,11 @@ export class EmailService{
       await this.sendEmail(emailData);
     }
 
+    async sendForgotPasswordEmail(username: string, email: string, hashCode: string){
+      let emailData = this.getForgotPasswordEmail(username, email, hashCode);
+      await this.sendEmail(emailData);
+    }
+
     private getRegistrationEmail(username: String, email: String, hashCode: String): IEmailData{
       let link = this.server + "/email" + emailConfirmationRegisterPath + "/" + hashCode;
 
@@ -74,7 +79,16 @@ export class EmailService{
     }
 
     private getForgotPasswordEmail(username: String, email: String, hashCode: String){
+      let link = this.server + "/email" + setupNewPasswordPath + "/" + hashCode;
       
+      let payload: String = `Hello, ${username}\nYou have requested to change the password for the devControl platform.\nBy clicking the link below you will be asked to enter the new password.\nIf you haven't requested to reset the password ignore the link below and contact the system administrator at kristiankliskovic@gmail.com\n\n${link}`;
+
+      let data: IEmailData = {
+        reciver: email,
+        title: 'Password reset',
+        payload: payload,
+      }
+      return data;
     }
 
     private async sendEmail(data: IEmailData){

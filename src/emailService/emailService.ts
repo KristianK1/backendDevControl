@@ -33,15 +33,15 @@ export class EmailService{
       var serverLink: string = "";
       
       try{
-        secretEmail = require('./emailKey_email');
-
+        secretEmail = require('./emailKey_email').secretEmail;
+        secretPassword = require('./emailKey_password').secretPassword;
+        serverLink = require('../serverData').serverLink;
       }catch(e){
 
       }
       this.myHiddenEmail = process.env.emailService_email || secretEmail;
       this.myHiddenEmailPassword = process.env.emailService_password || secretPassword;
       this.server = process.env.serverLink || serverLink;
-      
     }
 
     async sendRegistrationEmail(username: String, email: String, hashCode: String){

@@ -33,6 +33,7 @@ router.post('/token', async (req: any, res: any) => {
         loginResponse.username = user.username;
         loginResponse.id = user.id;
         loginResponse.authToken = loginReq.authToken;
+        loginResponse.email = user.email;
     } catch (e) {
         res.status(400);
         res.send(e.message);

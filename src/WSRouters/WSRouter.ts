@@ -334,6 +334,10 @@ export class MyWebSocketServer {
         }
     }
 
+    private async sendUserDataToUser(user: IUser[]){
+        
+    }
+
     private async sendDataToUserConnection(data: string, userConnection: IWSSConnectionUser, urgent?: boolean){
         if(urgent){
             userConnection.basicConnection.connection.sendUTF(data);

@@ -41,7 +41,6 @@ export class EmailService{
       this.myHiddenEmail = process.env.emailService_email || secretEmail;
       this.myHiddenEmailPassword = process.env.emailService_password || secretPassword;
       this.server = process.env.serverLink || serverLink;
-      console.log(require("../emailService/emailKey_email"));
       
     }
 

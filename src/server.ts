@@ -5,10 +5,13 @@ import { server as webSocketServer } from 'websocket';
 import { MyWebSocketServer } from './WSRouters/WSRouter';
 import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
 import { emailServiceSingletonFactory } from './emailService/emailService';
-import { emailConfirmationPath } from '../src/emailService/emailPaths';
+import * as path from 'path';
+import { IEmailConfirmationData } from 'emailService/emailModels';
+import { IUser } from 'models/basicModels';
 let http = require('http');
 let cors = require('cors');
 
+let emailRouter = require('./expressRouters/email/emailRouter.ts');
 
 export class Server {
 
@@ -41,6 +44,8 @@ export class Server {
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.use(bodyParser.json());
         this.app.use(cors());
+        this.app.set('view engine', 'ejs');
+        this.app.set('views', path.join(__dirname, '/views'));
     }
 
     setupRoutes() {
@@ -54,34 +59,7 @@ export class Server {
             res.send('dummy');
         });
 
-        this.app.get('/update', (req: any, res: any) => {
-            console.log('request:/update');
-            firestoreSingletonFactory.getInstance().updateDocumentValue('proba', 'Kristian', {
-                [`deviceFieldComplexGroups.${7}.fieldGroupStates.${4}.hello2`]: "JA SAM3"
-            });
-            res.send('update');
-        });
-
-        this.app.get('/emailTest', (req: any, res: any) => {
-            console.log("emailSendTest");
-            // emailServiceSingletonFactory.getInstance().sendEmail("devControlService@gmail.com", [], [], "Thank you for mentioning us", "We hope you are doing great.");
-            res.sendStatus(200);
-        });
-
-        this.app.get(emailConfirmationPath + "/:hashCode", async (req: any, res: any) => {
-            // res.send(req.params.hashCode);
-            try{
-                await usersDBSingletonFactory.getInstance().confirmEmail(req.params.hashCode);
-            }
-            catch (e) {
-                console.log(e.message);
-                res.status(200);
-                res.send('Error at confirming email. ' + e.message);
-            }
-
-            res.status(200);
-            res.send("Email has been confirmed.");
-        });
+        this.app.use('/email', emailRouter)
 
         var mainRouter = require('./expressRouters/expressRouter.ts');
         this.app.use('/API', mainRouter);

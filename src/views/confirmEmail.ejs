@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>devControl - Confirm email form</title>
+</head>
+
+<style>
+  .mainDiv {
+    display: flex;
+    /* height: 100vh;
+    width: 100vw; */
+    align-items: center;
+    justify-content: center;
+    background-color: #f9f9f9;
+    font-family: 'Open Sans', sans-serif;
+  }
+
+  .cardStyle {
+    width: 100%;
+    max-width: 1000px;
+    height: 100%;
+    max-height: 1500px;
+    border-color: white;
+    background: #fff;
+    padding: 36px 0;
+    border-radius: 4px;
+    margin: 30px 0;
+    box-shadow: 0px 0 2px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  .formTitle {
+    font-size: 50px;
+    margin-top: 20px;
+    color: #2F2D3B;
+    text-align: center;
+  }
+
+  .formSubTitle{
+    font-size: 30px;
+    margin-top: 20px;
+    color: #2F2D3B;
+    text-align: center;
+  }
+
+  .inputDiv {
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    margin-top: 15px;
+    margin-bottom: 15px;
+  }
+
+  .inputLabel {
+    font-size: 30px;
+    color: #555;
+    height: 40%;
+    margin-bottom: 6px;
+    margin-top: 10px;
+  }
+
+  input {
+    height: 60px;
+    font-size: 40px;
+    border-radius: 4px;
+    border: none;
+    border: solid 1px #ccc;
+    padding: 0 11px;
+  }
+
+  input:disabled {
+    cursor: not-allowed;
+    border: solid 1px #eee;
+  }
+
+  .buttonWrapper {
+    margin-top: 40px;
+  }
+
+  .submitButton {
+    width: 40%;
+    height: 40px;
+    margin: auto;
+    display: block;
+    color: #fff;
+    background-color: #065492;
+    border-color: #065492;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.035);
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+</style>
+
+<body>
+  <div class="mainDiv">
+    <div class="cardStyle">
+      <form action=<%=formHandlerPath%> method="POST" name="signupForm" id="signupForm">
+        
+        <h1 class="formTitle">
+          Confirm email
+        </h1>
+
+        <h3 class="formSubTitle">
+          By clicking the button below you are confirming your email adress "<b><%=email%></b>" to the account with the username "<%=username%>"
+        </h3>
+
+        <div class="buttonWrapper">
+          <button type="submit" id="submitButton" class="submitButton pure-button pure-button-primary">
+            <span>Confirm email</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</body>
+
+</html>

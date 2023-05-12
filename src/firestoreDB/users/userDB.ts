@@ -2,7 +2,7 @@ import { IAuthToken, IDevice, IUser } from '../../models/basicModels';
 import { getMaxIds } from '../MaxIDs/MaxIDs';
 import { ILoginResponse } from '../../models/API/loginRegisterReqRes';
 import { v4 as uuid } from 'uuid';
-import { addDaysToCurrentTime, getCurrentTimeUNIX, hasTimePASSED } from '../../generalStuff/timeHandlers';
+import { ISOToUNIX, addDaysToCurrentTime, getCurrentTimeISO, getCurrentTimeUNIX, hasTimePASSED } from '../../generalStuff/timeHandlers';
 import { firestoreSingletonFactory, getMaxIDSingletonFactory } from '../singletonService';
 import { FirestoreDB } from 'firestoreDB/firestore';
 import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from '../../models/userRightsModels';
@@ -10,7 +10,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getDeviceById } from '../../firestoreDB/userDBdeviceDBbridge';
 import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from 'models/frontendModels';
 import { EmailService, emailServiceSingletonFactory } from '../../emailService/emailService';
-import { IEmailConfirmationData } from 'emailService/emailModels';
+import { IEmailConfirmationData, IForgotPasswordData } from 'emailService/emailModels';
 var userDBObj: UsersDB;
 
 export function createUserDBInstance() {
@@ -25,6 +25,8 @@ export class UsersDB {
     static usersCollName = 'users';
     static authTokenCollName = 'authTokens';
     static emailConfirmationsCollName = 'emailConfirmations';
+    static forgetPasswordRequestsCollName = 'forgotPasswords';
+    
 
     firestore: FirestoreDB;
     getMaxIds: getMaxIds;
@@ -99,6 +101,20 @@ export class UsersDB {
         return user;
     }
 
+    async getUserbyEmail(email: string): Promise<IUser> {
+        let users: IUser[] = await this.getUsers();
+        let user = users.find(user => user.email === email);
+        if (!user) throw ({ message: 'User doesn\'t exist' });
+        return user;
+    }
+
+    async getUserbyName(username: string): Promise<IUser> {
+        let users: IUser[] = await this.getUsers();
+        let user = users.find(user => user.username === username);
+        if (!user) throw ({ message: 'User doesn\'t exist' });
+        return user;
+    }
+
     async removeToken(token: string) {
         let authTokenDB: IAuthToken = await this.firestore.getDocumentData(UsersDB.authTokenCollName, token);
         if (!authTokenDB) {
@@ -125,9 +141,12 @@ export class UsersDB {
         var sameNameUser = users.find(user => user.username === username);
         if (sameNameUser) throw ({ message: 'User with same name exists' });
         
-        let sameEmailUser = users.find(user => user.email === email);
-        if(sameEmailUser) throw ({ message: 'User with same email exists' });
-        var maxIDdoc = await this.getMaxIds.getMaxUserId(true);
+        if(email){
+            let sameEmailUser = users.find(user => user.email === email);
+            console.log(sameEmailUser);
+            if(sameEmailUser) throw ({ message: 'User with same email exists' });
+        }
+    var maxIDdoc = await this.getMaxIds.getMaxUserId(true);
 
         var newUser: IUser = {
             id: maxIDdoc + 1,
@@ -804,7 +823,7 @@ export class UsersDB {
 
     async sendEmailConfirmation_addEmail(id: number, username: String, email: string) {
         let hashCode = uuid();
-        await this.emailService.sendRegistrationEmail(username, email, hashCode);
+        await this.emailService.sendAddEmailEmail(username, email, hashCode);
 
         let emailConfirmationData: IEmailConfirmationData = {
             userId: id,
@@ -818,6 +837,13 @@ export class UsersDB {
             }
         }
         await this.firestore.setDocumentValue(UsersDB.emailConfirmationsCollName, hashCode, emailConfirmationData);   
+    }
+
+    async getEmailConfirmationData(hashCode: string): Promise<IEmailConfirmationData>{
+        let data: IEmailConfirmationData[] = await this.firestore.getCollectionData(UsersDB.emailConfirmationsCollName);
+        let findCode = data.find(o => o.hashCode === hashCode);
+        if(findCode) return findCode;
+        throw {message: 'Can\'t find email confirmation'};
     }
 
     async confirmEmail(hashCode: string){
@@ -848,5 +874,39 @@ export class UsersDB {
         else{
             throw({message: 'Invalid email confirmation code'});
         }
+    }
+
+    async createForgotPasswordRequest(userId: number, username: string, email: string) {
+        let request: IForgotPasswordData = {
+            userId: userId,
+            hashCode: uuid(),
+            timeStamp: getCurrentTimeISO(),
+        }
+        await this.emailService.sendForgotPasswordEmail(username, email, request.hashCode);
+        await this.firestore.setDocumentValue(UsersDB.forgetPasswordRequestsCollName, `${request.userId}`, request);
+    }
+
+    async getForgotPasswordRequest(hashCode: string): Promise<IForgotPasswordData>{
+        let datas: IForgotPasswordData[] = await this.firestore.getCollectionData(UsersDB.forgetPasswordRequestsCollName);
+        let data = datas.find(o => o.hashCode === hashCode);
+        if(data == null){
+            throw({message: 'Can\'t find it'});
+        }
+        return data;
+    }
+
+    async changePasswordViaForgetPasswordRequest(hashCode: string, newPassword: string){
+        let reqs: IForgotPasswordData[] = await this.firestore.getCollectionData(UsersDB.forgetPasswordRequestsCollName);
+        let req = reqs.find( o => o.hashCode === hashCode);
+        if(req == null){
+            throw({message: "Can't find the change password request"});
+        }
+
+        if(getCurrentTimeUNIX() - ISOToUNIX(req.timeStamp) > 1000 * 60 * 15){ //15 minutes
+            throw({message: "Expired"});
+        }
+        
+        await this.firestore.updateDocumentValue(UsersDB.usersCollName, `${req.userId}`, { password: newPassword });
+        await this.firestore.deleteDocument(UsersDB.forgetPasswordRequestsCollName, `${req.userId}`);
     }
 }

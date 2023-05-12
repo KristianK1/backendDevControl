@@ -68,6 +68,7 @@ export class UsersDB {
         let loginResponse = {} as ILoginResponse;
         loginResponse.username = user.username;
         loginResponse.id = user.id;
+        loginResponse.email = user.email;
 
         const newAuthToken = uuid().replace('-', '');
         const authToken: IAuthToken = {} as IAuthToken;
@@ -152,7 +153,7 @@ export class UsersDB {
             id: maxIDdoc + 1,
             password: password,
             username: username,
-            email: "",
+            email: email,
             userRight: { rightsToDevices: [], rightsToGroups: [], rightsToFields: [], rightsToComplexGroups: [] },
             fieldViews: [],
         }

@@ -55,13 +55,7 @@ router.post('/', async (req: any, res: any) => {
         res.send(e.message)
         return;
     }
-
-
-
-
     res.sendStatus(200);
-
-    
 });
 
 module.exports = router;

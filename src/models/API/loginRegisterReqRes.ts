@@ -11,6 +11,7 @@ export interface ILoginResponse {
     authToken: string,
     id: number,
     username: string,
+    email: string,
 }
 
 export interface IRegisterRequest {

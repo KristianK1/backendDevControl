@@ -1,8 +1,5 @@
 var nodemailer = require('nodemailer');
 import { IEmailData } from './emailModels';
-import { secretEmail } from './emailKey_email';
-import { secretPassword } from './emailKey_password';
-import { serverLink } from '../serverData';
 import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath, setupNewPasswordPath } from './emailPaths';
 
 export const emailServiceSingletonFactory = (function () {
@@ -30,6 +27,17 @@ export class EmailService{
     private server: string; //= serverLink || process.env.serverLink;
 
     constructor(){
+      
+      var secretEmail: string = "";
+      var secretPassword: string = "";
+      var serverLink: string = "";
+      
+      try{
+        secretEmail = require('./emailKey_email');
+
+      }catch(e){
+
+      }
       this.myHiddenEmail = process.env.emailService_email || secretEmail;
       this.myHiddenEmailPassword = process.env.emailService_password || secretPassword;
       this.server = process.env.serverLink || serverLink;

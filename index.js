@@ -41,6 +41,11 @@ wsServer.on('request', function (request) {
     }
     else{
       console.log("x:"+message.binaryData);
+      let x = "" + message.binaryData;
+      for (key in clients) {
+        clients[key].sendUTF(x);
+        console.log('sent Message to: ', key);
+      }
     }
   })
 });

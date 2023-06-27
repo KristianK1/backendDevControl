@@ -39,5 +39,8 @@ wsServer.on('request', function (request) {
         console.log('sent Message to: ', key);
       }
     }
+    else{
+      console.log("x:"+message.binaryData);
+    }
   })
 });

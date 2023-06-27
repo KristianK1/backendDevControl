@@ -29,7 +29,8 @@ wsServer.on('request', function (request) {
 
   connection.on('message', function (message) {
     console.log("new message");
-    if (message.type === 'utf8') {
+
+    if (!!message.utf8Data) {
       console.log('Received Message: ', message.utf8Data);
 
       // broadcasting message to all connected clients

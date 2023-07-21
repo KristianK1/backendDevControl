@@ -70,6 +70,8 @@ export interface IDeviceFieldNumeric {
     minValue: number,
     maxValue: number,
     valueStep: number,
+    prefix: string,
+    sufix: string,
     fieldDirection: 'input',
 }
 

@@ -1,14 +1,14 @@
-import { IAuthToken, IComplexFieldGroup, IComplexFieldGroupState, IDevice, IDeviceFieldBasic, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IFieldGroup, IRGB, IUser } from "models/basicModels";
+import { IAuthToken, IComplexFieldGroup, IComplexFieldGroupState, IDevice, IDeviceFieldBasic, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IFieldGroup, IRGB, IUser } from "../models/basicModels";
 import { FirestoreDB } from "./firestore";
 import { firestoreSingletonFactory } from "./singletonService";
 import { transformDeviceData, transformUserRights } from "./dataTransformations";
-import { ILoginResponse } from "models/API/loginRegisterReqRes";
+import { ILoginResponse } from "../models/API/loginRegisterReqRes";
 import { v4 as uuid } from 'uuid';
-import { ISOToUNIX, addDaysToCurrentTime, getCurrentTimeISO, getCurrentTimeUNIX, hasTimePASSED } from "generalStuff/timeHandlers";
-import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from "models/userRightsModels";
-import { IEmailConfirmationData, IForgotPasswordData } from "emailService/emailModels";
-import { EmailService, emailServiceSingletonFactory } from "emailService/emailService";
-import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from "models/frontendModels";
+import { ISOToUNIX, addDaysToCurrentTime, getCurrentTimeISO, getCurrentTimeUNIX, hasTimePASSED } from "../generalStuff/timeHandlers";
+import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from "../models/userRightsModels";
+import { IEmailConfirmationData, IForgotPasswordData } from "../emailService/emailModels";
+import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
+import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from "../models/frontendModels";
 import { FieldValue } from "firebase-admin/firestore";
 
 export class Db {

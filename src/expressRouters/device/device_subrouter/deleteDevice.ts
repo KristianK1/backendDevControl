@@ -1,7 +1,5 @@
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { DeviceDB } from "../../../firestoreDB/devices/deviceDB";
-import { UsersDB } from "../../../firestoreDB/users/userDB";
-import { IDeleteDeviceReq } from "../../../models/API/deviceCreateAlterReqRes";
+import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
+import { Db } from "firestoreDB/db";import { IDeleteDeviceReq } from "../../../models/API/deviceCreateAlterReqRes";
 import { IDevice, IUser } from "../../../models/basicModels";
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
@@ -9,8 +7,7 @@ import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFa
 var express = require('express');
 var router = express.Router();
 
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
-var userDb: UsersDB = usersDBSingletonFactory.getInstance();
+var db: Db = DBSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
@@ -18,7 +15,7 @@ router.post('/', async (req: any, res: any) => {
 
     let user: IUser;
     try {
-        user = await userDb.getUserByToken(removeDeviceReq.authToken, true);
+        user = await db.getUserByToken(removeDeviceReq.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -27,7 +24,7 @@ router.post('/', async (req: any, res: any) => {
 
     let device: IDevice;
     try {
-        device = await deviceDb.getDevicebyId(removeDeviceReq.deviceId);
+        device = await db.getDevicebyId(removeDeviceReq.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -41,8 +38,8 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        let users = await userDb.getAllUsersWithRightToDevice(await deviceDb.getDevicebyId(removeDeviceReq.deviceId));
-        await deviceDb.deleteDevice(removeDeviceReq.deviceId);
+        let users = await db.getAllUsersWithRightToDevice(await db.getDevicebyId(removeDeviceReq.deviceId));
+        await db.deleteDevice(removeDeviceReq.deviceId);
         wsServer.emitDeviceDeleted(users, removeDeviceReq.deviceId);
     } catch (e) {
         res.status(400);

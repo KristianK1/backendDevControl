@@ -1,7 +1,5 @@
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { DeviceDB } from "../../../firestoreDB/devices/deviceDB";
-import { UsersDB } from "../../../firestoreDB/users/userDB";
-import { IRenameDeviceReq } from "../../../models/API/deviceCreateAlterReqRes";
+import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
+import { Db } from "firestoreDB/db";import { IRenameDeviceReq } from "../../../models/API/deviceCreateAlterReqRes";
 import { IDevice, IUser } from "../../../models/basicModels";
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
@@ -9,15 +7,14 @@ import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFa
 var express = require('express');
 var router = express.Router();
 
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
-var userDb: UsersDB = usersDBSingletonFactory.getInstance();
+var db: Db = DBSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     var renameDeviceReq: IRenameDeviceReq = req.body;
     let user: IUser;
     try {
-        user = await userDb.getUserByToken(renameDeviceReq.authToken, true);
+        user = await db.getUserByToken(renameDeviceReq.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message)
@@ -26,7 +23,7 @@ router.post('/', async (req: any, res: any) => {
     
     let device: IDevice;
     try {
-        device = await deviceDb.getDevicebyId(renameDeviceReq.deviceId);
+        device = await db.getDevicebyId(renameDeviceReq.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message)
@@ -40,7 +37,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        await deviceDb.renameDevice(renameDeviceReq.deviceId, renameDeviceReq.deviceName);
+        await db.renameDevice(renameDeviceReq.deviceId, renameDeviceReq.deviceName);
         wsServer.emitDeviceRegistration(device.deviceKey);
     } catch (e) {
         res.status(400);

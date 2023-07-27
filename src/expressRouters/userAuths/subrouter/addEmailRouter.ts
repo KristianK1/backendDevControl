@@ -1,21 +1,20 @@
-import { DeviceDB } from 'firestoreDB/devices/deviceDB';
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../../../firestoreDB/singletonService';
-import { UsersDB } from 'firestoreDB/users/userDB';
 import { IUser } from 'models/basicModels';
 import { IAddEmailRequest } from 'models/API/loginRegisterReqRes';
+import { Db } from "firestoreDB/db";
+import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
+
+
 var express = require('express');
 var router = express.Router();
 
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
-var userDb: UsersDB = usersDBSingletonFactory.getInstance();
-
+var db: Db = DBSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IAddEmailRequest = req.body;
 
     let user: IUser;
     try {
-        user = await userDb.getUserByToken(request.authToken, false);
+        user = await db.getUserByToken(request.authToken, false);
     } catch (e) {
         res.status(400);
         res.send(e.message)
@@ -35,7 +34,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try{
-        let users = await userDb.getUsers();
+        let users = await db.getUsers();
         let userWithSameEmail = users.find(o => o.email === request.email);
         if(userWithSameEmail){
             res.status(400);
@@ -49,7 +48,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try{
-        userDb.sendEmailConfirmation_addEmail(user.id, user.username, request.email);
+        db.sendEmailConfirmation_addEmail(user.id, user.username, request.email);
     }catch(e){
         res.status(400);
         res.send(e.message)

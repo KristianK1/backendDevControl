@@ -1,15 +1,12 @@
-import { DeviceDB } from "firestoreDB/devices/deviceDB";
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { UsersDB } from "firestoreDB/users/userDB";
-import { IDeleteUserRightFieldReq } from "models/API/UserRightAlterReqRes";
 import { IDevice, IUser } from "models/basicModels";
 import { IDeviceRightsRequest } from "models/frontendModels";
+import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
+import { Db } from "firestoreDB/db";
 
 var express = require('express');
 var router = express.Router();
 
-var userDB: UsersDB = usersDBSingletonFactory.getInstance();
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
+var db: Db = DBSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IDeviceRightsRequest = req.body;
@@ -17,7 +14,7 @@ router.post('/', async (req: any, res: any) => {
     
     let admin: IUser;
     try {
-        admin = await userDB.getUserByToken(request.authToken, true);
+        admin = await db.getUserByToken(request.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -26,7 +23,7 @@ router.post('/', async (req: any, res: any) => {
 
     let device: IDevice;
     try {
-        device = await deviceDb.getDevicebyId(request.deviceId);
+        device = await db.getDevicebyId(request.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -40,7 +37,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try{
-        let result = await userDB.getUsersRightsToDevice(admin.id, device);
+        let result = await db.getUsersRightsToDevice(admin.id, device);
         res.json(result);
     } catch (e) {
         res.status(400);

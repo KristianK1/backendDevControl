@@ -1,3 +1,7 @@
+import { Db } from "firestoreDB/db";
+import { DBSingletonFactory } from "../../firestoreDB/singletonService";
+
+
 var express = require('express');
 var router = express.Router();
 
@@ -26,14 +30,14 @@ var changeFieldInComplexGroupRouter = require('./device_subrouter/deviceComplexG
 router.use('/fieldInComplexGroupState', changeFieldInComplexGroupRouter);
 
 
-import { deviceDBSingletonFactory } from "../../firestoreDB/singletonService";
-var deviceDb = deviceDBSingletonFactory.getInstance();
+var db: Db = DBSingletonFactory.getInstance();
+
 router.get('/:id', async (req: any, res: any) => {
     let id = req.params.id;
     console.log(id);
     let device;
     try {
-        device = await deviceDb.getDevicebyId(id);
+        device = await db.getDevicebyId(id);
     } catch (e) {
         res.status(400);
         res.send(e.message);

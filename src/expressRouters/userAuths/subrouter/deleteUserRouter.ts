@@ -1,6 +1,5 @@
-import { DeviceDB } from 'firestoreDB/devices/deviceDB';
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../../../firestoreDB/singletonService';
-import { UsersDB } from 'firestoreDB/users/userDB';
+import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
+import { Db } from "firestoreDB/db";
 import { IDeleteUserRequest } from '../../../models/API/loginRegisterReqRes';
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
@@ -10,8 +9,7 @@ import { ELogoutReasons } from '../../../models/frontendModels';
 var express = require('express');
 var router = express.Router();
 
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
-var userDb: UsersDB = usersDBSingletonFactory.getInstance();
+var db: Db = DBSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 
@@ -21,8 +19,8 @@ router.post('/', async (req: any, res: any) => {
     let user: IUser;
 
     try {
-        devices = await deviceDb.getTransformedDevices()
-        user = await userDb.getUserByToken(deleteReq.authToken, false);
+        devices = await db.getTransformedDevices()
+        user = await db.getUserByToken(deleteReq.authToken, false);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -39,7 +37,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        await userDb.deleteUser(deleteReq.authToken);
+        await db.deleteUser(deleteReq.authToken);
         await wsServer.logoutAllUsersSessions(user.id, ELogoutReasons.DeletedUser, deleteReq.authToken);
     } catch (e) {
         res.status(400);

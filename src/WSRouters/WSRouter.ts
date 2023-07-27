@@ -4,17 +4,13 @@ import { addDeviceConnection, addUserConnection } from './subrouter/WSConnect';
 import { v4 as uuid } from 'uuid';
 import { getCurrentTimeISO, getCurrentTimeUNIX } from '../generalStuff/timeHandlers';
 import { IDevice, IUser } from 'models/basicModels';
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../firestoreDB/singletonService';
-import { UsersDB } from '../firestoreDB/users/userDB';
-import { DeviceDB } from '../firestoreDB/devices/deviceDB';
 import { ERightType } from '../models/userRightsModels';
-import { ELogoutReasons, IDeviceDeleted, IDeviceForUser, IDeviceForUserFailed, ILoggedReason, IWSSMessageForUser } from '../models/frontendModels';
-import { getDeviceById } from 'firestoreDB/userDBdeviceDBbridge';
-import { log } from 'console';
+import { ELogoutReasons, IDeviceForUser, ILoggedReason, IWSSMessageForUser } from '../models/frontendModels';
+import { DBSingletonFactory } from '../firestoreDB/singletonService';
+import { Db } from 'firestoreDB/db';
 
 
-var userDB: UsersDB = usersDBSingletonFactory.getInstance();
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
+var db: Db = DBSingletonFactory.getInstance();
 
 const WSRouterEmitCheckInterval = 200;
 const WSRouterSlowTapInterval = 1000;
@@ -189,7 +185,7 @@ export class MyWebSocketServer {
 
     //<reasons to emit data>
     async emitDeviceRegistrationById(deviceId: number) {
-        let device = await deviceDb.getDevicebyId(deviceId)
+        let device = await db.getDevicebyId(deviceId)
         await this.emitDeviceRegistration(device.deviceKey)
     }
 
@@ -197,15 +193,15 @@ export class MyWebSocketServer {
         let deviceData: IDevice;
         let allUsers: IUser[];
         try {
-            allUsers = await userDB.getUsers();
-            deviceData = await deviceDb.getDeviceByKey(deviceKey);
+            allUsers = await db.getUsers();
+            deviceData = await db.getDeviceByKey(deviceKey);
         } catch (e) {
             return;
         }
 
         let usersWithRight: IUser[] = [];
         for (let user of allUsers) {
-            let right = await userDB.checkAnyUserRightToDevice(user, deviceData);
+            let right = await db.checkAnyUserRightToDevice(user, deviceData);
             if (right) {
                 usersWithRight.push(user);
             }
@@ -218,15 +214,15 @@ export class MyWebSocketServer {
         let deviceData: IDevice = {} as IDevice;
         let allUsers: IUser[] = [];
         try {
-            deviceData = await deviceDb.getDevicebyId(deviceId);
-            allUsers = await userDB.getUsers();
+            deviceData = await db.getDevicebyId(deviceId);
+            allUsers = await db.getUsers();
         } catch {
             return;
         }
 
         let usersWithRight: IUser[] = [];
         for (let user of allUsers) {
-            let right = await userDB.checkUserRightToField(user, deviceId, groupId, fieldId, deviceData);
+            let right = await db.checkUserRightToField(user, deviceId, groupId, fieldId, deviceData);
             if (right === ERightType.Write || right === ERightType.Read) {
                 usersWithRight.push(user);
             }
@@ -239,8 +235,8 @@ export class MyWebSocketServer {
         let deviceData: IDevice = {} as IDevice;
         let allUsers: IUser[] = [];
         try {
-            deviceData = await deviceDb.getDevicebyId(deviceId);
-            allUsers = await userDB.getUsers();
+            deviceData = await db.getDevicebyId(deviceId);
+            allUsers = await db.getUsers();
         } catch {
             return;
         }
@@ -248,7 +244,7 @@ export class MyWebSocketServer {
 
         let usersWithRight: IUser[] = [];
         for (let user of allUsers) {
-            let right = await userDB.checkUserRightToComplexGroup(user, deviceId, complexGroupId, deviceData);
+            let right = await db.checkUserRightToComplexGroup(user, deviceId, complexGroupId, deviceData);
             if (right === ERightType.Write || right === ERightType.Read) {
                 usersWithRight.push(user);
             }
@@ -258,8 +254,8 @@ export class MyWebSocketServer {
     }
 
     async emitUserRightUpdate(userId: number, deviceId: number) {
-        let deviceData = await deviceDb.getDevicebyId(deviceId);
-        let user = await userDB.getUserbyId(userId);
+        let deviceData = await db.getDevicebyId(deviceId);
+        let user = await db.getUserbyId(userId);
         for (let userClient of this.userClients) {
             if (userClient.userId !== user.id) continue;
             // try {
@@ -292,8 +288,8 @@ export class MyWebSocketServer {
 
     //<single connection emit>
     private async emitDeviceDataToConnection(userConnection: IWSSConnectionUser) {
-        let devices = await deviceDb.getTransformedDevices();
-        let user = await userDB.getUserbyId(userConnection.userId);
+        let devices = await db.getTransformedDevices();
+        let user = await db.getUserbyId(userConnection.userId);
         
         let userData = JSON.stringify(await this.getAllDeviceDataMessageForUser(devices, user));
         this.sendDataToUserConnection(userData, userConnection);
@@ -307,7 +303,7 @@ export class MyWebSocketServer {
         for(let device of allDeviceData){
        
             let  isActive = this.isDeviceActive(device.id);
-            let deviceForUser = await userDB.getDeviceForUser(user, device, isActive);
+            let deviceForUser = await db.getDeviceForUser(user, device, isActive);
             if (deviceForUser){
                 devices.push(deviceForUser);
             }
@@ -323,7 +319,7 @@ export class MyWebSocketServer {
 
     //<send>
     private async sendAllDataToUsers(users: IUser[]){
-        let devices = await deviceDb.getTransformedDevices();
+        let devices = await db.getTransformedDevices();
         for(let user of users){
             let userData = JSON.stringify(await this.getAllDeviceDataMessageForUser(devices, user));
             

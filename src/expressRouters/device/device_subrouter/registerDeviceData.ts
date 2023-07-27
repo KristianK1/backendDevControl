@@ -1,21 +1,19 @@
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { DeviceDB } from "../../../firestoreDB/devices/deviceDB";
-import { UsersDB } from "../../../firestoreDB/users/userDB";
-import { IDevice } from "models/basicModels";
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
+import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
+import { Db } from "firestoreDB/db";
+import { IDevice } from "models/basicModels";
 
 var express = require('express');
 var router = express.Router();
 
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
-var userDb: UsersDB = usersDBSingletonFactory.getInstance();
+var db: Db = DBSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     var registerDeviceDataReq: IDevice = req.body;
     try {
-        await deviceDb.registerDeviceData(registerDeviceDataReq);
+        await db.registerDeviceData(registerDeviceDataReq);
         wsServer.emitDeviceRegistration(registerDeviceDataReq.deviceKey); //bez await-a
     } catch (e) {
         res.status(400);

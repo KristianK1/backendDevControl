@@ -1,14 +1,12 @@
-import { DeviceDB } from 'firestoreDB/devices/deviceDB';
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from '../../../firestoreDB/singletonService';
-import { UsersDB } from 'firestoreDB/users/userDB';
 import { IUser } from 'models/basicModels';
 import { IGetUsersRequest, IGetUsersResponse } from 'models/API/loginRegisterReqRes';
+import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
+import { Db } from "firestoreDB/db";
+
 var express = require('express');
 var router = express.Router();
 
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
-var userDb: UsersDB = usersDBSingletonFactory.getInstance();
-
+var db: Db = DBSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     console.log("request")
@@ -18,8 +16,8 @@ router.post('/', async (req: any, res: any) => {
     let thisUser: IUser;
 
     try {
-        thisUser = await userDb.getUserByToken(request.authToken, false);
-        users = await userDb.getUsers()
+        thisUser = await db.getUserByToken(request.authToken, false);
+        users = await db.getUsers()
     } catch (e) {
         res.status(400);
         res.send(e.message);

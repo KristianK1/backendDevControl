@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@appland/appmap-agent-js": "^13.9.0",
     "body-parser": "^1.20.1",
     "cors": "^2.8.5",
     "ejs": "^3.1.9",

@@ -1,0 +1,5 @@
+name: backendDevControl
+packages:
+  - path: src
+language: javascript
+appmap_dir: tmp/appmap

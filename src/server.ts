@@ -1,13 +1,11 @@
 // import * as BodyParser from 'body-parser';
 import * as Express from 'express';
-import { firestoreSingletonFactory, usersDBSingletonFactory } from './firestoreDB/singletonService';
 import { server as webSocketServer } from 'websocket';
 import { MyWebSocketServer } from './WSRouters/WSRouter';
 import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
 import { emailServiceSingletonFactory } from './emailService/emailService';
 import * as path from 'path';
-import { IEmailConfirmationData } from 'emailService/emailModels';
-import { IUser } from 'models/basicModels';
+
 let http = require('http');
 let cors = require('cors');
 
@@ -74,13 +72,6 @@ export class Server {
     setupWSS() {
         this.wss = wsServerSingletonFactory.getInstance();
         this.wss.setupServer(this.wsServer);
-    }
-
-
-    startTimeout() {
-        const timeout = setInterval(() => {
-            let x = 3;
-        }, 5 * 1000);
     }
 
     startEmailService(){

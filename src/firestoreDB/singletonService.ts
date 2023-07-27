@@ -1,3 +1,4 @@
+import { Db } from "./db";
 import { DeviceDB } from "./devices/deviceDB";
 import { FirestoreDB } from "./firestore";
 import { getMaxIds } from "./MaxIDs/MaxIDs";
@@ -21,56 +22,74 @@ export const firestoreSingletonFactory = (function () {
     };
 })();
 
-export const usersDBSingletonFactory = (function () {
-    var usersDB: UsersDB;
+export const DBSingletonFactory = (function () {
+    var DB: Db;
 
-    function createInstance(): UsersDB {
-        var object = new UsersDB();
+    function createInstance(): Db {
+        var object = new Db();
         return object;
     }
 
     return {
         getInstance: function () {
-            if (!usersDB) {
-                usersDB = createInstance();
+            if (!DB) {
+                DB = createInstance();
             }
-            return usersDB;
+            return DB;
         }
     };
 })();
 
-export const deviceDBSingletonFactory = (function () {
-    var deviceDB: DeviceDB;
+// export const usersDBSingletonFactory = (function () {
+//     var usersDB: UsersDB;
 
-    function createInstance(): DeviceDB {
-        var object = new DeviceDB();
-        return object;
-    }
+//     function createInstance(): UsersDB {
+//         var object = new UsersDB();
+//         return object;
+//     }
 
-    return {
-        getInstance: function () {
-            if (!deviceDB) {
-                deviceDB = createInstance();
-            }
-            return deviceDB;
-        }
-    };
-})();
+//     return {
+//         getInstance: function () {
+//             if (!usersDB) {
+//                 usersDB = createInstance();
+//             }
+//             return usersDB;
+//         }
+//     };
+// })();
 
-export const getMaxIDSingletonFactory = (function () {
-    var getMaxIDs: getMaxIds;
+// export const deviceDBSingletonFactory = (function () {
+//     var deviceDB: DeviceDB;
 
-    function createInstance(): getMaxIds {
-        var object = new getMaxIds();
-        return object;
-    }
+//     function createInstance(): DeviceDB {
+//         var object = new DeviceDB();
+//         return object;
+//     }
 
-    return {
-        getInstance: function () {
-            if (!getMaxIDs) {
-                getMaxIDs = createInstance();
-            }
-            return getMaxIDs;
-        }
-    };
-})();
+//     return {
+//         getInstance: function () {
+//             if (!deviceDB) {
+//                 deviceDB = createInstance();
+//             }
+//             return deviceDB;
+//         }
+//     };
+// })();
+
+// export const getMaxIDSingletonFactory = (function () {
+//     var getMaxIDs: getMaxIds;
+
+//     function createInstance(): getMaxIds {
+//         var object = new getMaxIds();
+//         return object;
+//     }
+
+//     return {
+//         getInstance: function () {
+//             if (!getMaxIDs) {
+//                 getMaxIDs = createInstance();
+//             }
+//             return getMaxIDs;
+//         }
+//     };
+// })();

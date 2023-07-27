@@ -66,6 +66,23 @@ export interface IBooleanTrigger {
     latestValue: boolean,
 }
 
+export enum ETriggerSourceType {
+    FieldInGroup,
+    FieldInComplexGroup,
+}
+
+export interface ITriggerSourceAdress_fieldInGroup {
+    groupId: number,
+    fieldId: number,
+}
+
+export interface ITriggerSourceAdress_fieldInComplexGroup {
+    complexGroupId: number,
+    stateId: number,
+    fieldId: number,
+}
+
+
 export interface ITriggerEmailResponse {
     emailSubject: string,
     emailText: string,
@@ -100,8 +117,15 @@ export enum ETriggerResponseType {
 
 export interface ITrigger {
     name: string,
-    settings: INumericTrigger | ITextTrigger | IMCTrigger | IBooleanTrigger | IRGBTrigger,
     userId: number,
+
+    sourceDeviceId: number,
+    sourceType: ETriggerSourceType,
+    sourceAdress: ITriggerSourceAdress_fieldInGroup |ITriggerSourceAdress_fieldInComplexGroup,
+
+    fieldType: 'numeric' | 'text' | 'button' | 'RGB' | 'multipleChoice',
+    settings: INumericTrigger | ITextTrigger | IMCTrigger | IBooleanTrigger | IRGBTrigger,
+
     responseType: ETriggerResponseType,
     responseSettings: ITriggerEmailResponse |ITriggerMobileNotificationResponse | ITriggerSettingValueResponse_fieldInGroup |ITriggerSettingsValueResponse_fieldInComplexGroup,
 }

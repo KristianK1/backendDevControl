@@ -19,7 +19,7 @@ router.post('/device', async (req: any, res: any) => {
     let request: IChangeDeviceField_Device = req.body;
     try {
         await db.changeDeviceFieldValueFromDevice(request.deviceKey, request.groupId, request.fieldId, request.fieldValue)
-        let id = (await db.getDeviceByKey(request.deviceKey)).id;
+        let id = (await db.getDevicebyKey(request.deviceKey)).id;
         wsServer.emitFieldChanged(id, request.groupId, request.fieldId);
     } catch (e) {
         res.status(400);

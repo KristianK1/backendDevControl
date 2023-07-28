@@ -9,6 +9,7 @@ import { IEmailConfirmationData, IForgotPasswordData } from "../emailService/ema
 import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
 import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from "../models/frontendModels";
 import { FieldValue } from "firebase-admin/firestore";
+import { getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "./deviceStructureFunctions";
 
 export class Db {
     static usersCollName = 'users';
@@ -770,7 +771,7 @@ export class Db {
 
     async renameDeviceFieldGroup(deviceId: number, groupId: number, groupName: string) {
         let device = await this.getDevicebyId(deviceId);
-        this.getDeviceFieldGroup(device, groupId);
+        getDeviceFieldGroup(device, groupId);
 
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.groupName`]: groupName
@@ -779,7 +780,7 @@ export class Db {
 
     async deleteDeviceFieldGroup(deviceId: number, groupId: number) {
         let device = await this.getDevicebyId(deviceId);
-        this.getDeviceFieldGroup(device, groupId);
+        getDeviceFieldGroup(device, groupId);
 
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}`]: FieldValue.delete()
@@ -796,8 +797,8 @@ export class Db {
 
     async renameDeviceField(deviceId: number, groupId: number, fieldId: number, fieldName: string) {
         let device = await this.getDevicebyId(deviceId);
-        let groupField = this.getDeviceFieldGroup(device, groupId);
-        this.getDeviceField(groupField, fieldId);
+        let groupField = getDeviceFieldGroup(device, groupId);
+        getDeviceField(groupField, fieldId);
         await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldName`]: fieldName
         });
@@ -805,8 +806,8 @@ export class Db {
 
     async deleteDeviceField(deviceId: number, groupId: number, fieldId: number) {
         let device = await this.getDevicebyId(deviceId);
-        let groupField = this.getDeviceFieldGroup(device, groupId);
-        this.getDeviceField(groupField, fieldId);
+        let groupField = getDeviceFieldGroup(device, groupId);
+        getDeviceField(groupField, fieldId);
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}`]: FieldValue.delete()
         });
@@ -816,15 +817,15 @@ export class Db {
 
     async changeDeviceFieldValueFromDevice(deviceKey: string, groupId: number, fieldId: number, fieldValue: any) {
         let device = await this.getDevicebyKey(deviceKey);
-        let group = this.getDeviceFieldGroup(device, groupId);
-        let field = this.getDeviceField(group, fieldId);
+        let group = getDeviceFieldGroup(device, groupId);
+        let field = getDeviceField(group, fieldId);
         await this.tryToChangeDeviceFieldValue(device.id, groupId, field, fieldValue);
     }
 
     async changeDeviceFieldValueFromUser(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {
         let device = await this.getDevicebyId(deviceId);
-        let group = this.getDeviceFieldGroup(device, groupId);
-        let field = this.getDeviceField(group, fieldId);
+        let group = getDeviceFieldGroup(device, groupId);
+        let field = getDeviceField(group, fieldId);
 
         if (field.fieldValue.fieldDirection === 'output') {
             throw ({ message: 'Field value is output only - can\'t be set by user' });
@@ -925,7 +926,7 @@ export class Db {
 
     async addComplexGroupState(deviceId: number, groupId: number, stateId: number, stateName: string) {
         let device = await this.getDevicebyId(deviceId);
-        let group = this.getComplexGroup(device, groupId);
+        let group = getComplexGroup(device, groupId);
 
         let state: IComplexFieldGroupState = {
             id: stateId,
@@ -939,7 +940,7 @@ export class Db {
 
     async renameComplexGroupState(deviceId: number, groupId: number, stateId: number, stateName: string) {
         let device = await this.getDevicebyId(deviceId);
-        let group = this.getComplexGroup(device, groupId);
+        let group = getComplexGroup(device, groupId);
 
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.stateName`]: stateName
@@ -954,8 +955,8 @@ export class Db {
 
     async addFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldData: IDeviceFieldBasic) {
         let device = await this.getDevicebyId(deviceId);
-        let group = this.getComplexGroup(device, groupId);
-        let state = this.getComplexGroupState(group, stateId);
+        let group = getComplexGroup(device, groupId);
+        let state = getComplexGroupState(group, stateId);
 
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldData.id}`]: fieldData
@@ -973,7 +974,7 @@ export class Db {
     }
 
     private async tryToChangeComplexGroupState(device: IDevice, groupId: number, state: number) {
-        let group = this.getComplexGroup(device, groupId);
+        let group = getComplexGroup(device, groupId);
         let NofStates = group.fieldGroupStates.length;
         if (state >= 0 && state < NofStates) {
             await this.firestore.updateDocumentValue(Db.devCollName, `${device.id}`, {
@@ -997,17 +998,17 @@ export class Db {
 
     async changeFieldValueInComplexGroupFromDevice(deviceKey: string, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
         let device = await this.getDevicebyKey(deviceKey);
-        let group = this.getComplexGroup(device, groupId);
-        let state = this.getComplexGroupState(group, stateId);
-        let field = this.getFieldInComplexGroup(state, fieldId);
+        let group = getComplexGroup(device, groupId);
+        let state = getComplexGroupState(group, stateId);
+        let field = getFieldInComplexGroup(state, fieldId);
         await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, field, fieldValue);
     }
 
     async changeFieldValueInComplexGroupFromUser(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
         let device = await this.getDevicebyId(deviceId);
-        let group = this.getComplexGroup(device, groupId);
-        let state = this.getComplexGroupState(group, stateId);
-        let field = this.getFieldInComplexGroup(state, fieldId);
+        let group = getComplexGroup(device, groupId);
+        let state = getComplexGroupState(group, stateId);
+        let field = getFieldInComplexGroup(state, fieldId);
         if (field.fieldValue.fieldDirection === 'output') {
             throw ({ message: 'Field value is output only - can\'t be set by user' });
         }

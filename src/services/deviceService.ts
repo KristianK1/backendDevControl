@@ -72,7 +72,7 @@ export class DeviceService {
             try {
                 getDeviceFieldGroup(deviceData, oldGroup.id);
             } catch {
-                await this.deleteDeviceFieldGroup(deviceId, oldGroup.id);
+                await this.db.deleteDeviceFieldGroup(deviceId, oldGroup.id);
                 device = await this.getDevicebyId(deviceId);
             }
         }
@@ -83,13 +83,13 @@ export class DeviceService {
                 oldGroup = getDeviceFieldGroup(device, newGroup.id);
             }
             catch {
-                await this.addDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
+                await this.db.addDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
                 device = await this.getDevicebyId(deviceId);
             }
             oldGroup = getDeviceFieldGroup(device, newGroup.id);
 
             if (oldGroup.groupName !== newGroup.groupName) {
-                await this.renameDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
+                await this.db.renameDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
             }
 
             let oldDeviceFields = getDeviceFieldGroup(device, newGroup.id).fields;
@@ -99,7 +99,7 @@ export class DeviceService {
                 try {
                     getDeviceField(newGroup, oldField.id);
                 } catch {
-                    await this.deleteDeviceField(deviceId, newGroup.id, oldField.id);
+                    await this.db.deleteDeviceField(deviceId, newGroup.id, oldField.id);
                 }
             }
 
@@ -109,16 +109,16 @@ export class DeviceService {
                     oldField = getDeviceField(oldGroup, newField.id);
                 }
                 catch {
-                    await this.addDeviceField(deviceId, newGroup.id, newField);
+                    await this.db.addDeviceField(deviceId, newGroup.id, newField);
                     device = await this.getDevicebyId(deviceId);
                     continue;
                 }
                 if (newField.fieldName !== oldField.fieldName) {
-                    await this.renameDeviceField(deviceId, newGroup.id, newField.id, newField.fieldName);
+                    await this.db.renameDeviceField(deviceId, newGroup.id, newField.id, newField.fieldName);
                 }
                 if (compareFields(newField, oldField) === false) {
-                    await this.deleteDeviceField(deviceId, newGroup.id, newField.id);
-                    await this.addDeviceField(deviceId, newGroup.id, newField);
+                    await this.db.deleteDeviceField(deviceId, newGroup.id, newField.id);
+                    await this.db.addDeviceField(deviceId, newGroup.id, newField);
                 }
             }
         }

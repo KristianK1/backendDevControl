@@ -34,7 +34,7 @@ export async function addUserConnection(request: IWSSUserConnectRequest, basicCo
 export async function addDeviceConnection(request: IWSSDeviceConnectRequest, basicConnection: IWSSBasicConnection): Promise<IWSSConnectionDevice | undefined> {
     let device: IDevice;
     try {
-        device = await db.getDeviceByKey(request.deviceKey)
+        device = await db.getDevicebyKey(request.deviceKey)
     } catch (e) {
         console.log(e.message);
         return;

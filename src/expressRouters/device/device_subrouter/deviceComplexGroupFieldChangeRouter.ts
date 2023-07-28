@@ -20,7 +20,7 @@ router.post('/device', async (req: any, res: any) => {
 
     try {
         await db.changeFieldValueInComplexGroupFromDevice(request.deviceKey, request.groupId, request.stateId, request.fieldId, request.fieldValue);
-        let id = (await db.getDeviceByKey(request.deviceKey)).id;
+        let id = (await db.getDevicebyKey(request.deviceKey)).id;
         wsServer.emitComplexGroupChanged(id, request.groupId);
     } catch (e) {
         res.status(400);

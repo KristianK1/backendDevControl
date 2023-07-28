@@ -194,7 +194,7 @@ export class MyWebSocketServer {
         let allUsers: IUser[];
         try {
             allUsers = await db.getUsers();
-            deviceData = await db.getDeviceByKey(deviceKey);
+            deviceData = await db.getDevicebyKey(deviceKey);
         } catch (e) {
             return;
         }

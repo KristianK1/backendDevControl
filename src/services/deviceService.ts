@@ -2,11 +2,12 @@ import { IComplexFieldGroup, IComplexFieldGroupState, IDevice, IDeviceFieldBasic
 import { v4 as uuid } from 'uuid';
 import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
-import { compareFields, getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "firestoreDB/deviceStructureFunctions";
+import { compareFields, getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "./../firestoreDB/deviceStructureFunctions";
 import { IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser } from "models/frontendModels";
-import { getCurrentTimeUNIX } from "generalStuff/timeHandlers";
+import { getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
+import { ERightType } from "../models/userRightsModels";
 import { group } from "console";
-import { ERightType } from "models/userRightsModels";
+import { stat } from "fs";
 
 export class DeviceService {
     private db: Db;
@@ -540,4 +541,94 @@ export class DeviceService {
         deviceReduced.updateTimeStamp = getCurrentTimeUNIX();
         return deviceReduced;
     }
+
+    async getGroup(deviceId: number, groupId: number, device?: IDevice) {
+        if (!device) {
+            device = await this.db.getDevicebyId(deviceId);
+        }
+        let group = getDeviceFieldGroup(device, groupId);
+        return group;
+    }
+
+    async getField(deviceId: number, groupId: number, fieldId: number, device?: IDevice): Promise<IDeviceFieldBasic> {
+        let group = await this.getGroup(deviceId, groupId, device);
+        let field = getDeviceField(group, fieldId);
+        return field;
+    }
+
+    async getComplexGroup(deviceId: number, complexGroupId: number, device?: IDevice): Promise<IComplexFieldGroup> {
+        if (!device) {
+            device = await this.db.getDevicebyId(deviceId);
+        }
+        let complexGroup = getComplexGroup(device, complexGroupId);
+        return complexGroup;
+    }
+
+    async getComplexGroupState(deviceId: number, groupId: number, stateId: number, device?: IDevice): Promise<IComplexFieldGroupState> {
+        let group = await this.getComplexGroup(deviceId, groupId, device);
+        let state = getComplexGroupState(group, stateId);
+        return state;
+    }
+
+    async getFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number, device?: IDevice): Promise<IDeviceFieldBasic> {
+        let state = await this.getComplexGroupState(deviceId, groupId, stateId, device);
+        let field = getFieldInComplexGroup(state, fieldId);
+        return field;
+    }
+
+    // async checkDoesDeviceExist(deviceId: number): Promise<boolean> {
+    //     try {
+    //         await this.db.getDevicebyId(deviceId);
+    //     } catch {
+    //         return false;
+    //     }
+    //     return true;
+    // }
+
+    async checkDoesGroupExist(deviceId: number, groupId: number, device?: IDevice): Promise<boolean> {
+        try {
+            await this.getGroup(deviceId, groupId, device);
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+    async checkDoesFieldExist(deviceId: number, groupId: number, fieldId: number, device?: IDevice): Promise<boolean> {
+        try {
+            await this.getField(deviceId, groupId, fieldId, device);
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+    async checkDoesComplexGroupExist(deviceId: number, complexGroupId: number, device?: IDevice): Promise<boolean> {
+        try {
+            await this.getComplexGroup(deviceId, complexGroupId, device);
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+    async checkDoesComplexGroupStateExist(deviceId: number, complexGroupId: number, stateId: number, device?: IDevice): Promise<boolean> {
+        try {
+            await this.getComplexGroupState(deviceId, complexGroupId, stateId, device);
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+    async checkDoesComplexGroupFieldExist(deviceId: number, complexGroupId: number, stateId: number, fieldId: number, device?: IDevice): Promise<boolean> {
+        try {
+            await this.getFieldInComplexGroup(deviceId, complexGroupId, stateId, fieldId, device);
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+
 }

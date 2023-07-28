@@ -17,6 +17,10 @@ export class UserService {
         this.emailService = emailServiceSingletonFactory.getInstance();
     }
 
+    async getUserbyId(id: number): Promise<IUser> {
+        return await this.db.getUserbyId(id);
+    }
+
     async loginUserByCreds(username: string, password: string): Promise<ILoginResponse> {
         var users = await this.db.getUsers();
         const user = users.find(user => user.username === username);
@@ -59,8 +63,8 @@ export class UserService {
         return user;
     }
 
-    async removeAllMyTokens(dontRemoveToken: string){
-        await this.db.removeAllMyTokens(dontRemoveToken); 
+    async removeAllMyTokens(dontRemoveToken: string) {
+        await this.db.removeAllMyTokens(dontRemoveToken);
     }
 
     async getUserbyEmail(email: string): Promise<IUser> {

@@ -2,14 +2,16 @@ import { IDevice, IUser } from "models/basicModels";
 import { IDeviceRightsRequest } from "models/frontendModels";
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { Db } from "firestoreDB/db";
-import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
+import { DeviceService } from "../../../services/deviceService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
+var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IDeviceRightsRequest = req.body;
@@ -26,7 +28,7 @@ router.post('/', async (req: any, res: any) => {
 
     let device: IDevice;
     try {
-        device = await db.getDevicebyId(request.deviceId);
+        device = await deviceService.getDevicebyId(request.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message);

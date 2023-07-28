@@ -267,7 +267,7 @@ export class Db {
 
     async addUserRightToGroup(user: IUser, deviceId: number, groupId: number, readOnly: boolean) {
         let currUserRightToDevice = await this.checkUserRightToDevice(user, deviceId);
-        let currUserRightToGroup = await this.checkUserRightToComplexGroup(user, deviceId, groupId);
+        let currUserRightToGroup = await this.checkUserRightToGroup(user, deviceId, groupId);
 
         if (!readOnly) { //write
             if (currUserRightToDevice === ERightType.Write) {

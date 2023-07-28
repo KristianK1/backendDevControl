@@ -5,22 +5,25 @@ import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFa
 import { ERightType } from "../../../models/userRightsModels";
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { Db } from "firestoreDB/db";
-import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
+import { DeviceService } from "../../../services/deviceService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
+var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/device', async (req: any, res: any) => {
     let request: IChangeComplexGroupField_Device = req.body;
 
     try {
-        await db.changeFieldValueInComplexGroupFromDevice(request.deviceKey, request.groupId, request.stateId, request.fieldId, request.fieldValue);
-        let id = (await db.getDevicebyKey(request.deviceKey)).id;
+        await deviceService.changeFieldValueInComplexGroupFromDevice(request.deviceKey, request.groupId, request.stateId, request.fieldId, request.fieldValue);
+        let id = (await deviceService.getDevicebyKey(request.deviceKey)).id;
         wsServer.emitComplexGroupChanged(id, request.groupId);
     } catch (e) {
         res.status(400);
@@ -50,7 +53,7 @@ router.post('/user', async (req: any, res: any) => {
     }
 
     try {
-        await db.changeFieldValueInComplexGroupFromUser(request.deviceId, request.groupId, request.stateId, request.fieldId, request.fieldValue);
+        await deviceService.changeFieldValueInComplexGroupFromUser(request.deviceId, request.groupId, request.stateId, request.fieldId, request.fieldValue);
         wsServer.emitComplexGroupChanged(request.deviceId, request.groupId); //bez await-a
     } catch (e) {
         res.status(400);

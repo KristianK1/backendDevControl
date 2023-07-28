@@ -4,20 +4,23 @@ import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { Db } from "firestoreDB/db";
-import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
+import { DeviceService } from "../../../services/deviceService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
+var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IAddUserRightFieldReq = req.body;
     console.log("field rights router");
-    
+
     if (typeof request.readOnly !== "boolean") {
         res.status(400);
         res.send('readOnly property must be boolean');
@@ -35,7 +38,7 @@ router.post('/', async (req: any, res: any) => {
 
     let device: IDevice;
     try {
-        device = await db.getDevicebyId(request.deviceId);
+        device = await deviceService.getDevicebyId(request.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -50,7 +53,7 @@ router.post('/', async (req: any, res: any) => {
 
     let user: IUser;
     try {
-        user = await db.getUserbyId(request.userId);
+        user = await userService.getUserbyId(request.userId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -63,12 +66,9 @@ router.post('/', async (req: any, res: any) => {
         return;
     }
 
-    try {
-        let group = db.getDeviceFieldGroup(device, request.groupId);
-        db.getDeviceField(group, request.fieldId);
-    } catch (e) {
+    if (!(await deviceService.checkDoesFieldExist(request.deviceId, request.groupId, request.fieldId))) {
         res.status(400);
-        res.send(e.message);
+        res.send('Field doesn\'t exist');
         return;
     }
 

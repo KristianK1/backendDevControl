@@ -2,16 +2,16 @@ import { IChangeDeviceAdminReq } from "../../../models/API/deviceCreateAlterReqR
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 import { IDevice, IUser } from "models/basicModels";
-import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { Db } from "firestoreDB/db";
-import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
+import { DeviceService } from "../../../services/deviceService";
 
 var express = require('express');
 var router = express.Router();
 
-var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
+var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
@@ -22,7 +22,7 @@ router.post('/', async (req: any, res: any) => {
 
     let device: IDevice;
     try {
-        device = await db.getDevicebyId(changeDeviceAdminReq.deviceId);
+        device = await deviceService.getDevicebyId(changeDeviceAdminReq.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -46,7 +46,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        await db.getUserbyId(changeDeviceAdminReq.userAdminId);
+        await userService.getUserbyId(changeDeviceAdminReq.userAdminId);
     } catch (e) {
         console.log("change admin request - ERROR2");
         res.status(400);
@@ -55,19 +55,14 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        await db.changeDeviceAdmin(changeDeviceAdminReq.deviceId, changeDeviceAdminReq.userAdminId);
-        await db.addUserRightToDevice(admin, device.id, false)
-        wsServer.emitDeviceRegistrationById(changeDeviceAdminReq.deviceId);
+        await deviceService.changeDeviceAdmin(changeDeviceAdminReq.deviceId, changeDeviceAdminReq.userAdminId);
+        wsServer.emitDeviceRegistrationById(changeDeviceAdminReq.deviceId); //TODO jel treba oboje
         wsServer.emitUserRightUpdate(admin.id, changeDeviceAdminReq.deviceId)
     } catch (e) {
-        console.log("change admin request - ERROR3");
-        console.log(e.message);
-        
         res.status(400);
         res.send(e.message);
         return;
     }
-    console.log("change admin request END");
 
     res.sendStatus(200);
 });

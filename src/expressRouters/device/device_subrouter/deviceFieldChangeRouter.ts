@@ -5,21 +5,24 @@ import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFa
 import { ERightType } from "../../../models/userRightsModels";
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { Db } from "firestoreDB/db";
-import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
+import { DeviceService } from "../../../services/deviceService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
+var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
+
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/device', async (req: any, res: any) => {
     let request: IChangeDeviceField_Device = req.body;
     try {
-        await db.changeDeviceFieldValueFromDevice(request.deviceKey, request.groupId, request.fieldId, request.fieldValue)
-        let id = (await db.getDevicebyKey(request.deviceKey)).id;
+        await deviceService.changeDeviceFieldValueFromDevice(request.deviceKey, request.groupId, request.fieldId, request.fieldValue)
+        let id = (await deviceService.getDevicebyKey(request.deviceKey)).id;
         wsServer.emitFieldChanged(id, request.groupId, request.fieldId);
     } catch (e) {
         res.status(400);
@@ -48,7 +51,7 @@ router.post('/user', async (req: any, res: any) => {
     }
 
     try {
-        await db.changeDeviceFieldValueFromUser(request.deviceId, request.groupId, request.fieldId, request.fieldValue);
+        await deviceService.changeDeviceFieldValueFromUser(request.deviceId, request.groupId, request.fieldId, request.fieldValue);
         wsServer.emitFieldChanged(request.deviceId, request.groupId, request.fieldId);
     } catch (e) {
         res.status(400);

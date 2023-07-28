@@ -1,16 +1,13 @@
-import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { IChangePasswordRequest } from 'models/API/loginRegisterReqRes';
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 import { ELogoutReasons } from '../../../models/frontendModels';
-import { Db } from "firestoreDB/db";
 import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
 
 var express = require('express');
 var router = express.Router();
 
-var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 

@@ -3,18 +3,17 @@ import { IUser } from "models/basicModels";
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 import { ERightType } from "../../../models/userRightsModels";
-import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { Db } from "firestoreDB/db";
-import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
 import { DeviceService } from "../../../services/deviceService";
+import { UserPermissionService } from "services/userPermissionService";
 
 var express = require('express');
 var router = express.Router();
 
-var db: Db = DBSingletonFactory.getInstance();
 var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
+var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
 
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
@@ -43,7 +42,7 @@ router.post('/user', async (req: any, res: any) => {
         return;
     }
 
-    let right = await db.checkUserRightToField(user, request.deviceId, request.groupId, request.fieldId);
+    let right = await userPermissionService.checkUserRightToField(user, request.deviceId, request.groupId, request.fieldId);
     if (right !== ERightType.Write) {
         res.status(400);
         res.send('User doesn\'t have write rights to this field');

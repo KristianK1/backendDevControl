@@ -3,11 +3,8 @@ import { v4 as uuid } from 'uuid';
 import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { compareFields, getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "./../firestoreDB/deviceStructureFunctions";
-import { IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser } from "models/frontendModels";
+import { IDeviceForDevice } from "models/frontendModels";
 import { getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
-import { ERightType } from "../models/userRightsModels";
-import { group } from "console";
-import { stat } from "fs";
 
 export class DeviceService {
     private db: Db;
@@ -58,7 +55,7 @@ export class DeviceService {
     }
 
     async deleteDevice(id: number) {
-        await this.deleteDeviceOnAllUsers(id);
+        // await this.deleteDeviceOnAllUsers(id); //TODO FIXXXX
         await this.db.deleteDevice(id);
     }
 
@@ -94,6 +91,7 @@ export class DeviceService {
     async deleteDeviceFieldGroup(deviceId: number, groupId: number) {
         let device = await this.getDevicebyId(deviceId);
         getDeviceFieldGroup(device, groupId);
+        // await this.deleteGroupOnAllUsers(deviceId, groupId); //TODO FIXXXX
         await this.db.deleteDeviceFieldGroup(deviceId, groupId);
     }
 
@@ -112,6 +110,7 @@ export class DeviceService {
         let device = await this.getDevicebyId(deviceId);
         let groupField = getDeviceFieldGroup(device, groupId);
         getDeviceField(groupField, fieldId);
+        // await this.deleteFieldOnAllUsers(deviceId, groupId, fieldId); //TODO FIXXXX
         await this.db.deleteDeviceField(deviceId, groupId, fieldId);
     }
 
@@ -134,6 +133,7 @@ export class DeviceService {
     }
 
     async deleteComplexGroup(deviceId: number, complexGroupId: number) {
+        // await this.deleteComplexGroupOnAllUsers(deviceId, complexGroupId); //TODO FIXXXX
         await this.db.deleteComplexGroup(deviceId, complexGroupId);
     }
 
@@ -204,11 +204,6 @@ export class DeviceService {
         await this.db.deleteFieldInComplexGroup(deviceId, groupId, stateId, fieldId);
     }
 
-
-
-
-
-
     async changeDeviceFieldValueFromDevice(deviceKey: string, groupId: number, fieldId: number, fieldValue: any) {
         let device = await this.getDevicebyKey(deviceKey);
         let group = getDeviceFieldGroup(device, groupId);
@@ -226,20 +221,6 @@ export class DeviceService {
         }
         await this.tryToChangeDeviceFieldValue(deviceId, groupId, field, fieldValue);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     async registerDeviceData(deviceData: IDevice) {
         let device = await this.getDevicebyKey(deviceData.deviceKey);
@@ -568,6 +549,4 @@ export class DeviceService {
         }
         return true;
     }
-
-
 }

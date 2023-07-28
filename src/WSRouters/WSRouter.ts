@@ -6,15 +6,14 @@ import { getCurrentTimeISO, getCurrentTimeUNIX } from '../generalStuff/timeHandl
 import { IDevice, IUser } from 'models/basicModels';
 import { ERightType } from '../models/userRightsModels';
 import { ELogoutReasons, IDeviceForUser, ILoggedReason, IWSSMessageForUser } from '../models/frontendModels';
-import { DBSingletonFactory } from '../firestoreDB/singletonService';
-import { Db } from 'firestoreDB/db';
-import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../services/serviceSingletonFactory";
 import { UserService } from "../services/userService";
 import { DeviceService } from "../services/deviceService";
+import { UserPermissionService } from "services/userPermissionService";
 
-var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
 var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
 
 const WSRouterEmitCheckInterval = 200;
 const WSRouterSlowTapInterval = 1000;
@@ -129,16 +128,16 @@ export class MyWebSocketServer {
 
         setInterval(() => {
             // console.log("wsRouter Queue check. Size: " + this.deviceDataEmitQueue.length + "                        " + getCurrentTimeISO());
-            for(let i = 0; i < this.deviceDataEmitQueue.length; i++){
+            for (let i = 0; i < this.deviceDataEmitQueue.length; i++) {
                 let connection = this.deviceDataEmitQueue[i];
                 console.log(i + ": fromLastEmit: " + (getCurrentTimeUNIX() - connection.lastEmited));
-                if(getCurrentTimeUNIX() - connection.lastEmited > WSRouterSlowTapInterval){
+                if (getCurrentTimeUNIX() - connection.lastEmited > WSRouterSlowTapInterval) {
                     console.log("emit " + i);
-                    
+
                     this.emitDeviceDataToConnection(connection).then(() => {
                         connection.lastEmited = getCurrentTimeUNIX();
                     });
-                    this.deviceDataEmitQueue.splice(i,1);
+                    this.deviceDataEmitQueue.splice(i, 1);
                     i--;
                 }
                 console.log();
@@ -150,9 +149,9 @@ export class MyWebSocketServer {
     async logoutAllUsersSessions(userId: number, reason: ELogoutReasons, safeToken?: string) {
         let clients = this.userClients.filter(client => client.userId === userId);
         let logoutReason: ILoggedReason = { logoutReason: reason };
-        let message: IWSSMessageForUser= {
+        let message: IWSSMessageForUser = {
             messageType: "userMessage",
-            data: logoutReason,           
+            data: logoutReason,
         }
         for (let client of clients) {
             if (client.authToken === safeToken) continue;
@@ -170,9 +169,9 @@ export class MyWebSocketServer {
     async logoutUserSession(token: string, reason: ELogoutReasons) {
         let clients = this.userClients.filter(client => client.authToken === token);
         let logoutReason: ILoggedReason = { logoutReason: reason };
-        let message: IWSSMessageForUser= {
+        let message: IWSSMessageForUser = {
             messageType: "userMessage",
-            data: logoutReason,           
+            data: logoutReason,
         }
         for (let client of clients) {
             client.basicConnection.connection.sendUTF(JSON.stringify(message));
@@ -205,7 +204,7 @@ export class MyWebSocketServer {
 
         let usersWithRight: IUser[] = [];
         for (let user of allUsers) {
-            let right = await db.checkAnyUserRightToDevice(user, deviceData);
+            let right = await userPermissionService.checkAnyUserRightToDevice(user, deviceData);
             if (right) {
                 usersWithRight.push(user);
             }
@@ -226,7 +225,7 @@ export class MyWebSocketServer {
 
         let usersWithRight: IUser[] = [];
         for (let user of allUsers) {
-            let right = await db.checkUserRightToField(user, deviceId, groupId, fieldId, deviceData);
+            let right = await userPermissionService.checkUserRightToField(user, deviceId, groupId, fieldId, deviceData);
             if (right === ERightType.Write || right === ERightType.Read) {
                 usersWithRight.push(user);
             }
@@ -248,7 +247,7 @@ export class MyWebSocketServer {
 
         let usersWithRight: IUser[] = [];
         for (let user of allUsers) {
-            let right = await db.checkUserRightToComplexGroup(user, deviceId, complexGroupId, deviceData);
+            let right = await userPermissionService.checkUserRightToComplexGroup(user, deviceId, complexGroupId, deviceData);
             if (right === ERightType.Write || right === ERightType.Read) {
                 usersWithRight.push(user);
             }
@@ -262,26 +261,7 @@ export class MyWebSocketServer {
         let user = await userService.getUserbyId(userId);
         for (let userClient of this.userClients) {
             if (userClient.userId !== user.id) continue;
-            // try {
-                // let isActive = this.isDeviceActive(deviceData.id)
-                // let deviceForUser = await userDB.getDeviceForUser(user, deviceData, isActive);
-                // if (!deviceForUser) {
-                //     let response: IDeviceForUserFailed = {
-                //         lostRightsToDevice: deviceId,
-                //     }
-                //     let message: IWSSMessageForUser = {
-                //         messageType: "lostRightsToDevice",
-                //         data: response,
-                //     }
-                    
-                //     userClient.basicConnection.connection.sendUTF(JSON.stringify(message));
-                // }
-                // else {
-                this.sendAllDataToUsers([user]);
-                // }
-            // } catch (e) {
-            //     console.log(e);
-            // }
+            this.sendAllDataToUsers([user]);
         }
     }
 
@@ -294,21 +274,21 @@ export class MyWebSocketServer {
     private async emitDeviceDataToConnection(userConnection: IWSSConnectionUser) {
         let devices = await deviceService.getDevices();
         let user = await userService.getUserbyId(userConnection.userId);
-        
+
         let userData = JSON.stringify(await this.getAllDeviceDataMessageForUser(devices, user));
         this.sendDataToUserConnection(userData, userConnection);
     }
     //<single connection emit>
-    
+
 
     //<collect data>
-    private async getAllDeviceDataMessageForUser(allDeviceData: IDevice[], user: IUser): Promise<IWSSMessageForUser>{
+    private async getAllDeviceDataMessageForUser(allDeviceData: IDevice[], user: IUser): Promise<IWSSMessageForUser> {
         let devices: IDeviceForUser[] = [];
-        for(let device of allDeviceData){
-       
-            let  isActive = this.isDeviceActive(device.id);
-            let deviceForUser = await deviceService.getDeviceForUser(user, device, isActive);
-            if (deviceForUser){
+        for (let device of allDeviceData) {
+
+            let isActive = this.isDeviceActive(device.id);
+            let deviceForUser = await userPermissionService.getDeviceForUser(user, device, isActive);
+            if (deviceForUser) {
                 devices.push(deviceForUser);
             }
         }
@@ -322,35 +302,35 @@ export class MyWebSocketServer {
 
 
     //<send>
-    private async sendAllDataToUsers(users: IUser[]){
+    private async sendAllDataToUsers(users: IUser[]) {
         let devices = await deviceService.getDevices();
-        for(let user of users){
+        for (let user of users) {
             let userData = JSON.stringify(await this.getAllDeviceDataMessageForUser(devices, user));
-            
+
             let userConnections = this.userClients.filter(o => o.userId === user.id)
-            for(let connection of userConnections){
+            for (let connection of userConnections) {
                 this.sendDataToUserConnection(userData, connection);
             }
         }
     }
 
-    private async sendUserDataToUser(user: IUser[]){
-        
+    private async sendUserDataToUser(user: IUser[]) {
+
     }
 
-    private async sendDataToUserConnection(data: string, userConnection: IWSSConnectionUser, urgent?: boolean){
-        if(urgent){
+    private async sendDataToUserConnection(data: string, userConnection: IWSSConnectionUser, urgent?: boolean) {
+        if (urgent) {
             userConnection.basicConnection.connection.sendUTF(data);
-        }else{
+        } else {
             let currentTime = getCurrentTimeUNIX();
-            if(currentTime - userConnection.lastEmited > WSRouterSlowTapOverrideInterval){
+            if (currentTime - userConnection.lastEmited > WSRouterSlowTapOverrideInterval) {
                 //enough time has passed from some old emit to this connection
                 userConnection.basicConnection.connection.sendUTF(data);
                 userConnection.lastEmited = getCurrentTimeUNIX();
             }
-            else{
-                let exists = !!this.deviceDataEmitQueue.find(o => o.basicConnection === userConnection.basicConnection );
-                if(!exists){
+            else {
+                let exists = !!this.deviceDataEmitQueue.find(o => o.basicConnection === userConnection.basicConnection);
+                if (!exists) {
                     this.deviceDataEmitQueue.push(userConnection);
                 }
             }
@@ -363,7 +343,7 @@ export class MyWebSocketServer {
     }
 
 
-        // async logoutUserSession(token: string, reason: ELogoutReasons) {
+    // async logoutUserSession(token: string, reason: ELogoutReasons) {
     //     let client = this.userClients.find(client => client.authToken === token);
     //     let logoutReason: ILoggedReason = { logoutReason: reason };
     //     client?.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));

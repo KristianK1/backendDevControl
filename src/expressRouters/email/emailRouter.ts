@@ -1,8 +1,6 @@
-import { Db } from "firestoreDB/db";
 import { IEmailConfirmationData } from "../../emailService/emailModels";
 import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath, emailConfirmation_formHandlerPath, forgotPassword_formHandlerPath, setupNewPasswordPath, setupNewPassword_formHandlerPath } from "../../emailService/emailPaths";
 import { IUser } from "models/basicModels";
-import { DBSingletonFactory } from "../../firestoreDB/singletonService";
 import { UserService } from "../../services/userService";
 import { userServiceSingletonFactory } from "../../services/serviceSingletonFactory";
 
@@ -11,7 +9,6 @@ var validator = require("email-validator");
 var express = require('express');
 var router = express.Router();
 
-var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
 
 

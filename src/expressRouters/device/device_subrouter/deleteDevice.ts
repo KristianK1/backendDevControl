@@ -1,17 +1,18 @@
-import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { Db } from "firestoreDB/db";import { IDeleteDeviceReq } from "../../../models/API/deviceCreateAlterReqRes";
 import { IDevice, IUser } from "../../../models/basicModels";
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
-import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
 import { DeviceService } from "../../../services/deviceService";
+import { UserPermissionService } from "services/userPermissionService";
+import { IDeleteDeviceReq } from "models/API/deviceCreateAlterReqRes";
+
 var express = require('express');
 var router = express.Router();
 
-var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
 var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
 
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
@@ -43,8 +44,8 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        let users = await deviceService.getAllUsersWithRightToDevice(device);
-        await db.deleteDevice(removeDeviceReq.deviceId);
+        let users = await userPermissionService.getAllUsersWithRightToDevice(device);
+        await deviceService.deleteDevice(removeDeviceReq.deviceId);
         wsServer.emitDeviceDeleted(users, removeDeviceReq.deviceId);
     } catch (e) {
         res.status(400);

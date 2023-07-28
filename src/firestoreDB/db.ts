@@ -145,7 +145,6 @@ export class Db {
     }
 
     async deleteUserRightToDevice(userId: number, deviceId: number) {
-        // await this.deleteNestedRightsForDevice(user, deviceId, false);
         await this.firestore.updateDocumentValue(Db.usersCollName, `${userId}`, {
             [`userRight.rightsToDevices.${deviceId}`]: FieldValue.delete()
         });
@@ -239,7 +238,6 @@ export class Db {
 
     async deleteDevice(id: number) {
         await this.firestore.deleteDocument(Db.devCollName, `${id}`);
-        await this.deleteDeviceOnAllUsers(id);
     }
 
     async changeDeviceAdmin(deviceId: number, userId: number) {
@@ -264,7 +262,7 @@ export class Db {
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}`]: FieldValue.delete()
         })
-        await this.deleteGroupOnAllUsers(deviceId, groupId);
+
     }
 
     async addDeviceField(deviceId: number, groupId: number, deviceField: IDeviceFieldBasic): Promise<void> {
@@ -283,7 +281,6 @@ export class Db {
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}`]: FieldValue.delete()
         });
-        await this.deleteFieldOnAllUsers(deviceId, groupId, fieldId);
     }
 
     async changeDeviceFieldValue(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {
@@ -321,7 +318,6 @@ export class Db {
             [`deviceFieldComplexGroups.${groupId}`]: FieldValue.delete()
         });
 
-        await this.deleteComplexGroupOnAllUsers(deviceId, groupId);
     }
 
     async addComplexGroupState(deviceId: number, groupId: number, state: IComplexFieldGroupState) {

@@ -6,7 +6,7 @@ import { ERightType, IUserRightComplexGroup, IUserRightDevice, IUserRightField, 
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { Db } from "../firestoreDB/db";
 import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from "models/frontendModels";
-import { getCurrentTimeUNIX } from "generalStuff/timeHandlers";
+import { getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
 
 export class UserPermissionService {
     userService: UserService;
@@ -285,31 +285,47 @@ export class UserPermissionService {
         }
     }
 
+    async deleteUserRightToDevice(userId: number, deviceId: number) {
+        await this.db.deleteUserRightToDevice(userId, deviceId);
+    }
+
+    async deleteUserRightToGroup(userId: number, deviceId: number, groupId: number) {
+        await this.deleteUserRightToGroup(userId, deviceId, groupId);
+    }
+
+    async deleteUserRightToField(userId: number, deviceId: number, groupId: number, fieldId: number) {
+        await this.db.deleteUserRightToField(userId, deviceId, groupId, fieldId);
+    }
+
+    async deleteUserRightToComplexGroup(userId: number, deviceId: number, complexGroupId: number) {
+        await this.db.deleteUserRightToComplexGroup(userId, deviceId, complexGroupId);
+    }
+
     async deleteDeviceOnAllUsers(deviceId: number) {
         const allUsers = await this.userService.getUsers();
         for (let user of allUsers) {
-            await this.db.deleteUserRightToDevice(user.id, deviceId);
+            await this.deleteUserRightToDevice(user.id, deviceId);
         }
     }
 
     async deleteGroupOnAllUsers(deviceId: number, groupId: number) {
         const allUsers = await this.userService.getUsers();
         for (let user of allUsers) {
-            await this.db.deleteUserRightToGroup(user.id, deviceId, groupId);
+            await this.deleteUserRightToGroup(user.id, deviceId, groupId);
         }
     }
 
     async deleteFieldOnAllUsers(deviceId: number, groupId: number, fieldId: number) {
         const allUsers = await this.userService.getUsers();
         for (let user of allUsers) {
-            await this.db.deleteUserRightToField(user.id, deviceId, groupId, fieldId);
+            await this.deleteUserRightToField(user.id, deviceId, groupId, fieldId);
         }
     }
 
     async deleteComplexGroupOnAllUsers(deviceId: number, complexGroupId: number) {
         const allUsers = await this.userService.getUsers();
         for (let user of allUsers) {
-            await this.db.deleteUserRightToComplexGroup(user.id, deviceId, complexGroupId);
+            await this.deleteUserRightToComplexGroup(user.id, deviceId, complexGroupId);
         }
     }
 
@@ -355,7 +371,7 @@ export class UserPermissionService {
         return false;
     }
 
-        async changeDeviceAdmin(deviceId: number, userId: number) {
+    async changeDeviceAdmin(deviceId: number, userId: number) {
         let device: IDevice = await this.deviceService.getDevicebyId(deviceId);
         if (device.userAdminId === userId) {
             throw ({ message: 'User is already the admin' });

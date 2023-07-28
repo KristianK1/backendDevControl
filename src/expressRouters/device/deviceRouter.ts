@@ -1,7 +1,3 @@
-import { Db } from "firestoreDB/db";
-import { DBSingletonFactory } from "../../firestoreDB/singletonService";
-
-
 var express = require('express');
 var router = express.Router();
 

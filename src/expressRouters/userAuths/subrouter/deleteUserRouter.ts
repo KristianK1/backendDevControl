@@ -1,5 +1,3 @@
-import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { Db } from "firestoreDB/db";
 import { IDeleteUserRequest } from '../../../models/API/loginRegisterReqRes';
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
@@ -12,7 +10,6 @@ import { DeviceService } from "../../../services/deviceService";
 var express = require('express');
 var router = express.Router();
 
-var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
 var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
 

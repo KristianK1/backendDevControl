@@ -1,13 +1,10 @@
-import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { ILoginByTokenRequest, ILoginRequest, ILoginResponse } from '../../../models/API/loginRegisterReqRes'
-import { Db } from "firestoreDB/db";
 import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
 
 var express = require('express');
 var router = express.Router();
 
-var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
 
 

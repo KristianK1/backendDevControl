@@ -2,18 +2,17 @@ import { IDeleteUserRightGroupReq } from "models/API/UserRightAlterReqRes";
 import { IDevice, IUser } from "models/basicModels";
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
-import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { Db } from "firestoreDB/db";
-import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
 import { DeviceService } from "../../../services/deviceService";
+import { UserPermissionService } from "services/userPermissionService";
 
 var express = require('express');
 var router = express.Router();
 
-var db: Db = DBSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
 var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
 
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
@@ -54,7 +53,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        await db.deleteUserRightToGroup(user, request.deviceId, request.groupId);
+        await userPermissionService.deleteUserRightToGroup(user.id, request.deviceId, request.groupId);
         wsServer.emitUserRightUpdate(user.id, request.deviceId);
     } catch (e) {
         res.status(400);

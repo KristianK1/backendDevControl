@@ -21,6 +21,10 @@ export class UserService {
         return await this.db.getUserbyId(id);
     }
 
+    async getUsers(): Promise<IUser[]> {
+        return await this.db.getUsers();
+    }
+
     async loginUserByCreds(username: string, password: string): Promise<ILoginResponse> {
         var users = await this.db.getUsers();
         const user = users.find(user => user.username === username);
@@ -65,6 +69,10 @@ export class UserService {
 
     async removeAllMyTokens(dontRemoveToken: string) {
         await this.db.removeAllMyTokens(dontRemoveToken);
+    }
+
+    async removeToken(token: string): Promise<void> {
+        await this.db.removeToken(token);
     }
 
     async getUserbyEmail(email: string): Promise<IUser> {

@@ -43,7 +43,7 @@ router.get(emailConfirmationRegisterPath + "/:hashCode", async (req: any, res: a
     let user: IUser;
     try {
         data = await userService.getEmailConfirmationData(req.params.hashCode);
-        user = await db.getUserbyId(data.userId);
+        user = await userService.getUserbyId(data.userId);
     }
     catch (e) {
         console.log(e.message);
@@ -65,7 +65,7 @@ router.get(emailConfirmationAddEmailPath + "/:hashCode", async (req: any, res: a
     let user: IUser;
     try {
         data = await userService.getEmailConfirmationData(req.params.hashCode);
-        user = await db.getUserbyId(data.userId);
+        user = await userService.getUserbyId(data.userId);
     }
     catch (e) {
         console.log(e.message);

@@ -24,35 +24,34 @@ router.post('/', async (req: any, res: any) => {
         return;
     }
 
-    if(request.email === ""){
+    if (request.email === "") {
         res.status(400);
         res.send('Invalid e-mail');
         return;
     }
 
-    if(user.email !== ""){
+    if (user.email !== "") {
         res.status(400);
         res.send('User already has an email address.');
         return;
     }
 
-    try{
-        let users = await db.getUsers();
-        let userWithSameEmail = users.find(o => o.email === request.email);
-        if(userWithSameEmail){
+    try {
+        let user = await userService.getUserbyEmail(request.email);
+        if (user) {
             res.status(400);
             res.send('This email is already linked to a diffrent user');
             return;
         }
-    }catch(e){
+    } catch (e) {
         res.status(400);
         res.send(e.message);
         return;
     }
 
-    try{
+    try {
         userService.sendEmailConfirmation_addEmail(user.id, user.username, request.email);
-    }catch(e){
+    } catch (e) {
         res.status(400);
         res.send(e.message)
         return;

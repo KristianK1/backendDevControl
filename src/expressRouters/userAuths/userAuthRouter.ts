@@ -21,20 +21,4 @@ router.use('/changePassword', changePasswordRouter);
 var addEmailRouter = require('./subrouter/addEmailRouter.ts');
 router.use('/addEmail', addEmailRouter);
 
-
-
-var db = DBSingletonFactory.getInstance();
-
-router.get('/:id', async (req: any, res: any) => {
-    let id = req.params.id;
-    let user;
-    try {
-        user = await db.getUserbyId(id);
-    } catch (e) {
-        res.status(400);
-        res.send(e.message);
-    }
-    res.json(user);
-})
-
 module.exports = router;

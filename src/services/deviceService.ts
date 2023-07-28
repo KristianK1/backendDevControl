@@ -20,6 +20,10 @@ export class DeviceService {
         return await this.db.getDevicebyId(id);
     }
 
+    async getDevices(): Promise<IDevice[]> {
+        return await this.db.getTransformedDevices();
+    }
+
     async getDevicebyKey(key: string): Promise<IDevice> {
         return await this.db.getDevicebyKey(key);
     }

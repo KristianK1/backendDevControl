@@ -30,13 +30,13 @@ router.post('/', async (req: any, res: any) => {
 
     try {
         if (logoutRequest.logoutOtherSessions) {
-            await db.removeAllMyTokens(logoutRequest.authToken)
-            await db.removeToken(logoutRequest.authToken);
+            await userService.removeAllMyTokens(logoutRequest.authToken)
+            await userService.removeToken(logoutRequest.authToken);
             wsServer.logoutAllUsersSessions(user.id, ELogoutReasons.LogoutAll, logoutRequest.authToken);
         }
         else{
-            await db.removeToken(logoutRequest.authToken);
-            // wsServer.logoutUserSession(logoutRequest.authToken, ELogoutReasons.LogoutMyself)
+            await userService.removeToken(logoutRequest.authToken);
+            // wsServer.logoutUserSession(logoutRequest.authToken, ELogoutReasons.LogoutMyself) //TODO hmm commented (android implications)
         }
     } catch (e) {
         res.status(400);

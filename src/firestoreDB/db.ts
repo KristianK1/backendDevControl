@@ -81,6 +81,56 @@ export class Db {
     }
     //</USER>
 
+    //<TOKENs>
+    async generateAndSaveNewToken(userId: number): Promise<IAuthToken> {
+
+        const newAuthToken = uuid().replace('-', '');
+        const authToken: IAuthToken = {} as IAuthToken;
+
+        authToken.authToken = newAuthToken;
+        authToken.userId = userId;
+        authToken.validUntil = addDaysToCurrentTime(30);
+
+        await this.firestore.setDocumentValue(Db.authTokenCollName, newAuthToken, authToken);
+
+        return authToken;
+    }
+
+    async getToken(token: string): Promise<IAuthToken> {
+        return await this.firestore.getDocumentData(Db.authTokenCollName, token);
+    }
+
+    async extendToken(token: string): Promise<void> {
+        await this.firestore.updateDocumentValue(Db.authTokenCollName, token, {
+            validUntil: addDaysToCurrentTime(30)
+        });
+    }
+
+    async getTokens(): Promise<IAuthToken[]> {
+        return await this.firestore.getCollectionData(Db.authTokenCollName);
+    }
+
+    async removeToken(token: string) {
+        let authTokenDB: IAuthToken = await this.firestore.getDocumentData(Db.authTokenCollName, token);
+        if (!authTokenDB) {
+            throw ({ message: 'Couldn\'t find token' });
+        }
+        await this.firestore.deleteDocument(Db.authTokenCollName, token);
+    }
+
+    async removeAllMyTokens(dontRemoveToken: string) {
+        let authTokenDB: IAuthToken = await this.firestore.getDocumentData(Db.authTokenCollName, dontRemoveToken);
+        if (!authTokenDB) {
+            throw ({ message: 'Couldn\'t find token' });
+        }
+        const allAuthTokens: IAuthToken[] = await this.firestore.getCollectionData(Db.authTokenCollName);
+        allAuthTokens.forEach(async token => { //TODO maybe regular for loop
+            if (token.userId == authTokenDB.userId && token.authToken !== dontRemoveToken) {
+                await this.firestore.deleteDocument(Db.authTokenCollName, `${token.authToken}`);
+            }
+        })
+    }
+    //</TOKENs>
 
     //<USER_RIGHTS>
     async getUserRights(userId: number): Promise<IUserRight> {
@@ -580,61 +630,6 @@ export class Db {
         return result;
     }
     //</USER_RIGHTS>
-
-
-    //<TOKENs>
-    async generateAndSaveNewToken(userId: number): Promise<IAuthToken> {
-
-        const newAuthToken = uuid().replace('-', '');
-        const authToken: IAuthToken = {} as IAuthToken;
-
-        authToken.authToken = newAuthToken;
-        authToken.userId = userId;
-        authToken.validUntil = addDaysToCurrentTime(30);
-
-        await this.firestore.setDocumentValue(Db.authTokenCollName, newAuthToken, authToken);
-
-        return authToken;
-    }
-
-    async getToken(token: string): Promise<IAuthToken> {
-        return await this.firestore.getDocumentData(Db.authTokenCollName, token);
-    }
-
-    async extendToken(token: string): Promise<void> {
-        await this.firestore.updateDocumentValue(Db.authTokenCollName, token, {
-            validUntil: addDaysToCurrentTime(30)
-        });
-    }
-
-    async getTokens(): Promise<IAuthToken[]> {
-        return await this.firestore.getCollectionData(Db.authTokenCollName);
-    }
-
-    async removeToken(token: string) {
-        let authTokenDB: IAuthToken = await this.firestore.getDocumentData(Db.authTokenCollName, token);
-        if (!authTokenDB) {
-            throw ({ message: 'Couldn\'t find token' });
-        }
-        await this.firestore.deleteDocument(Db.authTokenCollName, token);
-    }
-
-    async removeAllMyTokens(dontRemoveToken: string) {
-        let authTokenDB: IAuthToken = await this.firestore.getDocumentData(Db.authTokenCollName, dontRemoveToken);
-        if (!authTokenDB) {
-            throw ({ message: 'Couldn\'t find token' });
-        }
-        const allAuthTokens: IAuthToken[] = await this.firestore.getCollectionData(Db.authTokenCollName);
-        allAuthTokens.forEach(async token => { //TODO maybe regular for loop
-            if (token.userId == authTokenDB.userId && token.authToken !== dontRemoveToken) {
-                await this.firestore.deleteDocument(Db.authTokenCollName, `${token.authToken}`);
-            }
-        })
-    }
-    //</TOKENs>
-
-
-
 
     //<DEVICE>
     private async getDevices(): Promise<IDevice[]> {
@@ -1372,7 +1367,7 @@ export class Db {
         await this.firestore.setDocumentValue(Db.forgetPasswordRequestsCollName, `${request.userId}`, request);
     }
 
-    async deleteForgotPasswordRequest(userId: number): Promise<void>{
+    async deleteForgotPasswordRequest(userId: number): Promise<void> {
         await this.firestore.deleteDocument(Db.forgetPasswordRequestsCollName, `${userId}`);
     }
     async getAllForgotPasswordRequests(): Promise<IForgotPasswordData[]> {

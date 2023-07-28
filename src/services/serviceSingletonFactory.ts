@@ -1,4 +1,5 @@
 import { DeviceService } from "./deviceService";
+import { UserPermissionService } from "./userPermissionService";
 import { UserService } from "./userService";
 
 export const userServiceSingletonFactory = (function () {
@@ -33,6 +34,24 @@ export const deviceServiceSingletonFactory = (function () {
                 deviceService = createInstance();
             }
             return deviceService;
+        }
+    };
+})();
+
+export const userPermissionServiceSingletonFactory = (function () {
+    var userPermissionService: UserPermissionService;
+
+    function createInstance(): UserPermissionService {
+        var object = new UserPermissionService();
+        return object;
+    }
+
+    return {
+        getInstance: function () {
+            if (!userPermissionService) {
+                userPermissionService = createInstance();
+            }
+            return userPermissionService;
         }
     };
 })();

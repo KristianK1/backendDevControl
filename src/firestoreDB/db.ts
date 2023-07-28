@@ -686,106 +686,22 @@ export class Db {
         });
     }
 
-
-    async getDeviceForUser(user: IUser, device: IDevice, isActive: boolean): Promise<IDeviceForUser | undefined> {
-        if (! await this.checkAnyUserRightToDevice(user, device)) return;
-        let deviceReduced: IDeviceForUser = {
-            id: device.id,
-            deviceKey: device.deviceKey,
-            deviceName: device.deviceName,
-            userAdminId: device.userAdminId,
-            deviceFieldGroups: [],
-            deviceFieldComplexGroups: [],
-            updateTimeStamp: 0,
-            isActive: isActive,
-        }
-
-        for (let group of device.deviceFieldGroups) {
-            let groupReduced: IFieldGroupForUser = {
-                id: group.id,
-                groupName: group.groupName,
-                fields: [],
-            }
-            for (let field of group.fields) {
-                let fieldRight = await this.checkUserRightToField(user, device.id, group.id, field.id, device);
-                if (fieldRight === ERightType.None) continue;
-
-                let fieldReduced: IDeviceFieldBasicForUser = {
-                    deviceId: field.deviceId,
-                    groupId: field.groupId,
-                    id: field.id,
-                    fieldName: field.fieldName,
-                    fieldType: field.fieldType,
-                    fieldValue: field.fieldValue,
-                    readOnly: fieldRight === ERightType.Read,
-                }
-                groupReduced.fields.push(fieldReduced);
-            }
-            if (groupReduced.fields.length > 0) {
-                deviceReduced.deviceFieldGroups.push(groupReduced);
-            }
-        }
-
-        for (let complexGroup of device.deviceFieldComplexGroups) {
-            let complexGroupRight = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.id, device);
-            if (complexGroupRight === ERightType.None) continue;
-
-            let complexGroupReduced: IComplexFieldGroupForUser = {
-                id: complexGroup.id,
-                groupName: complexGroup.groupName,
-                currentState: complexGroup.currentState,
-                fieldGroupStates: complexGroup.fieldGroupStates,
-                readOnly: complexGroupRight === ERightType.Read,
-            }
-            deviceReduced.deviceFieldComplexGroups.push(complexGroupReduced);
-        }
-        deviceReduced.updateTimeStamp = getCurrentTimeUNIX();
-        return deviceReduced;
-    }
-
-    async getDeviceForDevice(device: IDevice) {
-        let deviceData: IDeviceForDevice = {
-            id: device.id,
-            deviceKey: device.deviceKey,
-            deviceName: device.deviceName,
-            deviceFieldGroups: device.deviceFieldGroups,
-            deviceFieldComplexGroups: device.deviceFieldComplexGroups,
-            userAdminId: device.userAdminId,
-            updateTimeStamp: getCurrentTimeUNIX(),
-        }
-        return deviceData;
-    }
-
-    async addDeviceFieldGroup(deviceId: number, groupId: number, groupName: string): Promise<void> {
-        // let device = await this.getDevicebyId(deviceId);
-        let newGroup: IFieldGroup = {
-            id: groupId,
-            groupName: groupName,
-            fields: [],
-        }
-
+    async addDeviceFieldGroup(deviceId: number, newGroup: IFieldGroup): Promise<void> {
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${newGroup.id}`]: newGroup
         });
     }
 
     async renameDeviceFieldGroup(deviceId: number, groupId: number, groupName: string) {
-        let device = await this.getDevicebyId(deviceId);
-        getDeviceFieldGroup(device, groupId);
-
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.groupName`]: groupName
         });
     }
 
     async deleteDeviceFieldGroup(deviceId: number, groupId: number) {
-        let device = await this.getDevicebyId(deviceId);
-        getDeviceFieldGroup(device, groupId);
-
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}`]: FieldValue.delete()
         })
-
         await this.deleteGroupOnAllUsers(deviceId, groupId);
     }
 
@@ -796,121 +712,43 @@ export class Db {
     }
 
     async renameDeviceField(deviceId: number, groupId: number, fieldId: number, fieldName: string) {
-        let device = await this.getDevicebyId(deviceId);
-        let groupField = getDeviceFieldGroup(device, groupId);
-        getDeviceField(groupField, fieldId);
         await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldName`]: fieldName
         });
     }
 
     async deleteDeviceField(deviceId: number, groupId: number, fieldId: number) {
-        let device = await this.getDevicebyId(deviceId);
-        let groupField = getDeviceFieldGroup(device, groupId);
-        getDeviceField(groupField, fieldId);
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}`]: FieldValue.delete()
         });
-
         await this.deleteFieldOnAllUsers(deviceId, groupId, fieldId);
     }
 
-    async changeDeviceFieldValueFromDevice(deviceKey: string, groupId: number, fieldId: number, fieldValue: any) {
-        let device = await this.getDevicebyKey(deviceKey);
-        let group = getDeviceFieldGroup(device, groupId);
-        let field = getDeviceField(group, fieldId);
-        await this.tryToChangeDeviceFieldValue(device.id, groupId, field, fieldValue);
-    }
-
-    async changeDeviceFieldValueFromUser(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {
-        let device = await this.getDevicebyId(deviceId);
-        let group = getDeviceFieldGroup(device, groupId);
-        let field = getDeviceField(group, fieldId);
-
-        if (field.fieldValue.fieldDirection === 'output') {
-            throw ({ message: 'Field value is output only - can\'t be set by user' });
-        }
-        await this.tryToChangeDeviceFieldValue(deviceId, groupId, field, fieldValue);
-    }
-
-    private async tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any) {
-        if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
-            await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
-        }
-        else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
-            let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
-            if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
-                let N = (fieldValue - numField.minValue) / numField.valueStep;
-                if (N % 1 < 0.05 || N % 1 > 0.95) {
-                    await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
-                }
-                else throw ({ message: 'Incorrect step' });
-            }
-            else throw ({ message: 'Value out of interval [min,max]' });
-        }
-        else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
-            await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
-        }
-        else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
-            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
-            if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
-                await this.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
-            }
-            else throw ({ message: 'Out of range - MC field' });
-        }
-        else if (
-            field.fieldType === 'RGB' &&
-            ((!!fieldValue.R || fieldValue.R === 0) && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
-            ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
-            ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
-        ) {
-            console.log('RGB');
-            console.log(fieldValue);
-            await this.changeDeviceFieldValueRGB(deviceId, groupId, field.id, fieldValue);
-        }
-        else {
-            console.log('wrong');
-            throw ({ message: 'Wrong field data type' });
-        }
-    }
-
-    private async changeDeviceFieldValue(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {
+    async changeDeviceFieldValue(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {
         await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldValue.fieldValue`]: fieldValue
         });
     }
 
-    private async changeDeviceFieldValueRGB(deviceId: number, groupId: number, fieldId: number, fieldValue: IRGB) {
+    async changeDeviceFieldValueRGB(deviceId: number, groupId: number, fieldId: number, fieldValue: IRGB) {
         await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldValue.R`]: fieldValue.R
         });
-
         await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldValue.G`]: fieldValue.G
         });
-
         await this.firestore.updateDocumentValue('devices', `${deviceId}`, {
             [`deviceFieldGroups.${groupId}.fields.${fieldId}.fieldValue.B`]: fieldValue.B
         });
     }
 
-    async addComplexGroup(deviceId: number, groupId: number, groupName: string) {
-        let device = await this.getDevicebyId(deviceId);
-
-        let newGroup: IComplexFieldGroup = {
-            id: groupId,
-            groupName: groupName,
-            currentState: 0,
-            fieldGroupStates: [],
-        }
-
+    async addComplexGroup(deviceId: number, newGroup: IComplexFieldGroup) {
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${newGroup.id}`]: newGroup
         });
     }
 
     async renameComplexGroup(deviceId: number, groupId: number, groupName: string) {
-        let device = await this.getDevicebyId(deviceId);
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups[${groupId}].groupName`]: groupName
         });
@@ -924,26 +762,21 @@ export class Db {
         await this.deleteComplexGroupOnAllUsers(deviceId, groupId);
     }
 
-    async addComplexGroupState(deviceId: number, groupId: number, stateId: number, stateName: string) {
-        let device = await this.getDevicebyId(deviceId);
-        let group = getComplexGroup(device, groupId);
-
-        let state: IComplexFieldGroupState = {
-            id: stateId,
-            stateName: stateName,
-            fields: [],
-        };
+    async addComplexGroupState(deviceId: number, groupId: number, state: IComplexFieldGroupState) {
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
-            [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}`]: state
+            [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${state.id}`]: state
         });
     }
 
     async renameComplexGroupState(deviceId: number, groupId: number, stateId: number, stateName: string) {
-        let device = await this.getDevicebyId(deviceId);
-        let group = getComplexGroup(device, groupId);
-
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.stateName`]: stateName
+        });
+    }
+
+    async changeComplexGroupState(deviceId: number, groupId: number, stateId: number){
+        await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
+            [`deviceFieldComplexGroups.${groupId}.currentState`]: stateId
         });
     }
 
@@ -954,34 +787,9 @@ export class Db {
     }
 
     async addFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldData: IDeviceFieldBasic) {
-        let device = await this.getDevicebyId(deviceId);
-        let group = getComplexGroup(device, groupId);
-        let state = getComplexGroupState(group, stateId);
-
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldData.id}`]: fieldData
         });
-    }
-
-    async changeComplexGroupStateFromDevice(deviceKey: string, groupId: number, state: number) {
-        let device = await this.getDevicebyKey(deviceKey);
-        await this.tryToChangeComplexGroupState(device, groupId, state);
-    }
-
-    async changeComplexGroupStateFromUser(deviceId: number, groupId: number, state: number) {
-        let device = await this.getDevicebyId(deviceId);
-        await this.tryToChangeComplexGroupState(device, groupId, state);
-    }
-
-    private async tryToChangeComplexGroupState(device: IDevice, groupId: number, state: number) {
-        let group = getComplexGroup(device, groupId);
-        let NofStates = group.fieldGroupStates.length;
-        if (state >= 0 && state < NofStates) {
-            await this.firestore.updateDocumentValue(Db.devCollName, `${device.id}`, {
-                [`deviceFieldComplexGroups.${groupId}.currentState`]: state
-            });
-        }
-        else throw ({ message: 'Invalid state number' });
     }
 
     async deleteFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number) {
@@ -996,75 +804,13 @@ export class Db {
         });
     }
 
-    async changeFieldValueInComplexGroupFromDevice(deviceKey: string, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
-        let device = await this.getDevicebyKey(deviceKey);
-        let group = getComplexGroup(device, groupId);
-        let state = getComplexGroupState(group, stateId);
-        let field = getFieldInComplexGroup(state, fieldId);
-        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, field, fieldValue);
-    }
-
-    async changeFieldValueInComplexGroupFromUser(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
-        let device = await this.getDevicebyId(deviceId);
-        let group = getComplexGroup(device, groupId);
-        let state = getComplexGroupState(group, stateId);
-        let field = getFieldInComplexGroup(state, fieldId);
-        if (field.fieldValue.fieldDirection === 'output') {
-            throw ({ message: 'Field value is output only - can\'t be set by user' });
-        }
-        //check user rights
-        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, field, fieldValue);
-    }
-
-    private async tryToChangeFieldValueInComplexGroup(device: IDevice, groupId: number, stateId: number, field: IDeviceFieldBasic, fieldValue: any) {
-
-
-        if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
-            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
-        }
-        else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
-            let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
-            if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
-                let N = (fieldValue - numField.minValue) / numField.valueStep;
-                if (N % 1 < 0.05 || N % 1 > 0.95) {
-                    await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
-                }
-                else throw ({ message: 'Incorrect step' });
-            }
-            else throw ({ message: 'Value out of interval [min,max]' });
-
-        }
-        else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
-            await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
-        }
-        else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
-            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
-            if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
-                await this.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
-            }
-            else throw ({ message: 'Out of range - MC field' });
-        }
-        else if (
-            field.fieldType === 'RGB' &&
-            ((!!fieldValue.R || fieldValue.R === 0) && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
-            ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
-            ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
-        ) {
-            console.log(fieldValue);
-            await this.changeDeviceFieldValueInComplexGroupRGB(device.id, groupId, stateId, field.id, fieldValue);
-        }
-        else {
-            throw ({ message: 'Wrong field data type' });
-        }
-    }
-
-    private async changeDeviceFieldValueInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
+    async changeDeviceFieldValueInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldId}.fieldValue.fieldValue`]: fieldValue
         });
     }
 
-    private async changeDeviceFieldValueInComplexGroupRGB(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: IRGB) {
+    async changeDeviceFieldValueInComplexGroupRGB(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: IRGB) {
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${groupId}.fieldGroupStates.${stateId}.fields.${fieldId}.fieldValue.R`]: fieldValue.R
         });

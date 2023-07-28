@@ -1,8 +1,12 @@
-import { IComplexFieldGroup, IComplexFieldGroupState, IDevice, IDeviceFieldBasic, IFieldGroup } from "models/basicModels";
+import { IComplexFieldGroup, IComplexFieldGroupState, IDevice, IDeviceFieldBasic, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IFieldGroup, IUser } from "models/basicModels";
 import { v4 as uuid } from 'uuid';
 import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { compareFields, getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "firestoreDB/deviceStructureFunctions";
+import { IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser } from "models/frontendModels";
+import { getCurrentTimeUNIX } from "generalStuff/timeHandlers";
+import { group } from "console";
+import { ERightType } from "models/userRightsModels";
 
 export class DeviceService {
     private db: Db;
@@ -62,6 +66,185 @@ export class DeviceService {
         await this.db.deleteUserRightForNewAdmin(userId, deviceId);
     }
 
+    async getDeviceForDevice(device: IDevice) {
+        let deviceData: IDeviceForDevice = {
+            id: device.id,
+            deviceKey: device.deviceKey,
+            deviceName: device.deviceName,
+            deviceFieldGroups: device.deviceFieldGroups,
+            deviceFieldComplexGroups: device.deviceFieldComplexGroups,
+            userAdminId: device.userAdminId,
+            updateTimeStamp: getCurrentTimeUNIX(),
+        }
+        return deviceData;
+    }
+
+    async addDeviceFieldGroup(deviceId: number, groupId: number, groupName: string): Promise<void> {
+        // let device = await this.getDevicebyId(deviceId);
+        let newGroup: IFieldGroup = {
+            id: groupId,
+            groupName: groupName,
+            fields: [],
+        }
+        await this.db.addDeviceFieldGroup(deviceId, newGroup);
+    }
+
+    async renameDeviceFieldGroup(deviceId: number, groupId: number, groupName: string) {
+        let device = await this.getDevicebyId(deviceId);
+        getDeviceFieldGroup(device, groupId);
+        await this.db.renameDeviceFieldGroup(deviceId, groupId, groupName);
+    }
+
+    async deleteDeviceFieldGroup(deviceId: number, groupId: number) {
+        let device = await this.getDevicebyId(deviceId);
+        getDeviceFieldGroup(device, groupId);
+        await this.db.deleteDeviceFieldGroup(deviceId, groupId);
+    }
+
+    async addDeviceField(deviceId: number, groupId: number, deviceField: IDeviceFieldBasic): Promise<void> {
+        await this.db.addDeviceField(deviceId, groupId, deviceField);
+    }
+
+    async renameDeviceField(deviceId: number, groupId: number, fieldId: number, fieldName: string) {
+        let device = await this.getDevicebyId(deviceId);
+        let groupField = getDeviceFieldGroup(device, groupId);
+        getDeviceField(groupField, fieldId);
+        await this.db.renameDeviceField(deviceId, groupId, fieldId, fieldName);
+    }
+
+    async deleteDeviceField(deviceId: number, groupId: number, fieldId: number) {
+        let device = await this.getDevicebyId(deviceId);
+        let groupField = getDeviceFieldGroup(device, groupId);
+        getDeviceField(groupField, fieldId);
+        await this.db.deleteDeviceField(deviceId, groupId, fieldId);
+    }
+
+    async addComplexGroup(deviceId: number, groupId: number, groupName: string) {
+        let device = await this.getDevicebyId(deviceId);
+
+        let newGroup: IComplexFieldGroup = {
+            id: groupId,
+            groupName: groupName,
+            currentState: 0,
+            fieldGroupStates: [],
+        }
+
+        await this.db.addComplexGroup(deviceId, newGroup);
+    }
+
+    async renameComplexGroup(deviceId: number, groupId: number, groupName: string) {
+        await this.getDevicebyId(deviceId);
+        await this.db.renameComplexGroup(deviceId, groupId, groupName);
+    }
+
+    async deleteComplexGroup(deviceId: number, complexGroupId: number) {
+        await this.db.deleteComplexGroup(deviceId, complexGroupId);
+    }
+
+    async addComplexGroupState(deviceId: number, groupId: number, stateId: number, stateName: string) {
+        let device = await this.getDevicebyId(deviceId);
+        let group = getComplexGroup(device, groupId);
+
+        let state: IComplexFieldGroupState = {
+            id: stateId,
+            stateName: stateName,
+            fields: [],
+        };
+        await this.db.addComplexGroupState(deviceId, groupId, state);
+    }
+
+    async renameComplexGroupState(deviceId: number, groupId: number, stateId: number, stateName: string) {
+        let device = await this.getDevicebyId(deviceId);
+        let group = getComplexGroup(device, groupId);
+
+        await this.db.renameComplexGroupState(deviceId, groupId, stateId, stateName);
+    }
+
+    async changeComplexGroupStateFromDevice(deviceKey: string, groupId: number, state: number) {
+        let device = await this.getDevicebyKey(deviceKey);
+        await this.tryToChangeComplexGroupState(device, groupId, state);
+    }
+
+    async changeComplexGroupStateFromUser(deviceId: number, groupId: number, state: number) {
+        let device = await this.getDevicebyId(deviceId);
+        await this.tryToChangeComplexGroupState(device, groupId, state);
+    }
+
+    async deleteComplexGroupState(deviceId: number, groupId: number, stateId: number) {
+        await this.db.deleteComplexGroupState(deviceId, groupId, stateId);
+    }
+
+    async addFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldData: IDeviceFieldBasic) {
+        let device = await this.getDevicebyId(deviceId);
+        let group = getComplexGroup(device, groupId);
+        let state = getComplexGroupState(group, stateId);
+        await this.db.addFieldInComplexGroup(deviceId, groupId, stateId, fieldData);
+    }
+
+    async renameFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldName: string) {
+        await this.db.renameFieldInComplexGroup(deviceId, groupId, stateId, fieldId, fieldName);
+    }
+
+    async changeFieldValueInComplexGroupFromDevice(deviceKey: string, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
+        let device = await this.getDevicebyKey(deviceKey);
+        let group = getComplexGroup(device, groupId);
+        let state = getComplexGroupState(group, stateId);
+        let field = getFieldInComplexGroup(state, fieldId);
+        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, field, fieldValue);
+    }
+
+    async changeFieldValueInComplexGroupFromUser(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
+        let device = await this.getDevicebyId(deviceId);
+        let group = getComplexGroup(device, groupId);
+        let state = getComplexGroupState(group, stateId);
+        let field = getFieldInComplexGroup(state, fieldId);
+        if (field.fieldValue.fieldDirection === 'output') {
+            throw ({ message: 'Field value is output only - can\'t be set by user' });
+        }
+        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, field, fieldValue);
+    }
+
+    async deleteFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number) {
+        await this.db.deleteFieldInComplexGroup(deviceId, groupId, stateId, fieldId);
+    }
+
+
+
+
+
+
+    async changeDeviceFieldValueFromDevice(deviceKey: string, groupId: number, fieldId: number, fieldValue: any) {
+        let device = await this.getDevicebyKey(deviceKey);
+        let group = getDeviceFieldGroup(device, groupId);
+        let field = getDeviceField(group, fieldId);
+        await this.tryToChangeDeviceFieldValue(device.id, groupId, field, fieldValue);
+    }
+
+    async changeDeviceFieldValueFromUser(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {
+        let device = await this.getDevicebyId(deviceId);
+        let group = getDeviceFieldGroup(device, groupId);
+        let field = getDeviceField(group, fieldId);
+
+        if (field.fieldValue.fieldDirection === 'output') {
+            throw ({ message: 'Field value is output only - can\'t be set by user' });
+        }
+        await this.tryToChangeDeviceFieldValue(deviceId, groupId, field, fieldValue);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     async registerDeviceData(deviceData: IDevice) {
         let device = await this.getDevicebyKey(deviceData.deviceKey);
         let deviceId = device.id;
@@ -83,7 +266,7 @@ export class DeviceService {
                 oldGroup = getDeviceFieldGroup(device, newGroup.id);
             }
             catch {
-                await this.db.addDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
+                await this.addDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
                 device = await this.getDevicebyId(deviceId);
             }
             oldGroup = getDeviceFieldGroup(device, newGroup.id);
@@ -142,7 +325,7 @@ export class DeviceService {
                 oldGroup = getComplexGroup(device, newGroup.id);
             }
             catch {
-                await this.db.addComplexGroup(deviceId, newGroup.id, newGroup.groupName);
+                await this.addComplexGroup(deviceId, newGroup.id, newGroup.groupName);
                 device = await this.getDevicebyId(deviceId);
             }
 
@@ -168,7 +351,7 @@ export class DeviceService {
                     oldState = getComplexGroupState(oldGroup, newState.id);
                 }
                 catch {
-                    await this.db.addComplexGroupState(deviceId, newGroup.id, newState.id, newState.stateName);
+                    await this.addComplexGroupState(deviceId, newGroup.id, newState.id, newState.stateName);
                     device = await this.getDevicebyId(deviceId);
                 }
                 oldState = getComplexGroupState(getComplexGroup(device, newGroup.id), newState.id);
@@ -212,6 +395,149 @@ export class DeviceService {
         }
     }
 
+    async tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any) {
+        if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
+            await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+        }
+        else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
+            let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
+            if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
+                let N = (fieldValue - numField.minValue) / numField.valueStep;
+                if (N % 1 < 0.05 || N % 1 > 0.95) {
+                    await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+                }
+                else throw ({ message: 'Incorrect step' });
+            }
+            else throw ({ message: 'Value out of interval [min,max]' });
+        }
+        else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
+            await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+        }
+        else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
+            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
+            if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
+                await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+            }
+            else throw ({ message: 'Out of range - MC field' });
+        }
+        else if (
+            field.fieldType === 'RGB' &&
+            ((!!fieldValue.R || fieldValue.R === 0) && typeof fieldValue.R === 'number' && fieldValue.R >= 0 && fieldValue.R < 256) &&
+            ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0 && fieldValue.G < 256) &&
+            ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0 && fieldValue.B < 256)
+        ) {
+            console.log('RGB');
+            console.log(fieldValue);
+            await this.db.changeDeviceFieldValueRGB(deviceId, groupId, field.id, fieldValue);
+        }
+        else {
+            console.log('wrong');
+            throw ({ message: 'Wrong field data type' });
+        }
+    }
 
+    async tryToChangeComplexGroupState(device: IDevice, groupId: number, state: number) {
+        let group = getComplexGroup(device, groupId);
+        let NofStates = group.fieldGroupStates.length;
+        if (state >= 0 && state < NofStates) {
+            await this.db.changeComplexGroupState(device.id, groupId, state);
+        }
+        else throw ({ message: 'Invalid state number' });
+    }
 
+    async tryToChangeFieldValueInComplexGroup(device: IDevice, groupId: number, stateId: number, field: IDeviceFieldBasic, fieldValue: any) {
+        if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
+            await this.db.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
+        }
+        else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
+            let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
+            if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
+                let N = (fieldValue - numField.minValue) / numField.valueStep;
+                if (N % 1 < 0.05 || N % 1 > 0.95) {
+                    await this.db.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
+                }
+                else throw ({ message: 'Incorrect step' });
+            }
+            else throw ({ message: 'Value out of interval [min,max]' });
+
+        }
+        else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
+            await this.db.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
+        }
+        else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
+            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
+            if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
+                await this.db.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
+            }
+            else throw ({ message: 'Out of range - MC field' });
+        }
+        else if (
+            field.fieldType === 'RGB' &&
+            ((!!fieldValue.R || fieldValue.R === 0) && typeof fieldValue.R === 'number' && fieldValue.R >= 0) &&
+            ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
+            ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
+        ) {
+            console.log(fieldValue);
+            await this.db.changeDeviceFieldValueInComplexGroupRGB(device.id, groupId, stateId, field.id, fieldValue);
+        }
+        else {
+            throw ({ message: 'Wrong field data type' });
+        }
+    }
+
+    async getDeviceForUser(user: IUser, device: IDevice, isActive: boolean): Promise<IDeviceForUser | undefined> {
+        if (! await this.db.checkAnyUserRightToDevice(user, device)) return;
+        let deviceReduced: IDeviceForUser = {
+            id: device.id,
+            deviceKey: device.deviceKey,
+            deviceName: device.deviceName,
+            userAdminId: device.userAdminId,
+            deviceFieldGroups: [],
+            deviceFieldComplexGroups: [],
+            updateTimeStamp: 0,
+            isActive: isActive,
+        }
+
+        for (let group of device.deviceFieldGroups) {
+            let groupReduced: IFieldGroupForUser = {
+                id: group.id,
+                groupName: group.groupName,
+                fields: [],
+            }
+            for (let field of group.fields) {
+                let fieldRight = await this.db.checkUserRightToField(user, device.id, group.id, field.id, device);
+                if (fieldRight === ERightType.None) continue;
+
+                let fieldReduced: IDeviceFieldBasicForUser = {
+                    deviceId: field.deviceId,
+                    groupId: field.groupId,
+                    id: field.id,
+                    fieldName: field.fieldName,
+                    fieldType: field.fieldType,
+                    fieldValue: field.fieldValue,
+                    readOnly: fieldRight === ERightType.Read,
+                }
+                groupReduced.fields.push(fieldReduced);
+            }
+            if (groupReduced.fields.length > 0) {
+                deviceReduced.deviceFieldGroups.push(groupReduced);
+            }
+        }
+
+        for (let complexGroup of device.deviceFieldComplexGroups) {
+            let complexGroupRight = await this.db.checkUserRightToComplexGroup(user, device.id, complexGroup.id, device);
+            if (complexGroupRight === ERightType.None) continue;
+
+            let complexGroupReduced: IComplexFieldGroupForUser = {
+                id: complexGroup.id,
+                groupName: complexGroup.groupName,
+                currentState: complexGroup.currentState,
+                fieldGroupStates: complexGroup.fieldGroupStates,
+                readOnly: complexGroupRight === ERightType.Read,
+            }
+            deviceReduced.deviceFieldComplexGroups.push(complexGroupReduced);
+        }
+        deviceReduced.updateTimeStamp = getCurrentTimeUNIX();
+        return deviceReduced;
+    }
 }

@@ -2,19 +2,22 @@ import { IUser } from 'models/basicModels';
 import { IAddEmailRequest } from 'models/API/loginRegisterReqRes';
 import { Db } from "firestoreDB/db";
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
+import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
 
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IAddEmailRequest = req.body;
 
     let user: IUser;
     try {
-        user = await db.getUserByToken(request.authToken, false);
+        user = await userService.getUserByToken(request.authToken, false);
     } catch (e) {
         res.status(400);
         res.send(e.message)
@@ -48,7 +51,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try{
-        db.sendEmailConfirmation_addEmail(user.id, user.username, request.email);
+        userService.sendEmailConfirmation_addEmail(user.id, user.username, request.email);
     }catch(e){
         res.status(400);
         res.send(e.message)

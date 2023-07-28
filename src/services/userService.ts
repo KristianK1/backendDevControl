@@ -1,8 +1,8 @@
-import { IEmailConfirmationData, IForgotPasswordData } from "emailService/emailModels";
-import { EmailService, emailServiceSingletonFactory } from "emailService/emailService";
+import { IEmailConfirmationData, IForgotPasswordData } from "../emailService/emailModels";
+import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
 import { Db } from "firestoreDB/db";
-import { DBSingletonFactory } from "firestoreDB/singletonService";
-import { ISOToUNIX, getCurrentTimeISO, getCurrentTimeUNIX, hasTimePASSED } from "generalStuff/timeHandlers";
+import { DBSingletonFactory } from "../firestoreDB/singletonService";
+import { ISOToUNIX, getCurrentTimeISO, getCurrentTimeUNIX, hasTimePASSED } from "../generalStuff/timeHandlers";
 import { ILoginResponse } from "models/API/loginRegisterReqRes";
 import { IAuthToken, IUser } from "models/basicModels";
 import { v4 as uuid } from 'uuid';
@@ -57,6 +57,10 @@ export class UserService {
             await this.db.extendToken(token);
         }
         return user;
+    }
+
+    async removeAllMyTokens(dontRemoveToken: string){
+        await this.db.removeAllMyTokens(dontRemoveToken); 
     }
 
     async getUserbyEmail(email: string): Promise<IUser> {

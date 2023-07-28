@@ -4,11 +4,14 @@ import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFa
 import { IDevice, IUser } from "models/basicModels";
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { Db } from "firestoreDB/db";
+import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
@@ -28,7 +31,7 @@ router.post('/', async (req: any, res: any) => {
 
     let admin: IUser;
     try {
-        admin = await db.getUserByToken(changeDeviceAdminReq.authToken, true);
+        admin = await userService.getUserByToken(changeDeviceAdminReq.authToken, true);
     } catch (e) {
         console.log("change admin request - ERROR1");
         res.status(400);

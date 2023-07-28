@@ -3,18 +3,21 @@ import { Db } from "firestoreDB/db";import { IRenameDeviceReq } from "../../../m
 import { IDevice, IUser } from "../../../models/basicModels";
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
+import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     var renameDeviceReq: IRenameDeviceReq = req.body;
     let user: IUser;
     try {
-        user = await db.getUserByToken(renameDeviceReq.authToken, true);
+        user = await userService.getUserByToken(renameDeviceReq.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message)

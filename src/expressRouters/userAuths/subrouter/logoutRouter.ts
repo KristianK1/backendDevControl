@@ -5,11 +5,14 @@ import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 import { Db } from "firestoreDB/db";
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
+import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 
@@ -18,7 +21,7 @@ router.post('/', async (req: any, res: any) => {
 
     let user: IUser;
     try {
-        user = await db.getUserByToken(logoutRequest.authToken, true);
+        user = await userService.getUserByToken(logoutRequest.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message);

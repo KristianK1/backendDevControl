@@ -5,11 +5,14 @@ import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 import { IDevice, IUser } from '../../../models/basicModels';
 import { ELogoutReasons } from '../../../models/frontendModels';
+import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 
@@ -20,7 +23,7 @@ router.post('/', async (req: any, res: any) => {
 
     try {
         devices = await db.getTransformedDevices()
-        user = await db.getUserByToken(deleteReq.authToken, false);
+        user = await userService.getUserByToken(deleteReq.authToken, false);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -37,7 +40,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        await db.deleteUser(deleteReq.authToken);
+        await userService.deleteUser(deleteReq.authToken);
         await wsServer.logoutAllUsersSessions(user.id, ELogoutReasons.DeletedUser, deleteReq.authToken);
     } catch (e) {
         res.status(400);

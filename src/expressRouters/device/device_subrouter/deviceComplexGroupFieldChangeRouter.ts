@@ -5,15 +5,15 @@ import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFa
 import { ERightType } from "../../../models/userRightsModels";
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { Db } from "firestoreDB/db";
+import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
-
-var express = require('express');
-var router = express.Router();
 
 router.post('/device', async (req: any, res: any) => {
     let request: IChangeComplexGroupField_Device = req.body;
@@ -35,7 +35,7 @@ router.post('/user', async (req: any, res: any) => {
     let request: IChangeComplexGroupField_User = req.body;
     let user: IUser;
     try {
-        user = await db.getUserByToken(request.authToken, false);
+        user = await userService.getUserByToken(request.authToken, false);
     } catch (e) {
         res.status(400);
         res.send(e.message)

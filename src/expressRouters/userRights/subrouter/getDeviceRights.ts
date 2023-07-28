@@ -2,11 +2,14 @@ import { IDevice, IUser } from "models/basicModels";
 import { IDeviceRightsRequest } from "models/frontendModels";
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { Db } from "firestoreDB/db";
+import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IDeviceRightsRequest = req.body;
@@ -14,7 +17,7 @@ router.post('/', async (req: any, res: any) => {
     
     let admin: IUser;
     try {
-        admin = await db.getUserByToken(request.authToken, true);
+        admin = await userService.getUserByToken(request.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message);

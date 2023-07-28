@@ -1,11 +1,14 @@
 import { DBSingletonFactory } from "../../../firestoreDB/singletonService";
 import { ILoginResponse, IRegisterRequest } from '../../../models/API/loginRegisterReqRes'
 import { Db } from "firestoreDB/db";
+import { userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
 
 var express = require('express');
 var router = express.Router();
 
 var db: Db = DBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     console.log('reggg');
@@ -14,8 +17,8 @@ router.post('/', async (req: any, res: any) => {
 
     let loginResponse: ILoginResponse;
     try {
-        await db.addUser(registerReq.username, registerReq.password, registerReq.email);
-        loginResponse = await db.loginUserByCreds(registerReq.username, registerReq.password);
+        await userService.addUser(registerReq.username, registerReq.password, registerReq.email);
+        loginResponse = await userService.loginUserByCreds(registerReq.username, registerReq.password);
         res.json(loginResponse);
     } catch (e) {
         res.status(400);

@@ -2,13 +2,16 @@ import { Db } from "firestoreDB/db";
 import { DBSingletonFactory } from "../../firestoreDB/singletonService";
 import { IWSSBasicConnection, IWSSConnectionDevice, IWSSConnectionUser, IWSSDeviceConnectRequest, IWSSUserConnectRequest } from "models/WSS/wssConnectionReqRes";
 import { IDevice, IUser } from "models/basicModels";
+import { UserService } from "services/userService";
+import { userServiceSingletonFactory } from "../../services/serviceSingletonFactory";
 
 var db: Db = DBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
 
 export async function addUserConnection(request: IWSSUserConnectRequest, basicConnection: IWSSBasicConnection) {
     let user: IUser;
     try {
-        user = await db.getUserByToken(request.authToken, true);
+        user = await userService.getUserByToken(request.authToken, true);
     } catch (e) {
         console.log(e.message);
         return;

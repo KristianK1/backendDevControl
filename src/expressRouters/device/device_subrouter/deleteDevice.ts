@@ -43,8 +43,8 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        let users = await db.getAllUsersWithRightToDevice(device);
-        await deviceService.deleteDevice(removeDeviceReq.deviceId);
+        let users = await deviceService.getAllUsersWithRightToDevice(device);
+        await db.deleteDevice(removeDeviceReq.deviceId);
         wsServer.emitDeviceDeleted(users, removeDeviceReq.deviceId);
     } catch (e) {
         res.status(400);

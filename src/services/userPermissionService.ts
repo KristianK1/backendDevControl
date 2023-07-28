@@ -5,7 +5,8 @@ import { UserService } from "./userService";
 import { ERightType, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from "../models/userRightsModels";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { Db } from "../firestoreDB/db";
-import { IAllDeviceRightsForAdminResponse, IGroupRightsForAdmin } from "models/frontendModels";
+import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from "models/frontendModels";
+import { getCurrentTimeUNIX } from "generalStuff/timeHandlers";
 
 export class UserPermissionService {
     userService: UserService;
@@ -105,12 +106,6 @@ export class UserPermissionService {
         }
         return ERightType.None;
     }
-
-
-
-
-
-
 
     async addUserRightToDevice(user: IUser, deviceId: number, readOnly: boolean) {
         let currUserRight = await this.checkUserRightToDevice(user, deviceId);
@@ -360,6 +355,73 @@ export class UserPermissionService {
         return false;
     }
 
+        async changeDeviceAdmin(deviceId: number, userId: number) {
+        let device: IDevice = await this.deviceService.getDevicebyId(deviceId);
+        if (device.userAdminId === userId) {
+            throw ({ message: 'User is already the admin' });
+        }
+        let previousAdmin = await this.userService.getUserbyId(device.userAdminId);
+        await this.addUserRightToDevice(previousAdmin, deviceId, false);
+        await this.db.changeDeviceAdmin(deviceId, userId);
+        await this.db.deleteUserRightForNewAdmin(userId, deviceId);
+    }
+
+    async getDeviceForUser(user: IUser, device: IDevice, isActive: boolean): Promise<IDeviceForUser | undefined> {
+        if (! await this.checkAnyUserRightToDevice(user, device)) return;
+        let deviceReduced: IDeviceForUser = {
+            id: device.id,
+            deviceKey: device.deviceKey,
+            deviceName: device.deviceName,
+            userAdminId: device.userAdminId,
+            deviceFieldGroups: [],
+            deviceFieldComplexGroups: [],
+            updateTimeStamp: 0,
+            isActive: isActive,
+        }
+
+        for (let group of device.deviceFieldGroups) {
+            let groupReduced: IFieldGroupForUser = {
+                id: group.id,
+                groupName: group.groupName,
+                fields: [],
+            }
+            for (let field of group.fields) {
+                let fieldRight = await this.checkUserRightToField(user, device.id, group.id, field.id, device);
+                if (fieldRight === ERightType.None) continue;
+
+                let fieldReduced: IDeviceFieldBasicForUser = {
+                    deviceId: field.deviceId,
+                    groupId: field.groupId,
+                    id: field.id,
+                    fieldName: field.fieldName,
+                    fieldType: field.fieldType,
+                    fieldValue: field.fieldValue,
+                    readOnly: fieldRight === ERightType.Read,
+                }
+                groupReduced.fields.push(fieldReduced);
+            }
+            if (groupReduced.fields.length > 0) {
+                deviceReduced.deviceFieldGroups.push(groupReduced);
+            }
+        }
+
+        for (let complexGroup of device.deviceFieldComplexGroups) {
+            let complexGroupRight = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.id, device);
+            if (complexGroupRight === ERightType.None) continue;
+
+            let complexGroupReduced: IComplexFieldGroupForUser = {
+                id: complexGroup.id,
+                groupName: complexGroup.groupName,
+                currentState: complexGroup.currentState,
+                fieldGroupStates: complexGroup.fieldGroupStates,
+                readOnly: complexGroupRight === ERightType.Read,
+            }
+            deviceReduced.deviceFieldComplexGroups.push(complexGroupReduced);
+        }
+        deviceReduced.updateTimeStamp = getCurrentTimeUNIX();
+        return deviceReduced;
+    }
+
     async getUsersRightsToDevice(adminId: number, device: IDevice): Promise<IAllDeviceRightsForAdminResponse> {
         let result = this.setupBasicDeviceStructureForUserPermissionsDataforAdmin(device);
         let users = await this.userService.getUsers();
@@ -435,7 +497,6 @@ export class UserPermissionService {
                     });
                 }
             }
-
         }
         return result;
     }
@@ -472,6 +533,4 @@ export class UserPermissionService {
         }
         return result;
     }
-
-
 }

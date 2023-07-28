@@ -122,43 +122,43 @@ export function transformFieldInComplexGroup(groupState: IComplexFieldGroupState
 
 
 export function transformUserRights(userRights: IUserRight): IUserRight {
-        let rightsDev = userRights.rightsToDevices;
-        let actualDevRigts: IUserRightDevice[] = [];
-        Object.keys(rightsDev).forEach(deviceId => {
-            actualDevRigts.push(rightsDev[deviceId]);
-        });
+    let rightsDev = userRights.rightsToDevices;
+    let actualDevRigts: IUserRightDevice[] = [];
+    Object.keys(rightsDev).forEach(deviceId => {
+        actualDevRigts.push(rightsDev[deviceId]);
+    });
 
-        let rightsGroup = userRights.rightsToGroups;
-        let actualGroupRights: IUserRightGroup[] = [];
-        Object.keys(rightsGroup).forEach(deviceId => {
-            Object.keys(rightsGroup[deviceId]).forEach(groupId => {
-                actualGroupRights.push(rightsGroup[deviceId][groupId]);
+    let rightsGroup = userRights.rightsToGroups;
+    let actualGroupRights: IUserRightGroup[] = [];
+    Object.keys(rightsGroup).forEach(deviceId => {
+        Object.keys(rightsGroup[deviceId]).forEach(groupId => {
+            actualGroupRights.push(rightsGroup[deviceId][groupId]);
+        });
+    });
+
+    let rightsField = userRights.rightsToFields;
+    let actualFieldRights: IUserRightField[] = [];
+    Object.keys(rightsField).forEach(deviceId => {
+        Object.keys(rightsField[deviceId]).forEach(groupId => {
+            Object.keys(rightsField[deviceId][groupId]).forEach(fieldId => {
+                actualFieldRights.push(rightsField[deviceId][groupId][fieldId]);
             });
         });
+    });
 
-        let rightsField = userRights.rightsToFields;
-        let actualFieldRights: IUserRightField[] = [];
-        Object.keys(rightsField).forEach(deviceId => {
-            Object.keys(rightsField[deviceId]).forEach(groupId => {
-                Object.keys(rightsField[deviceId][groupId]).forEach(fieldId => {
-                    actualFieldRights.push(rightsField[deviceId][groupId][fieldId]);
-                });
-            });
+    let complexGroupRigths = userRights.rightsToComplexGroups;
+    let actualComplexGroupRights: IUserRightComplexGroup[] = [];
+    Object.keys(complexGroupRigths).forEach(deviceId => {
+        Object.keys(complexGroupRigths[deviceId]).forEach(complexGroupId => {
+            actualComplexGroupRights.push(complexGroupRigths[deviceId][complexGroupId]);
         });
+    });
 
-        let complexGroupRigths = userRights.rightsToComplexGroups;
-        let actualComplexGroupRights: IUserRightComplexGroup[] = [];
-        Object.keys(complexGroupRigths).forEach(deviceId => {
-            Object.keys(complexGroupRigths[deviceId]).forEach(complexGroupId => {
-                actualComplexGroupRights.push(complexGroupRigths[deviceId][complexGroupId]);
-            });
-        });
-
-        let actualRights: IUserRight = {
-            rightsToDevices: actualDevRigts,
-            rightsToGroups: actualGroupRights,
-            rightsToFields: actualFieldRights,
-            rightsToComplexGroups: actualComplexGroupRights,
-        };
-        return actualRights;
-    }
+    let actualRights: IUserRight = {
+        rightsToDevices: actualDevRigts,
+        rightsToGroups: actualGroupRights,
+        rightsToFields: actualFieldRights,
+        rightsToComplexGroups: actualComplexGroupRights,
+    };
+    return actualRights;
+}

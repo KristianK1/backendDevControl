@@ -114,6 +114,14 @@ export class UserPermissionService {
         return ERightType.None;
     }
 
+    async addDeviceWriteUserRightToAdmin(user:IUser, deviceId: number){
+        let right: IUserRightDevice = {
+            deviceId: deviceId,
+            readOnly: false,
+        };
+        await this.db.addUserRightToDevice(user.id, right);
+    }
+
     async addUserRightToDevice(user: IUser, deviceId: number, readOnly: boolean) {
         let currUserRight = await this.checkUserRightToDevice(user, deviceId);
         if (!readOnly) { //write
@@ -297,7 +305,7 @@ export class UserPermissionService {
     }
 
     async deleteUserRightToGroup(userId: number, deviceId: number, groupId: number) {
-        await this.deleteUserRightToGroup(userId, deviceId, groupId);
+        await this.db.deleteUserRightToGroup(userId, deviceId, groupId);
     }
 
     async deleteUserRightToField(userId: number, deviceId: number, groupId: number, fieldId: number) {
@@ -384,7 +392,7 @@ export class UserPermissionService {
             throw ({ message: 'User is already the admin' });
         }
         let previousAdmin = await this.getUserbyId(device.userAdminId);
-        await this.addUserRightToDevice(previousAdmin, deviceId, false);
+        await this.addDeviceWriteUserRightToAdmin(previousAdmin, deviceId);
         await this.db.changeDeviceAdmin(deviceId, userId);
         await this.db.deleteUserRightForNewAdmin(userId, deviceId);
     }

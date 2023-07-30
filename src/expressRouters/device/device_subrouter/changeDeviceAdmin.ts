@@ -45,6 +45,7 @@ router.post('/', async (req: any, res: any) => {
         console.log("change admin request - ERROR1.5");
         res.status(400);
         res.send('User isn\'t admin');
+        return;
     }
 
     try {
@@ -59,7 +60,7 @@ router.post('/', async (req: any, res: any) => {
     try {
         await userPermissionService.changeDeviceAdmin(changeDeviceAdminReq.deviceId, changeDeviceAdminReq.userAdminId);
         wsServer.emitDeviceRegistrationById(changeDeviceAdminReq.deviceId); //TODO jel treba oboje
-        wsServer.emitUserRightUpdate(admin.id, changeDeviceAdminReq.deviceId)
+        wsServer.emitUserRightUpdate(admin.id)
     } catch (e) {
         res.status(400);
         res.send(e.message);

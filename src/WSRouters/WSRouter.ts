@@ -256,8 +256,7 @@ export class MyWebSocketServer {
         await this.sendAllDataToUsers(usersWithRight);
     }
 
-    async emitUserRightUpdate(userId: number, deviceId: number) {
-        let deviceData = await deviceService.getDevicebyId(deviceId);
+    async emitUserRightUpdate(userId: number) {
         let user = await userService.getUserbyId(userId);
         for (let userClient of this.userClients) {
             if (userClient.userId !== user.id) continue;
@@ -265,7 +264,7 @@ export class MyWebSocketServer {
         }
     }
 
-    async emitDeviceDeleted(users: IUser[], deviceId: number) {
+    async emitDeviceDeleted(users: IUser[]) {
         await this.sendAllDataToUsers(users);
     }
     //</reasons to emit data>

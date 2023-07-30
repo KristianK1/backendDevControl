@@ -57,7 +57,7 @@ export class DeviceService {
     }
 
     async deleteDevice(id: number) {
-        this.deleteDeviceOnAllUsers(id);  //TODO FIXXXX
+        this.deleteDeviceOnAllUsers(id);
         await this.db.deleteDevice(id);
     }
 
@@ -93,7 +93,7 @@ export class DeviceService {
     async deleteDeviceFieldGroup(deviceId: number, groupId: number) {
         let device = await this.getDevicebyId(deviceId);
         getDeviceFieldGroup(device, groupId);
-        await this.deleteGroupOnAllUsers(deviceId, groupId); //TODO FIXXXX
+        await this.deleteGroupOnAllUsers(deviceId, groupId);
         await this.db.deleteDeviceFieldGroup(deviceId, groupId);
     }
 
@@ -112,7 +112,7 @@ export class DeviceService {
         let device = await this.getDevicebyId(deviceId);
         let groupField = getDeviceFieldGroup(device, groupId);
         getDeviceField(groupField, fieldId);
-        await this.deleteFieldOnAllUsers(deviceId, groupId, fieldId); //TODO FIXXXX
+        await this.deleteFieldOnAllUsers(deviceId, groupId, fieldId);
         await this.db.deleteDeviceField(deviceId, groupId, fieldId);
     }
 
@@ -135,7 +135,7 @@ export class DeviceService {
     }
 
     async deleteComplexGroup(deviceId: number, complexGroupId: number) {
-        await this.deleteComplexGroupOnAllUsers(deviceId, complexGroupId); //TODO FIXXXX
+        await this.deleteComplexGroupOnAllUsers(deviceId, complexGroupId);
         await this.db.deleteComplexGroup(deviceId, complexGroupId);
     }
 

@@ -66,7 +66,7 @@ router.post('/', async (req: any, res: any) => {
 
     try {
         await userPermissionService.addUserRightToDevice(user, request.deviceId, request.readOnly);
-        wsServer.emitUserRightUpdate(user.id, request.deviceId);
+        wsServer.emitUserRightUpdate(user.id);
     } catch (e) {
         res.status(400);
         res.send(e.message);

@@ -4,5 +4,10 @@ var router = express.Router();
 var addTriggerRouter = require('./triggers_subrouter/addTriggerRouter.ts');
 router.use('/addTrigger', addTriggerRouter);
 
+var deleteTriggerRouter = require('./triggers_subrouter/deleteTriggerRouter.ts');
+router.use('/deleteTrigger', deleteTriggerRouter);
+
+var seeAllTriggersRouter = require('./triggers_subrouter/seeAllTriggersRouter.ts');
+router.use('/seeAllTriggers', seeAllTriggersRouter);
 
 module.exports = router;

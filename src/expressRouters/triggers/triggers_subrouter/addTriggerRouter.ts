@@ -1,4 +1,3 @@
-import { emailServiceSingletonFactory } from "emailService/emailService";
 import { IAddTriggerReq } from "models/API/triggersReqRes";
 import { IUser } from "models/basicModels";
 import { ETriggerResponseType, ETriggerSourceType, ITrigger, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup } from "models/triggerModels";
@@ -115,7 +114,5 @@ router.post('/', async (req: any, res: any) => {
     //if the response is the valueSettings then check does the user have right to it.
 
 });
-
-
 
 module.exports = router;

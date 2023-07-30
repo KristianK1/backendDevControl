@@ -1,49 +1,35 @@
 import { IDevice, IUser } from "../models/basicModels";
-import { DeviceService } from "./deviceService";
-import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "./serviceSingletonFactory";
-import { UserService } from "./userService";
 import { ERightType, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from "../models/userRightsModels";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { Db } from "../firestoreDB/db";
 import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from "models/frontendModels";
 import { getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
-import { EDeleteUserPermissionsEvents, IComplexGroupAddress, IDeviceAddress, IFieldAddress, IGroupAddress } from "./deleteUserPermissionEvents";
+import { bridge_getDevicebyId, bridge_getUserbyId, bridge_getUsers } from "./serviceBridge";
 
 export class UserPermissionService {
-    userService: UserService;
-    deviceService: DeviceService;
-    db: Db;
+
+    private db: Db;
 
     constructor() {
-        this.userService = userServiceSingletonFactory.getInstance();
-        this.deviceService = deviceServiceSingletonFactory.getInstance();
         this.db = DBSingletonFactory.getInstance();
+    }
 
-        this.deviceService.userPermissionEventEmitter.on(EDeleteUserPermissionsEvents.Device, async (event) => {
-            let data = event as IDeviceAddress;
-            await this.deleteDeviceOnAllUsers(data.deviceId);
-        });
+    async getDevicebyId(deviceId: number): Promise<IDevice> {
+        return await bridge_getDevicebyId(deviceId);
+    }
 
-        this.deviceService.userPermissionEventEmitter.on(EDeleteUserPermissionsEvents.Group, async (event) => {
-            let data = event as IGroupAddress;
-            await this.deleteGroupOnAllUsers(data.deviceId, data.groupId);
-        });
+    async getUsers(): Promise<IUser[]> {
+        return await bridge_getUsers();
+    }
 
-        this.deviceService.userPermissionEventEmitter.on(EDeleteUserPermissionsEvents.Field, async (event) => {
-            let data = event as IFieldAddress;
-            await this.deleteFieldOnAllUsers(data.deviceId, data.groupId, data.fieldId);
-        });
-
-        this.deviceService.userPermissionEventEmitter.on(EDeleteUserPermissionsEvents.ComplexGroup, async (event) => {
-            let data = event as IComplexGroupAddress;
-            await this.deleteComplexGroupOnAllUsers(data.deviceId, data.complexGroupId);
-        });
+    async getUserbyId(userId: number): Promise<IUser> {
+        return await bridge_getUserbyId(userId);
     }
 
     async checkUserRightToDevice(user: IUser, deviceId: number, device?: IDevice): Promise<ERightType> {
         if (!device) {
             try {
-                device = await this.deviceService.getDevicebyId(deviceId);
+                device = await this.getDevicebyId(deviceId);
             } catch {
                 return ERightType.None;
             }
@@ -323,28 +309,28 @@ export class UserPermissionService {
     }
 
     async deleteDeviceOnAllUsers(deviceId: number) {
-        const allUsers = await this.userService.getUsers();
+        const allUsers = await this.getUsers();
         for (let user of allUsers) {
             await this.deleteUserRightToDevice(user.id, deviceId);
         }
     }
 
     async deleteGroupOnAllUsers(deviceId: number, groupId: number) {
-        const allUsers = await this.userService.getUsers();
+        const allUsers = await this.getUsers();
         for (let user of allUsers) {
             await this.deleteUserRightToGroup(user.id, deviceId, groupId);
         }
     }
 
     async deleteFieldOnAllUsers(deviceId: number, groupId: number, fieldId: number) {
-        const allUsers = await this.userService.getUsers();
+        const allUsers = await this.getUsers();
         for (let user of allUsers) {
             await this.deleteUserRightToField(user.id, deviceId, groupId, fieldId);
         }
     }
 
     async deleteComplexGroupOnAllUsers(deviceId: number, complexGroupId: number) {
-        const allUsers = await this.userService.getUsers();
+        const allUsers = await this.getUsers();
         for (let user of allUsers) {
             await this.deleteUserRightToComplexGroup(user.id, deviceId, complexGroupId);
         }
@@ -355,7 +341,7 @@ export class UserPermissionService {
     }
 
     async getAllUsersWithRightToDevice(deviceData: IDevice): Promise<IUser[]> {
-        let users = await this.userService.getUsers();
+        let users = await this.getUsers();
         let result: IUser[] = [];
         for (let user of users) {
             if (await this.checkAnyUserRightToDevice(user, deviceData)) {
@@ -393,11 +379,11 @@ export class UserPermissionService {
     }
 
     async changeDeviceAdmin(deviceId: number, userId: number) {
-        let device: IDevice = await this.deviceService.getDevicebyId(deviceId);
+        let device: IDevice = await this.getDevicebyId(deviceId);
         if (device.userAdminId === userId) {
             throw ({ message: 'User is already the admin' });
         }
-        let previousAdmin = await this.userService.getUserbyId(device.userAdminId);
+        let previousAdmin = await this.getUserbyId(device.userAdminId);
         await this.addUserRightToDevice(previousAdmin, deviceId, false);
         await this.db.changeDeviceAdmin(deviceId, userId);
         await this.db.deleteUserRightForNewAdmin(userId, deviceId);
@@ -461,7 +447,7 @@ export class UserPermissionService {
 
     async getUsersRightsToDevice(adminId: number, device: IDevice): Promise<IAllDeviceRightsForAdminResponse> {
         let result = this.setupBasicDeviceStructureForUserPermissionsDataforAdmin(device);
-        let users = await this.userService.getUsers();
+        let users = await this.getUsers();
         for (let user of users) {
             if (user.id === adminId) continue;
 

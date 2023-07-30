@@ -5,12 +5,11 @@ import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { compareFields, getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "./../firestoreDB/deviceStructureFunctions";
 import { IDeviceForDevice } from "models/frontendModels";
 import { getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
-import { EventEmitter  } from 'events'
-import { EDeleteUserPermissionsEvents, IComplexGroupAddress, IDeviceAddress, IFieldAddress, IGroupAddress } from "./deleteUserPermissionEvents";
+import { bridge_deleteComplexGroupOnAllUsers, bridge_deleteDeviceOnAllUsers, bridge_deleteFieldOnAllUsers, bridge_deleteGroupOnAllUsers } from "./serviceBridge";
 
 export class DeviceService {
+
     private db: Db;
-    userPermissionEventEmitter = new EventEmitter();
     
     constructor() {
         this.db = DBSingletonFactory.getInstance();
@@ -544,36 +543,20 @@ export class DeviceService {
         return true;
     }
 
-    deleteDeviceOnAllUsers(deviceId: number) {
-        let event: IDeviceAddress = {
-            deviceId: deviceId,
-        }
-        this.userPermissionEventEmitter.emit(EDeleteUserPermissionsEvents.Device, event);
+    async deleteDeviceOnAllUsers(deviceId: number) {
+        await bridge_deleteDeviceOnAllUsers(deviceId);
     }
 
-    deleteGroupOnAllUsers(deviceId: number, groupId: number) {
-        let event: IGroupAddress = {
-            deviceId: deviceId,
-            groupId: groupId
-        }
-        this.userPermissionEventEmitter.emit(EDeleteUserPermissionsEvents.Group, event);
+    async deleteGroupOnAllUsers(deviceId: number, groupId: number) {
+        await bridge_deleteGroupOnAllUsers(deviceId, groupId);
     }
 
-    deleteFieldOnAllUsers(deviceId: number, groupId: number, fieldId: number) {
-        let event: IFieldAddress = {
-            deviceId: deviceId,
-            groupId: groupId,
-            fieldId: fieldId
-        }
-        this.userPermissionEventEmitter.emit(EDeleteUserPermissionsEvents.Field, event);
+    async deleteFieldOnAllUsers(deviceId: number, groupId: number, fieldId: number) {
+        await bridge_deleteFieldOnAllUsers(deviceId, groupId, fieldId);
     }
 
-    deleteComplexGroupOnAllUsers(deviceId: number, complexGroupId: number) {
-        let event: IComplexGroupAddress = {
-            deviceId: deviceId,
-            complexGroupId: complexGroupId
-        }
-        this.userPermissionEventEmitter.emit(EDeleteUserPermissionsEvents.ComplexGroup, event);
+    async deleteComplexGroupOnAllUsers(deviceId: number, complexGroupId: number) {
+        await bridge_deleteComplexGroupOnAllUsers(deviceId, complexGroupId);
     }
 
 

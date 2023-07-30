@@ -113,7 +113,7 @@ export class UserService {
             id: maxIDdoc + 1,
             password: password,
             username: username,
-            email: email,
+            email: '',
             userRight: { rightsToDevices: [], rightsToGroups: [], rightsToFields: [], rightsToComplexGroups: [] },
             fieldViews: [],
         }

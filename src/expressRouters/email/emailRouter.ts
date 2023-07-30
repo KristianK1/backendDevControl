@@ -19,8 +19,6 @@ router.get('/emailTest', (req: any, res: any) => {
 
 
 router.post(emailConfirmation_formHandlerPath + "/:hashCode", async (req: any, res: any) => {
-    console.log("tu saaaaaaaaaam");
-    console.log(req.params.hashCode);
     try {
         await userService.confirmEmail(req.params.hashCode);
         res.render("successConfirmingEmail");

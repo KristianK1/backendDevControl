@@ -5,10 +5,13 @@ import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { compareFields, getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "./../firestoreDB/deviceStructureFunctions";
 import { IDeviceForDevice } from "models/frontendModels";
 import { getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
+import { EventEmitter  } from 'events'
+import { EDeleteUserPermissionsEvents, IComplexGroupAddress, IDeviceAddress, IFieldAddress, IGroupAddress } from "./deleteUserPermissionEvents";
 
 export class DeviceService {
     private db: Db;
-
+    userPermissionEventEmitter = new EventEmitter();
+    
     constructor() {
         this.db = DBSingletonFactory.getInstance();
     }
@@ -55,7 +58,7 @@ export class DeviceService {
     }
 
     async deleteDevice(id: number) {
-        // await this.deleteDeviceOnAllUsers(id); //TODO FIXXXX
+        this.deleteDeviceOnAllUsers(id);  //TODO FIXXXX
         await this.db.deleteDevice(id);
     }
 
@@ -91,7 +94,7 @@ export class DeviceService {
     async deleteDeviceFieldGroup(deviceId: number, groupId: number) {
         let device = await this.getDevicebyId(deviceId);
         getDeviceFieldGroup(device, groupId);
-        // await this.deleteGroupOnAllUsers(deviceId, groupId); //TODO FIXXXX
+        await this.deleteGroupOnAllUsers(deviceId, groupId); //TODO FIXXXX
         await this.db.deleteDeviceFieldGroup(deviceId, groupId);
     }
 
@@ -110,12 +113,12 @@ export class DeviceService {
         let device = await this.getDevicebyId(deviceId);
         let groupField = getDeviceFieldGroup(device, groupId);
         getDeviceField(groupField, fieldId);
-        // await this.deleteFieldOnAllUsers(deviceId, groupId, fieldId); //TODO FIXXXX
+        await this.deleteFieldOnAllUsers(deviceId, groupId, fieldId); //TODO FIXXXX
         await this.db.deleteDeviceField(deviceId, groupId, fieldId);
     }
 
     async addComplexGroup(deviceId: number, groupId: number, groupName: string) {
-        let device = await this.getDevicebyId(deviceId);
+        await this.getDevicebyId(deviceId);
 
         let newGroup: IComplexFieldGroup = {
             id: groupId,
@@ -133,7 +136,7 @@ export class DeviceService {
     }
 
     async deleteComplexGroup(deviceId: number, complexGroupId: number) {
-        // await this.deleteComplexGroupOnAllUsers(deviceId, complexGroupId); //TODO FIXXXX
+        await this.deleteComplexGroupOnAllUsers(deviceId, complexGroupId); //TODO FIXXXX
         await this.db.deleteComplexGroup(deviceId, complexGroupId);
     }
 
@@ -496,15 +499,6 @@ export class DeviceService {
         return field;
     }
 
-    // async checkDoesDeviceExist(deviceId: number): Promise<boolean> {
-    //     try {
-    //         await this.db.getDevicebyId(deviceId);
-    //     } catch {
-    //         return false;
-    //     }
-    //     return true;
-    // }
-
     async checkDoesGroupExist(deviceId: number, groupId: number, device?: IDevice): Promise<boolean> {
         try {
             await this.getGroup(deviceId, groupId, device);
@@ -549,4 +543,38 @@ export class DeviceService {
         }
         return true;
     }
+
+    deleteDeviceOnAllUsers(deviceId: number) {
+        let event: IDeviceAddress = {
+            deviceId: deviceId,
+        }
+        this.userPermissionEventEmitter.emit(EDeleteUserPermissionsEvents.Device, event);
+    }
+
+    deleteGroupOnAllUsers(deviceId: number, groupId: number) {
+        let event: IGroupAddress = {
+            deviceId: deviceId,
+            groupId: groupId
+        }
+        this.userPermissionEventEmitter.emit(EDeleteUserPermissionsEvents.Group, event);
+    }
+
+    deleteFieldOnAllUsers(deviceId: number, groupId: number, fieldId: number) {
+        let event: IFieldAddress = {
+            deviceId: deviceId,
+            groupId: groupId,
+            fieldId: fieldId
+        }
+        this.userPermissionEventEmitter.emit(EDeleteUserPermissionsEvents.Field, event);
+    }
+
+    deleteComplexGroupOnAllUsers(deviceId: number, complexGroupId: number) {
+        let event: IComplexGroupAddress = {
+            deviceId: deviceId,
+            complexGroupId: complexGroupId
+        }
+        this.userPermissionEventEmitter.emit(EDeleteUserPermissionsEvents.ComplexGroup, event);
+    }
+
+
 }

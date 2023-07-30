@@ -7,6 +7,7 @@ import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { Db } from "../firestoreDB/db";
 import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from "models/frontendModels";
 import { getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
+import { EDeleteUserPermissionsEvents, IComplexGroupAddress, IDeviceAddress, IFieldAddress, IGroupAddress } from "./deleteUserPermissionEvents";
 
 export class UserPermissionService {
     userService: UserService;
@@ -17,6 +18,26 @@ export class UserPermissionService {
         this.userService = userServiceSingletonFactory.getInstance();
         this.deviceService = deviceServiceSingletonFactory.getInstance();
         this.db = DBSingletonFactory.getInstance();
+
+        this.deviceService.userPermissionEventEmitter.on(EDeleteUserPermissionsEvents.Device, async (event) => {
+            let data = event as IDeviceAddress;
+            await this.deleteDeviceOnAllUsers(data.deviceId);
+        });
+
+        this.deviceService.userPermissionEventEmitter.on(EDeleteUserPermissionsEvents.Group, async (event) => {
+            let data = event as IGroupAddress;
+            await this.deleteGroupOnAllUsers(data.deviceId, data.groupId);
+        });
+
+        this.deviceService.userPermissionEventEmitter.on(EDeleteUserPermissionsEvents.Field, async (event) => {
+            let data = event as IFieldAddress;
+            await this.deleteFieldOnAllUsers(data.deviceId, data.groupId, data.fieldId);
+        });
+
+        this.deviceService.userPermissionEventEmitter.on(EDeleteUserPermissionsEvents.ComplexGroup, async (event) => {
+            let data = event as IComplexGroupAddress;
+            await this.deleteComplexGroupOnAllUsers(data.deviceId, data.complexGroupId);
+        });
     }
 
     async checkUserRightToDevice(user: IUser, deviceId: number, device?: IDevice): Promise<ERightType> {

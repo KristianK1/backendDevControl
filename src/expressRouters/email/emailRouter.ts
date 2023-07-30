@@ -11,7 +11,6 @@ var router = express.Router();
 
 var userService: UserService = userServiceSingletonFactory.getInstance();
 
-
 router.get('/emailTest', (req: any, res: any) => {
     console.log("emailSendTest");
     // emailServiceSingletonFactory.getInstance().sendEmail("devControlService@gmail.com", [], [], "Thank you for mentioning us", "We hope you are doing great.");

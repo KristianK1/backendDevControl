@@ -3,13 +3,11 @@ import { FirestoreDB } from "./firestore";
 import { firestoreSingletonFactory } from "./singletonService";
 import { transformDeviceData, transformUserRights } from "./dataTransformations";
 import { v4 as uuid } from 'uuid';
-import { addDaysToCurrentTime, getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
-import { ERightType, IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from "../models/userRightsModels";
+import { addDaysToCurrentTime } from "../generalStuff/timeHandlers";
+import { IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from "../models/userRightsModels";
 import { IEmailConfirmationData, IForgotPasswordData } from "../emailService/emailModels";
 import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
-import { IAllDeviceRightsForAdminResponse, IComplexFieldGroupForUser, IDeviceFieldBasicForUser, IDeviceForDevice, IDeviceForUser, IFieldGroupForUser, IGroupRightsForAdmin } from "../models/frontendModels";
 import { FieldValue } from "firebase-admin/firestore";
-import { getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "./deviceStructureFunctions";
 
 export class Db {
     static usersCollName = 'users';

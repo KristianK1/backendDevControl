@@ -81,33 +81,41 @@ router.post('/', async (req: any, res: any) => {
     switch (triggerData.responseType) {
         case ETriggerResponseType.Email:
             let emailSettings = triggerData.responseSettings as ITriggerEmailResponse;
-        if(user.email === ''){
+            if (user.email === '') {
                 res.status(400);
                 res.send('User doesn\'t have an email adress');
                 return;
             }
-            //save trigger
             break;
 
         case ETriggerResponseType.MobileNotification:
             let mobNotSettings = triggerData.responseSettings as ITriggerMobileNotificationResponse;
-            //save trigger
             break;
 
         case ETriggerResponseType.SettingValue_fieldInGroup:
             let fieldInGroupResponseSettings = triggerData.responseSettings as ITriggerSettingValueResponse_fieldInGroup;
-            
-            //check user (write) right to field
-            //save trigger
+            let fieldPermission = await userPermissionService.checkUserRightToField(user, fieldInGroupResponseSettings.deviceId, fieldInGroupResponseSettings.groupId, fieldInGroupResponseSettings.fieldId);
+
+            if (fieldPermission !== ERightType.Write) {
+                res.status(400);
+                res.send('User doesn\'t have write permission on target');
+                return;
+            }
             break;
 
         case ETriggerResponseType.SettingValue_fieldInComplexGroup:
             let fieldInComplexGroupResponseSettings = triggerData.responseSettings as ITriggerSettingsValueResponse_fieldInComplexGroup;
+            let complexGroupPermission = await userPermissionService.checkUserRightToComplexGroup(user, fieldInComplexGroupResponseSettings.deviceId, fieldInComplexGroupResponseSettings.complexGroupId);
 
-            //check user (write) right to field
-            //save trigger
+            if (complexGroupPermission !== ERightType.Write) {
+                res.status(400);
+                res.send('User doesn\'t have write permission on target');
+                return;
+            }
             break;
     }
+
+    //save trigger
 
     res.sendStatus(200);
 

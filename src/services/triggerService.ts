@@ -1,10 +1,7 @@
-import { bridge_getDevicebyId, bridge_getUserbyId, bridge_getUsers } from "./serviceBridge";
 import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
-import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_context, ERGBTriggerType_numeric, ETextTriggerType, ETriggerSourceType, IBooleanTrigger, IMCTrigger, INumericTrigger, IRGBTrigger, ITextTrigger, ITrigger, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup } from "models/triggerModels";
-import { IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "models/basicModels";
-import { getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "firestoreDB/deviceStructureFunctions";
-import { IFieldRGBValue } from "models/WSS/fieldValueAltering";
+import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_numeric, ETextTriggerType, ETriggerSourceType, IBooleanTrigger, IMCTrigger, INumericTrigger, IRGBTrigger, ITextTrigger, ITrigger } from "../models/triggerModels";
+import { IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "../models/basicModels";
 
 export class TriggerService {
     private db: Db;
@@ -13,42 +10,7 @@ export class TriggerService {
         this.db = DBSingletonFactory.getInstance();
     }
 
-    async checkTriggerSourceValueValidity(triggerData: ITrigger, deviceData?: IDevice) {
-        //checks does the field exist
-        //doesnt check user permission
-        if (!deviceData) {
-            deviceData = await bridge_getDevicebyId(triggerData.sourceDeviceId);
-        }
-
-        let field: IDeviceFieldBasic;
-
-        switch (triggerData.sourceType) {
-            case ETriggerSourceType.FieldInGroup:
-                let sourceAdress_group = triggerData.sourceAdress as ITriggerSourceAdress_fieldInGroup;
-                let group = getDeviceFieldGroup(deviceData, sourceAdress_group.groupId);
-                field = getDeviceField(group, sourceAdress_group.fieldId);
-
-                // let rightToField = await userPermissionService.checkUserRightToField(user, trigger.sourceDeviceId, sourceAdress_group.groupId, sourceAdress_group.fieldId);
-                // if (rightToField === ERightType.None) {
-                //     throw ({ message: 'User doesn\'t have rights' })
-                // }
-                
-                break;
-            case ETriggerSourceType.FieldInComplexGroup:
-                let sourceAdress_complexGroup = triggerData.sourceAdress as ITriggerSourceAdress_fieldInComplexGroup;
-                let complexGroup = getComplexGroup(deviceData, sourceAdress_complexGroup.complexGroupId);
-                let state = getComplexGroupState(complexGroup, sourceAdress_complexGroup.stateId);
-                field = getFieldInComplexGroup(state, sourceAdress_complexGroup.fieldId);
-
-                // let rightToField_CG = await userPermissionService.checkUserRightToComplexGroup(user, trigger.sourceDeviceId, sourceAdress_complexGroup.complexGroupId);
-                // if (rightToField_CG === ERightType.None) {
-                //     throw ({ message: 'User doesn\'t have rights' })
-                // }
-
-                break;
-            default:
-                throw ({ message: 'Wront data' });
-        }
+    async checkTriggerSourceValueValidity(triggerData: ITrigger, field: IDeviceFieldBasic) {
 
         switch (field.fieldType) {
             case "numeric":
@@ -180,5 +142,6 @@ export class TriggerService {
                 return ((settings.value < settings.second_value) &&
                     (settings.value > 0 || settings.second_value < 256));
         }
+        return false;
     }
 }

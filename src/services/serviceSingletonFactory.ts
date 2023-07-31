@@ -1,4 +1,5 @@
 import { DeviceService } from "./deviceService";
+import { TriggerService } from "./triggerService";
 import { UserPermissionService } from "./userPermissionService";
 import { UserService } from "./userService";
 
@@ -52,6 +53,24 @@ export const userPermissionServiceSingletonFactory = (function () {
                 userPermissionService = createInstance();
             }
             return userPermissionService;
+        }
+    };
+})();
+
+export const triggerServiceSingletonFactory = (function () {
+    var triggerService: TriggerService;
+
+    function createInstance(): TriggerService {
+        var object = new TriggerService();
+        return object;
+    }
+
+    return {
+        getInstance: function () {
+            if (!triggerService) {
+                triggerService = createInstance();
+            }
+            return triggerService;
         }
     };
 })();

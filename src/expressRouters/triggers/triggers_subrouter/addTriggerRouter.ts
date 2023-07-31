@@ -36,31 +36,54 @@ router.post('/', async (req: any, res: any) => {
 
     switch (triggerData.sourceType) {
         case ETriggerSourceType.FieldInGroup:
-            let sourceAdress_group = triggerData.sourceAdress as ITriggerSourceAdress_fieldInGroup;
+            let sourceAdress_group = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
             let group = getDeviceFieldGroup(deviceData, sourceAdress_group.groupId);
             field = getDeviceField(group, sourceAdress_group.fieldId);
 
             let rightToField = await userPermissionService.checkUserRightToField(user, triggerData.sourceDeviceId, sourceAdress_group.groupId, sourceAdress_group.fieldId);
+
             if (rightToField === ERightType.None) {
                 // throw ({ message: 'User doesn\'t have rights' });
                 res.status(400);
                 res.send('User doesn\'t have rights');
                 return;
             }
+
+            try {
+                await triggerService.checkTriggerSourceValueValidity(triggerData, field);
+            } catch (e) {
+                res.status(400);
+                res.send(e.message)
+                return;
+            }
+
             break;
         case ETriggerSourceType.FieldInComplexGroup:
-            let sourceAdress_complexGroup = triggerData.sourceAdress as ITriggerSourceAdress_fieldInComplexGroup;
+            let sourceAdress_complexGroup = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
             let complexGroup = getComplexGroup(deviceData, sourceAdress_complexGroup.complexGroupId);
             let state = getComplexGroupState(complexGroup, sourceAdress_complexGroup.stateId);
             field = getFieldInComplexGroup(state, sourceAdress_complexGroup.fieldId);
 
             let rightToField_CG = await userPermissionService.checkUserRightToComplexGroup(user, triggerData.sourceDeviceId, sourceAdress_complexGroup.complexGroupId);
+
             if (rightToField_CG === ERightType.None) {
                 // throw ({ message: 'User doesn\'t have rights' })
                 res.status(400);
                 res.send('User doesn\'t have rights');
                 return;
             }
+
+            try {
+                await triggerService.checkTriggerSourceValueValidity(triggerData, field);
+            } catch (e) {
+                res.status(400);
+                res.send(e.message)
+                return;
+            }
+
+            break;
+        case ETriggerSourceType.TimeTrigger:
+
             break;
         default:
             // throw ({ message: 'Wrong data' });
@@ -68,15 +91,6 @@ router.post('/', async (req: any, res: any) => {
             res.send('Wrong data');
             return;
     }
-
-    try {
-        await triggerService.checkTriggerSourceValueValidity(triggerData, field);
-    } catch (e) {
-        res.status(400);
-        res.send(e.message)
-        return;
-    }
-
 
     switch (triggerData.responseType) {
         case ETriggerResponseType.Email:

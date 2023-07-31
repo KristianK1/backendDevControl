@@ -1,4 +1,4 @@
-export enum ENumericTriggerType{
+export enum ENumericTriggerType {
     Bigger,
     Smaller,
     Equal,
@@ -69,6 +69,7 @@ export interface IBooleanTrigger {
 export enum ETriggerSourceType {
     FieldInGroup,
     FieldInComplexGroup,
+    TimeTrigger,
 }
 
 export interface ITriggerSourceAdress_fieldInGroup {
@@ -80,6 +81,13 @@ export interface ITriggerSourceAdress_fieldInComplexGroup {
     complexGroupId: number,
     stateId: number,
     fieldId: number,
+}
+
+export interface ITriggerTimeSourceData {
+    type: 'repeating' | 'once',
+    firstTimeStamp: string,
+    repeat: 'daily' | 'weekly' | 'chooseDaysInWeek' | 'monthly' | 'yearly',
+    daysInWeek?: number[],
 }
 
 
@@ -121,11 +129,11 @@ export interface ITrigger {
 
     sourceDeviceId: number,
     sourceType: ETriggerSourceType,
-    sourceAdress: ITriggerSourceAdress_fieldInGroup |ITriggerSourceAdress_fieldInComplexGroup,
+    sourceData: ITriggerSourceAdress_fieldInGroup | ITriggerSourceAdress_fieldInComplexGroup,
 
     fieldType: 'numeric' | 'text' | 'button' | 'RGB' | 'multipleChoice',
     settings: INumericTrigger | ITextTrigger | IMCTrigger | IBooleanTrigger | IRGBTrigger,
 
     responseType: ETriggerResponseType,
-    responseSettings: ITriggerEmailResponse |ITriggerMobileNotificationResponse | ITriggerSettingValueResponse_fieldInGroup |ITriggerSettingsValueResponse_fieldInComplexGroup,
+    responseSettings: ITriggerEmailResponse | ITriggerMobileNotificationResponse | ITriggerSettingValueResponse_fieldInGroup | ITriggerSettingsValueResponse_fieldInComplexGroup,
 }

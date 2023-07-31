@@ -1,5 +1,5 @@
 import { IAddTriggerReq } from "../../../models/API/triggersReqRes";
-import { IDeviceFieldBasic, IUser } from "models/basicModels";
+import { IDevice, IDeviceFieldBasic, IUser } from "models/basicModels";
 import { ETriggerResponseType, ETriggerSourceType, ITrigger, ITriggerEmailResponse, ITriggerMobileNotificationResponse, ITriggerSettingValueResponse_fieldInGroup, ITriggerSettingsValueResponse_fieldInComplexGroup, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup } from "models/triggerModels";
 import { ERightType } from "models/userRightsModels";
 import { deviceServiceSingletonFactory, triggerServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
@@ -30,17 +30,19 @@ router.post('/', async (req: any, res: any) => {
     }
 
     let triggerData: ITrigger = request.trigger;
-    let deviceData = await deviceService.getDevicebyId(triggerData.sourceDeviceId);
 
+    let deviceData: IDevice;
     let field: IDeviceFieldBasic;
 
     switch (triggerData.sourceType) {
         case ETriggerSourceType.FieldInGroup:
-            let sourceAdress_group = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
-            let group = getDeviceFieldGroup(deviceData, sourceAdress_group.groupId);
-            field = getDeviceField(group, sourceAdress_group.fieldId);
+            let sourceAdress_field_group = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
 
-            let rightToField = await userPermissionService.checkUserRightToField(user, triggerData.sourceDeviceId, sourceAdress_group.groupId, sourceAdress_group.fieldId);
+            deviceData = await deviceService.getDevicebyId(sourceAdress_field_group.deviceId);
+            let group = getDeviceFieldGroup(deviceData, sourceAdress_field_group.groupId);
+            field = getDeviceField(group, sourceAdress_field_group.fieldId);
+
+            let rightToField = await userPermissionService.checkUserRightToField(user, sourceAdress_field_group.deviceId, sourceAdress_field_group.groupId, sourceAdress_field_group.fieldId);
 
             if (rightToField === ERightType.None) {
                 // throw ({ message: 'User doesn\'t have rights' });
@@ -59,12 +61,14 @@ router.post('/', async (req: any, res: any) => {
 
             break;
         case ETriggerSourceType.FieldInComplexGroup:
-            let sourceAdress_complexGroup = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
-            let complexGroup = getComplexGroup(deviceData, sourceAdress_complexGroup.complexGroupId);
-            let state = getComplexGroupState(complexGroup, sourceAdress_complexGroup.stateId);
-            field = getFieldInComplexGroup(state, sourceAdress_complexGroup.fieldId);
+            let sourceAdress_field_complexGroup = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
 
-            let rightToField_CG = await userPermissionService.checkUserRightToComplexGroup(user, triggerData.sourceDeviceId, sourceAdress_complexGroup.complexGroupId);
+            deviceData = await deviceService.getDevicebyId(sourceAdress_field_complexGroup.deviceId);
+            let complexGroup = getComplexGroup(deviceData, sourceAdress_field_complexGroup.complexGroupId);
+            let state = getComplexGroupState(complexGroup, sourceAdress_field_complexGroup.stateId);
+            field = getFieldInComplexGroup(state, sourceAdress_field_complexGroup.fieldId);
+
+            let rightToField_CG = await userPermissionService.checkUserRightToComplexGroup(user, sourceAdress_field_complexGroup.deviceId, sourceAdress_field_complexGroup.complexGroupId);
 
             if (rightToField_CG === ERightType.None) {
                 // throw ({ message: 'User doesn\'t have rights' })

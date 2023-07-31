@@ -73,11 +73,13 @@ export enum ETriggerSourceType {
 }
 
 export interface ITriggerSourceAdress_fieldInGroup {
+    deviceId: number,
     groupId: number,
     fieldId: number,
 }
 
 export interface ITriggerSourceAdress_fieldInComplexGroup {
+    deviceId: number,
     complexGroupId: number,
     stateId: number,
     fieldId: number,
@@ -127,7 +129,6 @@ export interface ITrigger {
     name: string,
     userId: number,
 
-    sourceDeviceId: number,
     sourceType: ETriggerSourceType,
     sourceData: ITriggerSourceAdress_fieldInGroup | ITriggerSourceAdress_fieldInComplexGroup,
 

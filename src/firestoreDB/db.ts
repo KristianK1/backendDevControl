@@ -8,6 +8,7 @@ import { IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, 
 import { IEmailConfirmationData, IForgotPasswordData } from "../emailService/emailModels";
 import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
 import { FieldValue } from "firebase-admin/firestore";
+import { ETriggerSourceType, ITrigger, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup } from "models/triggerModels";
 
 export class Db {
     static usersCollName = 'users';
@@ -16,11 +17,13 @@ export class Db {
     static forgetPasswordRequestsCollName = 'forgotPasswords';
     static devCollName = 'devices';
     static maxIDsCollName = 'maxIDs';
+    static triggersCollName = 'triggers';
 
     static maxId_userKey = 'user';
     static maxId_deviceKey = 'device';
     static maxId_fieldGroupKey = 'fieldGroup';
     static maxId_fieldKey = 'field';
+    static maxId_triggerKey = 'trigger';
 
     firestore: FirestoreDB;
     emailService: EmailService;
@@ -148,7 +151,7 @@ export class Db {
         });
     }
 
-    async addUserRightToGroup(userId: number,  right: IUserRightGroup) {
+    async addUserRightToGroup(userId: number, right: IUserRightGroup) {
         await this.firestore.updateDocumentValue(Db.usersCollName, `${userId}`, {
             [`userRight.rightsToGroups.${right.deviceId}.${right.groupId}`]: right,
         });
@@ -330,7 +333,7 @@ export class Db {
         });
     }
 
-    async changeComplexGroupState(deviceId: number, groupId: number, stateId: number){
+    async changeComplexGroupState(deviceId: number, groupId: number, stateId: number) {
         await this.firestore.updateDocumentValue(Db.devCollName, `${deviceId}`, {
             [`deviceFieldComplexGroups.${groupId}.currentState`]: stateId
         });
@@ -404,6 +407,27 @@ export class Db {
     }
     //</EMAIL>
 
+    //<TRIGGER>
+    async saveTrigger(triggerData: ITrigger) {
+        let newTriggerId = await this.getMaxTriggerId(true);
+
+        switch (triggerData.sourceType) {
+            case ETriggerSourceType.FieldInGroup:
+                let addressG = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
+                await this.firestore.updateDocumentValue(Db.triggersCollName, `devices/${addressG.deviceId}/${addressG.groupId}/${addressG.fieldId}/${newTriggerId}`, triggerData);
+                break;
+            case ETriggerSourceType.FieldInComplexGroup:
+                let addressCG = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
+                await this.firestore.updateDocumentValue(Db.triggersCollName, `devices/${addressCG.deviceId}/${addressCG.complexGroupId}/${addressCG.stateId}/${addressCG.fieldId}/${newTriggerId}`, triggerData);
+                break;
+            case ETriggerSourceType.TimeTrigger:
+                await this.firestore.updateDocumentValue(Db.triggersCollName, `time/${newTriggerId}`, triggerData);
+                break;
+        }
+    }
+    //</TRIGGER>
+
+
     // <MAX_IDs>
     async getMaxUserId(autoIncrement: boolean): Promise<number> { return await this.getMax(Db.maxId_userKey, autoIncrement) }
     async setMaxUserId(id: number) { await this.setMax(Db.maxId_userKey, id) }
@@ -416,6 +440,9 @@ export class Db {
 
     async getMaxFieldId(autoIncrement: boolean): Promise<number> { return await this.getMax(Db.maxId_fieldKey, autoIncrement) }
     async setMaxFieldId(id: number) { await this.setMax(Db.maxId_fieldKey, id) }
+
+    async getMaxTriggerId(autoIncrement: boolean): Promise<number> { return await this.getMax(Db.maxId_triggerKey, autoIncrement) }
+    async setMaxTriggerId(id: number) { await this.setMax(Db.maxId_triggerKey, id) }
 
     private async getMax(key: string, autoIncrement?: boolean): Promise<number> {
         let maxId: number;

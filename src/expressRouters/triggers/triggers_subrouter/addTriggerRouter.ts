@@ -30,68 +30,7 @@ router.post('/', async (req: any, res: any) => {
 
     let device = await deviceService.getDevicebyId(trigger.sourceDeviceId);
 
-    switch (trigger.sourceType) {
-        case ETriggerSourceType.FieldInGroup:
-            let sourceAdress_group = trigger.sourceAdress as ITriggerSourceAdress_fieldInGroup;
-            let group = await deviceService.getGroup(device.id, sourceAdress_group.groupId, device);
-            let field_in_group = await deviceService.getField(device.id, group.id, sourceAdress_group.fieldId);
-
-            switch (field_in_group.fieldType) {
-                case "numeric":
-                    if (trigger.fieldType != 'numeric') throw ({ message: 'wrong field type' })
-                    break;
-                case "text":
-                    if (trigger.fieldType != 'text') throw ({ message: 'wrong field type' })
-                    break;
-                case "button":
-                    if (trigger.fieldType != 'button') throw ({ message: 'wrong field type' })
-                    break;
-                case "multipleChoice":
-                    if (trigger.fieldType != 'multipleChoice') throw ({ message: 'wrong field type' })
-                    break;
-                case "RGB":
-                    if (trigger.fieldType != 'RGB') throw ({ message: 'wrong field type' })
-                    break;
-            }
-
-            let rightToField = await userPermissionService.checkUserRightToField(user, trigger.sourceDeviceId, sourceAdress_group.groupId, sourceAdress_group.fieldId);
-            if (rightToField === ERightType.None) {
-                throw ({ message: 'User doesn\'t have rights' })
-            }
-            break;
-        case ETriggerSourceType.FieldInComplexGroup:
-            let sourceAdress_complexGroup = trigger.sourceAdress as ITriggerSourceAdress_fieldInComplexGroup;
-            let complexGroup = await deviceService.getComplexGroup(device.id, sourceAdress_complexGroup.complexGroupId, device);
-            let state = await deviceService.getComplexGroupState(device.id, complexGroup.id, sourceAdress_complexGroup.stateId, device);
-            let field_in_complex_group = await deviceService.getFieldInComplexGroup(device.id, complexGroup.id, state.id, sourceAdress_complexGroup.fieldId, device);
-
-            switch (field_in_complex_group.fieldType) {
-                case "numeric":
-                    if (trigger.fieldType != 'numeric') throw ({ message: 'wrong field type' })
-                    break;
-                case "text":
-                    if (trigger.fieldType != 'text') throw ({ message: 'wrong field type' })
-                    break;
-                case "button":
-                    if (trigger.fieldType != 'button') throw ({ message: 'wrong field type' })
-                    break;
-                case "multipleChoice":
-                    if (trigger.fieldType != 'multipleChoice') throw ({ message: 'wrong field type' })
-                    break;
-                case "RGB":
-                    if (trigger.fieldType != 'RGB') throw ({ message: 'wrong field type' })
-                    break;
-            }
-
-            let rightToField_CG = await userPermissionService.checkUserRightToComplexGroup(user, trigger.sourceDeviceId, sourceAdress_complexGroup.complexGroupId);
-            if (rightToField_CG === ERightType.None) {
-                throw ({ message: 'User doesn\'t have rights' })
-            }
-
-            break;
-        default:
-            throw ({ message: 'Wront data' });
-    }
+    
 
     switch (trigger.responseType) {
         case ETriggerResponseType.Email:

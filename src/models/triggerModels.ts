@@ -37,7 +37,7 @@ export interface INumericTrigger {
     value: number,
     second_value: number | null,
     type: ENumericTriggerType,
-    latestValue: number,
+    latestValue: number | undefined,
 }
 
 export interface ITextTrigger {
@@ -48,7 +48,7 @@ export interface ITextTrigger {
 
 export interface IMCTrigger {
     value: number,
-    type: ENumericTriggerType,
+    type: EMCTriggerType,
     latestValue: number,
 }
 

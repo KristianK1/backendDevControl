@@ -18,7 +18,6 @@ router.post('/', async (req: any, res: any) => {
     let emailTyped = validator.validate(emailORpassword);
     if (emailTyped) {
         try {
-            console.log("email");
             user = await userService.getUserbyEmail(emailORpassword);
         } catch (e) {
             console.log(e.message);

@@ -8,3 +8,8 @@ export interface IAddTriggerReq {
 export interface IGetAllUserTriggersReq {
     authToken: string,
 }
+
+export interface IDeleteTriggersReq {
+    authToken: string,
+    triggerId: number,
+}

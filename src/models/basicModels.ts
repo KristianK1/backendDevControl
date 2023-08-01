@@ -66,7 +66,6 @@ export interface IDeviceFieldBasic {
 
 export interface IDeviceFieldNumeric {
     fieldValue: number,
-    // fieldControlType: 'slider' | 'upDownButtons',
     minValue: number,
     maxValue: number,
     valueStep: number,

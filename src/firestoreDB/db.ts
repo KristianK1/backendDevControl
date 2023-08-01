@@ -434,13 +434,12 @@ export class Db {
         }
 
         let newTriggerId = await this.getMaxTriggerId(true);
+        triggerData.id = newTriggerId;
 
         switch (triggerData.sourceType) {
             case ETriggerSourceType.FieldInGroup:
                 let addressG = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
                 let pathFG = `${addressG.deviceId}.groups.${addressG.groupId}.${addressG.fieldId}.${newTriggerId}`;
-                console.log(pathFG);
-
                 await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
                     [`${pathFG}`]: triggerData
                 });
@@ -492,18 +491,47 @@ export class Db {
         return triggers;
     }
 
-    async getAllDeviceTriggers(): Promise<ITrigger[]> {
+    async getAllTriggers(): Promise<ITrigger[]> {
         let triggers: ITrigger[] = await this.getAllTriggersForDeviceSource();
         triggers.push(... await this.getAllTimeTriggers());
         return triggers;
     }
 
-    async getAllTriggers() {
-
+    async getTriggerbyId(triggerId: number) {
+        let triggers = await this.getAllTriggers();
+        for (let trigger of triggers) {
+            if (trigger.id === triggerId) {
+                return trigger;
+            }
+        }
+        throw ({ message: "no trigger" });
     }
 
-    async deleteTrigger(triggerId: number) {
+    async deleteTrigger(triggerData: ITrigger) {
+        switch (triggerData.sourceType) {
+            case ETriggerSourceType.FieldInGroup:
+                let addressG = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
+                let pathFG = `${addressG.deviceId}.groups.${addressG.groupId}.${addressG.fieldId}.${triggerData.id}`;
+                await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
+                    [`${pathFG}`]: FieldValue.delete()
+                });
+                break;
 
+            case ETriggerSourceType.FieldInComplexGroup:
+                let addressCG = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
+                let pathCFG = `${addressCG.deviceId}.complexGroups.${addressCG.complexGroupId}.${addressCG.stateId}.${addressCG.fieldId}.${triggerData.id}`;
+                await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
+                    [`${pathCFG}`]: FieldValue.delete()
+                });
+                break;
+
+            case ETriggerSourceType.TimeTrigger:
+                let pathT = `${triggerData.id}`;
+                await this.firestore.updateDocumentValue(Db.triggersCollName, 'time', {
+                    [`${pathT}`]: FieldValue.delete()
+                });
+                break;
+        }
     }
     //</TRIGGER>
 

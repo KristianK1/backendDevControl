@@ -15,7 +15,7 @@ export class TriggerService {
     }
 
     async getAllTriggersForUser(userId: number) {
-        let triggers: ITrigger[] = await this.db.getAllDeviceTriggers();
+        let triggers: ITrigger[] = await this.db.getAllTriggers();
         let myTriggers: ITrigger[] = [];
         for (let trigger of triggers) {
             if (trigger.userId === userId) {
@@ -23,6 +23,14 @@ export class TriggerService {
             }
         }
         return myTriggers;
+    }
+
+    async getTriggerbyId(triggerId: number) {
+        return await this.db.getTriggerbyId(triggerId);
+    }
+
+    async deleteTrigger(triggerData: ITrigger) {
+        return await this.db.deleteTrigger(triggerData);
     }
 
     async checkTriggerSourceValueValidity(triggerData: ITrigger, field: IDeviceFieldBasic) {

@@ -10,8 +10,6 @@ var express = require('express');
 var router = express.Router();
 
 var userService: UserService = userServiceSingletonFactory.getInstance();
-var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
-var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
 var triggerService: TriggerService = triggerServiceSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {

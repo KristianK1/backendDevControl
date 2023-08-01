@@ -12,7 +12,6 @@ router.post('/:hashCode', async (req: any, res: any) => {
         res.render("successConfirmingEmail");
     }
     catch (e) {
-        console.log(e.message);
         res.render('errorConfirmingEmail');
     }
 });

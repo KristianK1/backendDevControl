@@ -129,6 +129,8 @@ export enum ETriggerResponseType {
 }
 
 export interface ITrigger {
+    id: number,
+
     name: string,
     userId: number,
 

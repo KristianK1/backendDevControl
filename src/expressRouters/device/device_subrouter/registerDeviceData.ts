@@ -2,12 +2,14 @@ import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 import { IDevice } from "models/basicModels";
 import { DeviceService } from "../../../services/deviceService";
-import { deviceServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, triggerServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { TriggerService } from "../../../services/triggerService";
 
 var express = require('express');
 var router = express.Router();
 
 var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+var triggerService: TriggerService = triggerServiceSingletonFactory.getInstance();
 
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 

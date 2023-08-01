@@ -235,6 +235,7 @@ export class DeviceService {
                 getDeviceFieldGroup(deviceData, oldGroup.id);
             } catch {
                 await this.db.deleteDeviceFieldGroup(deviceId, oldGroup.id);
+                //deleteTriggersForGroup
                 device = await this.getDevicebyId(deviceId);
             }
         }
@@ -262,6 +263,7 @@ export class DeviceService {
                     getDeviceField(newGroup, oldField.id);
                 } catch {
                     await this.db.deleteDeviceField(deviceId, newGroup.id, oldField.id);
+                    //deleteTriggers for Field
                 }
             }
 
@@ -281,6 +283,7 @@ export class DeviceService {
                 if (compareFields(newField, oldField) === false) {
                     await this.db.deleteDeviceField(deviceId, newGroup.id, newField.id);
                     await this.db.addDeviceField(deviceId, newGroup.id, newField);
+                    //check is the trigger still valid
                 }
             }
         }
@@ -294,6 +297,7 @@ export class DeviceService {
                 getComplexGroup(deviceData, oldGroup.id);
             } catch {
                 await this.db.deleteComplexGroup(deviceId, oldGroup.id);
+                //delete triggers for CG
                 device = await this.getDevicebyId(deviceId);
             }
         }
@@ -321,6 +325,7 @@ export class DeviceService {
                     getComplexGroupState(newGroup, oldState.id);
                 } catch {
                     await this.db.deleteComplexGroupState(deviceId, newGroup.id, oldState.id);
+                    //delete triggers for CGS
                 }
             }
 
@@ -347,6 +352,7 @@ export class DeviceService {
                         getFieldInComplexGroup(newState, oldField.id);
                     } catch {
                         await this.db.deleteFieldInComplexGroup(deviceId, newGroup.id, newState.id, oldField.id);
+                        //delete triggers for F in CG
                     }
                 }
 
@@ -368,6 +374,7 @@ export class DeviceService {
                     if (compareFields(newField, oldField) === false) {
                         await this.db.deleteFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField.id);
                         await this.db.addFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField);
+                        //check is the trigger still valid
                     }
                 }
             }

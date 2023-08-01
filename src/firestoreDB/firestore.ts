@@ -33,7 +33,6 @@ export class FirestoreDB {
 
   async updateDocumentValueAtPath(collectionPath: string, documentName: string, path: string, value: any){
     return await this.db.collection(collectionPath).doc(documentName).update(path,value);
-    
   }
 
   async deleteDocument(collectionPath: string, documentName: string) {

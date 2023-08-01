@@ -1,13 +1,17 @@
 import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_numeric, ETextTriggerType, ETriggerSourceType, IBooleanTrigger, IMCTrigger, INumericTrigger, IRGBTrigger, ITextTrigger, ITrigger } from "../models/triggerModels";
-import { IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "../models/basicModels";
+import { IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "../models/basicModels";
 
 export class TriggerService {
     private db: Db;
 
     constructor() {
         this.db = DBSingletonFactory.getInstance();
+    }
+
+    async saveTrigger(triggerData: ITrigger) {
+        await this.db.saveTrigger(triggerData);
     }
 
     async checkTriggerSourceValueValidity(triggerData: ITrigger, field: IDeviceFieldBasic) {

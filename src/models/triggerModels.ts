@@ -37,19 +37,16 @@ export interface INumericTrigger {
     value: number,
     second_value: number | null,
     type: ENumericTriggerType,
-    latestValue: number | undefined,
 }
 
 export interface ITextTrigger {
     value: string,
     type: ETextTriggerType,
-    latestValue: string,
 }
 
 export interface IMCTrigger {
     value: number,
     type: EMCTriggerType,
-    latestValue: number,
 }
 
 export interface IRGBTrigger {
@@ -57,13 +54,11 @@ export interface IRGBTrigger {
     second_value: number,
     type: ERGBTriggerType_numeric,
     contextType: ERGBTriggerType_context,
-    latestValue: number,
 }
 
 export interface IBooleanTrigger {
     value: boolean,
     type: boolean,
-    latestValue: boolean,
 }
 
 export enum ETriggerSourceType {
@@ -85,10 +80,18 @@ export interface ITriggerSourceAdress_fieldInComplexGroup {
     fieldId: number,
 }
 
+export enum ETriggerTimeType {
+    Once,
+    Daily,
+    Weekly,
+    ChooseDaysInWeek,
+    Monthly,
+    Yearly,
+}
+
 export interface ITriggerTimeSourceData {
-    type: 'repeating' | 'once',
+    type: ETriggerTimeType,
     firstTimeStamp: string,
-    repeat: 'daily' | 'weekly' | 'chooseDaysInWeek' | 'monthly' | 'yearly',
     daysInWeek?: number[],
 }
 
@@ -130,7 +133,7 @@ export interface ITrigger {
     userId: number,
 
     sourceType: ETriggerSourceType,
-    sourceData: ITriggerSourceAdress_fieldInGroup | ITriggerSourceAdress_fieldInComplexGroup,
+    sourceData: ITriggerSourceAdress_fieldInGroup | ITriggerSourceAdress_fieldInComplexGroup | ITriggerTimeSourceData,
 
     fieldType: 'numeric' | 'text' | 'button' | 'RGB' | 'multipleChoice',
     settings: INumericTrigger | ITextTrigger | IMCTrigger | IBooleanTrigger | IRGBTrigger,

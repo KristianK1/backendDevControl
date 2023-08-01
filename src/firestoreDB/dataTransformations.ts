@@ -7,6 +7,7 @@ export function transformDeviceData(device: IDevice) {
         actualDeviceFieldGroups.push(transformDeviceFieldGroup(device, Number(key)));
     })
     device.deviceFieldGroups = actualDeviceFieldGroups;
+    
     let actualComplexGroups: IComplexFieldGroup[] = [];
     Object.keys(device.deviceFieldComplexGroups).forEach(key => {
         actualComplexGroups.push(transformComplexGroup(device, Number(key)));

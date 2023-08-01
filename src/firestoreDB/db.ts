@@ -8,7 +8,9 @@ import { IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, 
 import { IEmailConfirmationData, IForgotPasswordData } from "../emailService/emailModels";
 import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
 import { FieldValue } from "firebase-admin/firestore";
-import { ETriggerSourceType, ITrigger, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup } from "models/triggerModels";
+import { ETriggerSourceType, ITrigger, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup } from "../models/triggerModels";
+import { bridge_getDevicebyKey } from "../services/serviceBridge";
+import { log } from "console";
 
 export class Db {
     static usersCollName = 'users';
@@ -408,22 +410,111 @@ export class Db {
     //</EMAIL>
 
     //<TRIGGER>
+
+    async startTriggerCollection_devices(): Promise<void> {
+        await this.firestore.setDocumentValue(Db.triggersCollName, 'devices', {});
+    }
+
+    async startTriggerCollection_time(): Promise<void> {
+        await this.firestore.setDocumentValue(Db.triggersCollName, 'time', {});
+    }
+
+    // await this.firestore.updateDocumentValue(Db.usersCollName, `${userId}`, {
+    //     [`userRight.rightsToComplexGroups.${right.deviceId}.${right.complexGroupId}`]: right
+    // });
+
+
     async saveTrigger(triggerData: ITrigger) {
+        try {
+            let tgsD = await this.firestore.getDocumentData(Db.triggersCollName, 'devices');
+            let tgsT = await this.firestore.getDocumentData(Db.triggersCollName, 'time');
+            if (!tgsD) {
+                this.startTriggerCollection_devices();
+            }
+            if (!tgsT) {
+                this.startTriggerCollection_time();
+            }
+            console.log('tgs: ');
+            console.log(tgsD);
+            console.log(tgsT);
+
+
+        } catch {
+            console.log('error get trigger')
+        }
+
         let newTriggerId = await this.getMaxTriggerId(true);
+        console.log('x7');
 
         switch (triggerData.sourceType) {
             case ETriggerSourceType.FieldInGroup:
                 let addressG = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
-                await this.firestore.updateDocumentValue(Db.triggersCollName, `devices/${addressG.deviceId}/${addressG.groupId}/${addressG.fieldId}/${newTriggerId}`, triggerData);
+                let pathFG = `${addressG.deviceId}.groups.${addressG.groupId}.${addressG.fieldId}.${newTriggerId}`;
+                console.log('x8');
+                console.log(pathFG);
+
+                await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
+                    [`${pathFG}`]: triggerData
+                });
+                console.log('x9');
                 break;
             case ETriggerSourceType.FieldInComplexGroup:
                 let addressCG = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
-                await this.firestore.updateDocumentValue(Db.triggersCollName, `devices/${addressCG.deviceId}/${addressCG.complexGroupId}/${addressCG.stateId}/${addressCG.fieldId}/${newTriggerId}`, triggerData);
-                break;
+                let pathCFG = `${addressCG.deviceId}.complexGroups.${addressCG.complexGroupId}.${addressCG.stateId}.${addressCG.fieldId}.${newTriggerId}`;
+                await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
+                    [`${pathCFG}`]: triggerData
+                }); break;
             case ETriggerSourceType.TimeTrigger:
-                await this.firestore.updateDocumentValue(Db.triggersCollName, `time/${newTriggerId}`, triggerData);
-                break;
+                let pathT = `${newTriggerId}`;
+                await this.firestore.updateDocumentValue(Db.triggersCollName, 'time', {
+                    [`${pathT}`]: triggerData
+                }); break;
         }
+    }
+
+    async getAllTriggersForDeviceSource(deviceId: number): Promise<ITrigger[]> {
+        let data = await this.firestore.getCollectionData(Db.triggersCollName);
+
+        let triggers: ITrigger[] = [];
+        try {
+            for (let deviceId of Object.keys(data['devices'])) {
+                for (let groupId of Object.keys(data['device'][deviceId]['groups'])) {
+                    for (let fieldId of Object.keys(data['device'][deviceId]['groups'][groupId])) {
+                        for (let triggerId of Object.keys(data['device'][deviceId]['groups'][groupId][fieldId])) {
+                            triggers.push(data['device'][deviceId]['groups'][groupId][fieldId][triggerId]);
+                        }
+                    }
+                }
+                for (let complexGroupId of Object.keys(data['device'][deviceId]['complexGroups'])) {
+                    for (let stateId of Object.keys(data['device'][deviceId]['complexGroups'][complexGroupId])) {
+                        for (let fieldId of Object.keys(data['device'][deviceId]['complexGroups'][complexGroupId][stateId])) {
+                            for (let triggerId of Object.keys(data['device'][deviceId]['complexGroups'][complexGroupId][stateId][fieldId])) {
+                                triggers.push(data['device'][deviceId]['complexGroups'][complexGroupId][stateId][fieldId][triggerId]);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+
+        }
+        return triggers;
+    }
+
+    async getAllTimeTriggers() {
+
+    }
+
+    async getAllDeviceTriggers() {
+
+    }
+
+    async getAllTriggers() {
+
+    }
+
+    async deleteTrigger(triggerId: number) {
+
     }
     //</TRIGGER>
 

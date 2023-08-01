@@ -10,4 +10,7 @@ router.use('/device', deviceRouter);
 var userRightsRouter = require('./userRights/userRightsRouter.ts');
 router.use('/userRights', userRightsRouter);
 
+var triggerRouter = require('./triggers/triggersRouter');
+router.use('/triggers', triggerRouter);
+
 module.exports = router;

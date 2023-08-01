@@ -29,6 +29,11 @@ export async function bridge_getDevicebyId(deviceId: number): Promise<IDevice> {
     return await deviceService.getDevicebyId(deviceId);
 }
 
+export async function bridge_getDevicebyKey(deviceKey: string): Promise<IDevice> {
+    var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+    return await deviceService.getDevicebyKey(deviceKey);
+}
+
 export async function bridge_getUsers(): Promise<IUser[]> {
     var userService: UserService = userServiceSingletonFactory.getInstance();
     return await userService.getUsers();

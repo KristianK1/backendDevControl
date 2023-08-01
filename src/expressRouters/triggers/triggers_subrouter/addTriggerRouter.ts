@@ -20,7 +20,6 @@ var triggerService: TriggerService = triggerServiceSingletonFactory.getInstance(
 
 router.post('/', async (req: any, res: any) => {
     let request: IAddTriggerReq = req.body;
-    console.log(request);
     
     let user: IUser;
     try {
@@ -35,21 +34,16 @@ router.post('/', async (req: any, res: any) => {
 
     let deviceData: IDevice;
     let field: IDeviceFieldBasic;
-    console.log('x0');
 
     switch (triggerData.sourceType) {
         case ETriggerSourceType.FieldInGroup:
             let sourceAdress_field_group = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
 
             deviceData = await deviceService.getDevicebyId(sourceAdress_field_group.deviceId);
-            console.log('x1');
             let group = getDeviceFieldGroup(deviceData, sourceAdress_field_group.groupId);
-            console.log('x2');
             field = getDeviceField(group, sourceAdress_field_group.fieldId);
-            console.log('x3');
 
             let rightToField = await userPermissionService.checkUserRightToField(user, sourceAdress_field_group.deviceId, sourceAdress_field_group.groupId, sourceAdress_field_group.fieldId);
-            console.log('x4');
 
             if (rightToField === ERightType.None) {
                 // throw ({ message: 'User doesn\'t have rights' });
@@ -57,7 +51,6 @@ router.post('/', async (req: any, res: any) => {
                 res.send('User doesn\'t have rights');
                 return;
             }
-            console.log('x5');
 
             try {
                 await triggerService.checkTriggerSourceValueValidity(triggerData, field);
@@ -66,8 +59,6 @@ router.post('/', async (req: any, res: any) => {
                 res.send(e.message)
                 return;
             }
-            console.log('x6');
-
             break;
         case ETriggerSourceType.FieldInComplexGroup:
             let sourceAdress_field_complexGroup = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;

@@ -419,11 +419,6 @@ export class Db {
         await this.firestore.setDocumentValue(Db.triggersCollName, 'time', {});
     }
 
-    // await this.firestore.updateDocumentValue(Db.usersCollName, `${userId}`, {
-    //     [`userRight.rightsToComplexGroups.${right.deviceId}.${right.complexGroupId}`]: right
-    // });
-
-
     async saveTrigger(triggerData: ITrigger) {
         try {
             let tgsD = await this.firestore.getDocumentData(Db.triggersCollName, 'devices');
@@ -434,29 +429,21 @@ export class Db {
             if (!tgsT) {
                 this.startTriggerCollection_time();
             }
-            console.log('tgs: ');
-            console.log(tgsD);
-            console.log(tgsT);
-
-
         } catch {
-            console.log('error get trigger')
+
         }
 
         let newTriggerId = await this.getMaxTriggerId(true);
-        console.log('x7');
 
         switch (triggerData.sourceType) {
             case ETriggerSourceType.FieldInGroup:
                 let addressG = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
                 let pathFG = `${addressG.deviceId}.groups.${addressG.groupId}.${addressG.fieldId}.${newTriggerId}`;
-                console.log('x8');
                 console.log(pathFG);
 
                 await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
                     [`${pathFG}`]: triggerData
                 });
-                console.log('x9');
                 break;
             case ETriggerSourceType.FieldInComplexGroup:
                 let addressCG = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
@@ -472,41 +459,43 @@ export class Db {
         }
     }
 
-    async getAllTriggersForDeviceSource(deviceId: number): Promise<ITrigger[]> {
-        let data = await this.firestore.getCollectionData(Db.triggersCollName);
-
+    async getAllTriggersForDeviceSource(): Promise<ITrigger[]> {
+        let data = await this.firestore.getDocumentData(Db.triggersCollName, 'devices');
         let triggers: ITrigger[] = [];
-        try {
-            for (let deviceId of Object.keys(data['devices'])) {
-                for (let groupId of Object.keys(data['device'][deviceId]['groups'])) {
-                    for (let fieldId of Object.keys(data['device'][deviceId]['groups'][groupId])) {
-                        for (let triggerId of Object.keys(data['device'][deviceId]['groups'][groupId][fieldId])) {
-                            triggers.push(data['device'][deviceId]['groups'][groupId][fieldId][triggerId]);
-                        }
+        for (let deviceId of Object.keys(data)) {
+            for (let groupId of Object.keys(data[deviceId]['groups'])) {
+                for (let fieldId of Object.keys(data[deviceId]['groups'][groupId])) {
+                    for (let triggerId of Object.keys(data[deviceId]['groups'][groupId][fieldId])) {
+                        triggers.push(data[deviceId]['groups'][groupId][fieldId][triggerId]);
                     }
                 }
-                for (let complexGroupId of Object.keys(data['device'][deviceId]['complexGroups'])) {
-                    for (let stateId of Object.keys(data['device'][deviceId]['complexGroups'][complexGroupId])) {
-                        for (let fieldId of Object.keys(data['device'][deviceId]['complexGroups'][complexGroupId][stateId])) {
-                            for (let triggerId of Object.keys(data['device'][deviceId]['complexGroups'][complexGroupId][stateId][fieldId])) {
-                                triggers.push(data['device'][deviceId]['complexGroups'][complexGroupId][stateId][fieldId][triggerId]);
-                            }
+            }
+            for (let complexGroupId of Object.keys(data[deviceId]['complexGroups'])) {
+                for (let stateId of Object.keys(data[deviceId]['complexGroups'][complexGroupId])) {
+                    for (let fieldId of Object.keys(data[deviceId]['complexGroups'][complexGroupId][stateId])) {
+                        for (let triggerId of Object.keys(data[deviceId]['complexGroups'][complexGroupId][stateId][fieldId])) {
+                            triggers.push(data[deviceId]['complexGroups'][complexGroupId][stateId][fieldId][triggerId]);
                         }
                     }
                 }
             }
-        } catch (e) {
-
         }
         return triggers;
     }
 
-    async getAllTimeTriggers() {
-
+    async getAllTimeTriggers(): Promise<ITrigger[]> {
+        let data = await this.firestore.getDocumentData(Db.triggersCollName, 'time');
+        let triggers: ITrigger[] = [];
+        for (let triggerId of Object.keys(data)) {
+            triggers.push(data[triggerId]);
+        }
+        return triggers;
     }
 
-    async getAllDeviceTriggers() {
-
+    async getAllDeviceTriggers(): Promise<ITrigger[]> {
+        let triggers: ITrigger[] = await this.getAllTriggersForDeviceSource();
+        triggers.push(... await this.getAllTimeTriggers());
+        return triggers;
     }
 
     async getAllTriggers() {

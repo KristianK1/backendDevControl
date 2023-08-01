@@ -1,7 +1,7 @@
 import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
-import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_numeric, ETextTriggerType, ETriggerSourceType, IBooleanTrigger, IMCTrigger, INumericTrigger, IRGBTrigger, ITextTrigger, ITrigger } from "../models/triggerModels";
-import { IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "../models/basicModels";
+import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_numeric, ETextTriggerType, IBooleanTrigger, IMCTrigger, INumericTrigger, IRGBTrigger, ITextTrigger, ITrigger } from "../models/triggerModels";
+import { IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "../models/basicModels";
 
 export class TriggerService {
     private db: Db;
@@ -12,6 +12,17 @@ export class TriggerService {
 
     async saveTrigger(triggerData: ITrigger) {
         await this.db.saveTrigger(triggerData);
+    }
+
+    async getAllTriggersForUser(userId: number) {
+        let triggers: ITrigger[] = await this.db.getAllDeviceTriggers();
+        let myTriggers: ITrigger[] = [];
+        for (let trigger of triggers) {
+            if (trigger.userId === userId) {
+                myTriggers.push(trigger);
+            }
+        }
+        return myTriggers;
     }
 
     async checkTriggerSourceValueValidity(triggerData: ITrigger, field: IDeviceFieldBasic) {

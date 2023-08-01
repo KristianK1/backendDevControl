@@ -5,3 +5,6 @@ export interface IAddTriggerReq {
     trigger: ITrigger,
 }
 
+export interface IGetAllUserTriggersReq {
+    authToken: string,
+}

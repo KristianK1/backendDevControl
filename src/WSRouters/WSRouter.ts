@@ -70,7 +70,7 @@ export class MyWebSocketServer {
                         if (!userConn) {
                             let logoutData: ILoggedReason = { logoutReason: ELogoutReasons.LogoutMyself }
                             newConnection.connection.sendUTF(JSON.stringify(logoutData));
-                            setInterval(() => {
+                            setTimeout(() => {
                                 newConnection.connection.close();
                             }, 5000);
                             return

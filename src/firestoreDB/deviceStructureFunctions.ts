@@ -17,6 +17,9 @@ export function compareFields(fieldNew: IDeviceFieldBasic, fieldOld: IDeviceFiel
             if (fieldValueNew.minValue !== fieldValueOld.minValue) return false;
             if (fieldValueNew.maxValue !== fieldValueOld.maxValue) return false;
             if (fieldValueNew.valueStep !== fieldValueOld.valueStep) return false;
+            if (fieldValueNew.prefix !== fieldValueOld.prefix) return false;
+            if (fieldValueNew.sufix !== fieldValueOld.sufix) return false;
+
             // if (fieldValueNew.fieldValue !== fieldValueOld.fieldValue) return false;            
         }
 

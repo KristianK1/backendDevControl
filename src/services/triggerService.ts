@@ -6,11 +6,15 @@ import { bridge_checkUserRightToComplexGroup, bridge_checkUserRightToField, brid
 import { getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "../firestoreDB/deviceStructureFunctions";
 import { ERightType } from "../models/userRightsModels";
 import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
+import { log } from "console";
+import { getCurrentTimeUNIX } from "generalStuff/timeHandlers";
 
 
 export class TriggerService {
     private db: Db;
     private emailService: EmailService;
+    
+    static TimeTrigger_checkInterval = 5;
     constructor() {
         this.db = DBSingletonFactory.getInstance();
         this.emailService = emailServiceSingletonFactory.getInstance();
@@ -153,7 +157,6 @@ export class TriggerService {
     //call this
     async checkTriggersForFieldInGroup(deviceId: number, groupId: number, fieldId: number, oldValue: any) {
         let triggers = await this.findTriggersForFieldInGroup(deviceId, groupId, fieldId);
-
         let device = await bridge_getDevicebyId(deviceId);
         let group = getDeviceFieldGroup(device, groupId);
         let field = getDeviceField(group, fieldId);
@@ -164,7 +167,6 @@ export class TriggerService {
     //call this
     async checkTriggersForFieldInComplexGroup(deviceId: number, complexGroupId: number, stateId: number, fieldId: number, oldValue: any) {
         let triggers = await this.findTriggersForFieldInComplexGroup(deviceId, complexGroupId, stateId, fieldId);
-
         let device = await bridge_getDevicebyId(deviceId);
         let complexGroup = getComplexGroup(device, complexGroupId);
         let complexState = getComplexGroupState(complexGroup, stateId);
@@ -244,6 +246,23 @@ export class TriggerService {
         return foundTriggers;
     }
 
+    async checkAllTimeTriggers(){
+        let currentTime = getCurrentTimeUNIX();
+        let triggers = await this.db.getAllTimeTriggers();
+        for(let trigger of triggers){
+            let timeSettings = trigger.sourceData as ITriggerTimeSourceData;
+            switch(timeSettings.type){
+                case ETriggerTimeType.Once:
+
+                case ETriggerTimeType.Daily:
+                case ETriggerTimeType.Weekly:
+                case ETriggerTimeType.ChooseDaysInWeek:
+                case ETriggerTimeType.Monthly:
+                case ETriggerTimeType.Yearly:
+            }
+        }
+    }
+
     // private async checkTriggerTargerValidity(triggerData: ITrigger) {
     //     let device: IDevice;
     //     switch (triggerData.responseType) {
@@ -290,7 +309,7 @@ export class TriggerService {
                 let Gfield = getDeviceField(Ggroup, Gresponse.fieldId);
                 await bridge_tryToChangeDeviceFieldValue(Gresponse.deviceId, Gresponse.groupId, Gfield, Gresponse.value);
                 break;
-             case ETriggerResponseType.SettingValue_fieldInComplexGroup:
+            case ETriggerResponseType.SettingValue_fieldInComplexGroup:
                 let CGresponse = triggerData.responseSettings as ITriggerSettingsValueResponse_fieldInComplexGroup
                 let CGdevice = await bridge_getDevicebyId(CGresponse.deviceId);
                 let CGgroup = getComplexGroup(CGdevice, CGresponse.complexGroupId);
@@ -367,7 +386,7 @@ export class TriggerService {
             case ENumericTriggerType.Bigger:
                 return (settings.value < field.maxValue && settings.value > field.minValue)
             case ENumericTriggerType.Smaller:
-                return (settings.value < field.minValue && settings.value < field.maxValue)
+                return (settings.value < field.maxValue && settings.value > field.minValue)
             case ENumericTriggerType.Equal:
                 return (settings.value < field.minValue && settings.value < field.maxValue)
             case ENumericTriggerType.Inbetween:

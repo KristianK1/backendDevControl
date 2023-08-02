@@ -6,6 +6,7 @@ import { compareFields, getComplexGroup, getComplexGroupState, getDeviceField, g
 import { IDeviceForDevice } from "models/frontendModels";
 import { getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
 import { bridge_deleteComplexGroupOnAllUsers, bridge_deleteDeviceOnAllUsers, bridge_deleteFieldOnAllUsers, bridge_deleteGroupOnAllUsers } from "./serviceBridge";
+import { log } from "console";
 
 export class DeviceService {
 
@@ -221,7 +222,7 @@ export class DeviceService {
         if (field.fieldValue.fieldDirection === 'output') {
             throw ({ message: 'Field value is output only - can\'t be set by user' });
         }
-        await this.tryToChangeDeviceFieldValue(deviceId, groupId, field, fieldValue);
+        return await this.tryToChangeDeviceFieldValue(deviceId, groupId, field, fieldValue);
     }
 
     async registerDeviceData(deviceData: IDevice) {
@@ -393,6 +394,8 @@ export class DeviceService {
         else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
             let numField = field.fieldValue as IDeviceFieldNumeric;
             oldValue = numField.fieldValue;
+            console.log('OLD VALUE: ' + oldValue);
+            
             if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
                 let N = (fieldValue - numField.minValue) / numField.valueStep;
                 if (N % 1 < 0.05 || N % 1 > 0.95) {

@@ -17,17 +17,6 @@ export class TriggerService {
         await this.db.saveTrigger(triggerData);
     }
 
-    async getAllTriggersForUser(userId: number) {
-        let triggers: ITrigger[] = await this.db.getAllTriggers();
-        let myTriggers: ITrigger[] = [];
-        for (let trigger of triggers) {
-            if (trigger.userId === userId) {
-                myTriggers.push(trigger);
-            }
-        }
-        return myTriggers;
-    }
-
     async getTriggerbyId(triggerId: number) {
         return await this.db.getTriggerbyId(triggerId);
     }
@@ -52,7 +41,6 @@ export class TriggerService {
                 let rightToField = await bridge_checkUserRightToField(user, sourceAdress_field_group.deviceId, sourceAdress_field_group.groupId, sourceAdress_field_group.fieldId);
 
                 if (rightToField === ERightType.None) {
-                    // throw ({ message: 'User doesn\'t have rights' });
                     throw ({ message: 'User doesn\'t have rights' });
                 }
 
@@ -81,6 +69,7 @@ export class TriggerService {
                 throw ({ message: 'Wrong data' });
         }
 
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         let responseDeviceData: IDevice;
         switch (triggerData.responseType) {
             case ETriggerResponseType.Email:
@@ -125,47 +114,71 @@ export class TriggerService {
         }
     }
 
+    async getAllTriggersForUser(userId: number) {
+        let triggers: ITrigger[] = await this.db.getAllTriggers();
+        let myTriggers: ITrigger[] = [];
+        for (let trigger of triggers) {
+            if (trigger.userId === userId) {
+                myTriggers.push(trigger);
+            }
+        }
+        return myTriggers;
+    }
+    async checkValidityOfTriggersForUser(userId: number) {
+        let triggers: ITrigger[] = await this.getAllTriggersForUser(userId);
+        for (let trigger of triggers) {
+            try {
+                await this.checkValidityOfTrigger(trigger);
+            } catch (e) {
+                //TODO delete trigger
+            }
+        }
+    }
+
+
     async checkValidityOfTriggers() {
         let triggers = await this.db.getAllTriggers();
         for (let trigger of triggers) {
             try {
                 await this.checkValidityOfTrigger(trigger);
             } catch (e) {
-
+                //TODO delete trigger
             }
         }
     }
 
-    private async checkTriggerTargerValidity(triggerData: ITrigger) {
-        let device: IDevice;
-        switch (triggerData.responseType) {
-            case ETriggerResponseType.Email:
-                let emailSettings = triggerData.responseSettings as ITriggerEmailResponse;
 
-                break;
-            case ETriggerResponseType.MobileNotification:
-                let mobNotSettings = triggerData.responseSettings as ITriggerMobileNotificationResponse;
 
-                break;
-            case ETriggerResponseType.SettingValue_fieldInGroup:
-                let Gsettings = triggerData.responseSettings as ITriggerSettingValueResponse_fieldInGroup;
-                device = await bridge_getDevicebyId(Gsettings.deviceId);
-                let group = getDeviceFieldGroup(device, Gsettings.groupId);
-                let fieldInGroup = getDeviceField(group, Gsettings.fieldId);
+    // private async checkTriggerTargerValidity(triggerData: ITrigger) {
+    //     let device: IDevice;
+    //     switch (triggerData.responseType) {
+    //         case ETriggerResponseType.Email:
+    //             let emailSettings = triggerData.responseSettings as ITriggerEmailResponse;
 
-                await bridge_tryToChangeDeviceFieldValue(Gsettings.deviceId, Gsettings.groupId, fieldInGroup, Gsettings.value);
-                break;
-            case ETriggerResponseType.SettingValue_fieldInComplexGroup:
-                let CGsettings = triggerData.responseSettings as ITriggerSettingsValueResponse_fieldInComplexGroup;
-                device = await bridge_getDevicebyId(CGsettings.deviceId);
-                let complexGroup = getComplexGroup(device, CGsettings.complexGroupId);
-                let complexGroupState = getComplexGroupState(complexGroup, CGsettings.complexGroupState);
-                let fieldInComplexGroup = getFieldInComplexGroup(complexGroupState, CGsettings.fieldId);
-                await bridge_tryToChangeFieldValueInComplexGroup(CGsettings.deviceId, CGsettings.complexGroupId, CGsettings.complexGroupState, fieldInComplexGroup, CGsettings.value, true);
-                break;
+    //             break;
+    //         case ETriggerResponseType.MobileNotification:
+    //             let mobNotSettings = triggerData.responseSettings as ITriggerMobileNotificationResponse;
 
-        }
-    }
+    //             break;
+    //         case ETriggerResponseType.SettingValue_fieldInGroup:
+    //             let Gsettings = triggerData.responseSettings as ITriggerSettingValueResponse_fieldInGroup;
+    //             device = await bridge_getDevicebyId(Gsettings.deviceId);
+    //             let group = getDeviceFieldGroup(device, Gsettings.groupId);
+    //             let fieldInGroup = getDeviceField(group, Gsettings.fieldId);
+
+    //             await bridge_tryToChangeDeviceFieldValue(Gsettings.deviceId, Gsettings.groupId, fieldInGroup, Gsettings.value);
+    //             break;
+    //         case ETriggerResponseType.SettingValue_fieldInComplexGroup:
+    //             let CGsettings = triggerData.responseSettings as ITriggerSettingsValueResponse_fieldInComplexGroup;
+    //             device = await bridge_getDevicebyId(CGsettings.deviceId);
+    //             let complexGroup = getComplexGroup(device, CGsettings.complexGroupId);
+    //             let complexGroupState = getComplexGroupState(complexGroup, CGsettings.complexGroupState);
+    //             let fieldInComplexGroup = getFieldInComplexGroup(complexGroupState, CGsettings.fieldId);
+    //             await bridge_tryToChangeFieldValueInComplexGroup(CGsettings.deviceId, CGsettings.complexGroupId, CGsettings.complexGroupState, fieldInComplexGroup, CGsettings.value, true);
+    //             break;
+
+    //     }
+    // }
 
     private async checkTriggerSourceValueValidity(triggerData: ITrigger, field: IDeviceFieldBasic) {
 
@@ -245,7 +258,6 @@ export class TriggerService {
                 return ((settings.value < settings.second_value) &&
                     (settings.value > field.minValue || settings.second_value < field.maxValue));
         }
-        return false;
     }
 
     private checkTextTriggerSettings(field: IDeviceFieldText, settings: ITextTrigger) {

@@ -2,8 +2,8 @@ export enum ENumericTriggerType {
     Bigger,
     Smaller,
     Equal,
-    Inbetween,
-    NotInBetween,
+    Inbetween, // [x,y]
+    NotInBetween, // R \ [x,y]
 }
 
 export enum ETextTriggerType {

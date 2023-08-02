@@ -1,8 +1,8 @@
 import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
-import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_numeric, ETextTriggerType, ETriggerResponseType, ETriggerSourceType, ETriggerTimeType, IBooleanTrigger, IMCTrigger, INumericTrigger, IRGBTrigger, ITextTrigger, ITrigger, ITriggerEmailResponse, ITriggerMobileNotificationResponse, ITriggerSettingValueResponse_fieldInGroup, ITriggerSettingsValueResponse_fieldInComplexGroup, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup, ITriggerTimeSourceData } from "../models/triggerModels";
-import { IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText } from "../models/basicModels";
-import { bridge_checkUserRightToComplexGroup, bridge_checkUserRightToField, bridge_getDevicebyId, bridge_getUserbyId, bridge_tryToChangeDeviceFieldValue, bridge_tryToChangeFieldValueInComplexGroup } from "./serviceBridge";
+import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_context, ERGBTriggerType_numeric, ETextTriggerType, ETriggerResponseType, ETriggerSourceType, ETriggerTimeType, IBooleanTrigger, IMCTrigger, INumericTrigger, IRGBTrigger, ITextTrigger, ITrigger, ITriggerEmailResponse, ITriggerMobileNotificationResponse, ITriggerSettingValueResponse_fieldInGroup, ITriggerSettingsValueResponse_fieldInComplexGroup, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup, ITriggerTimeSourceData } from "../models/triggerModels";
+import { IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText, IRGB } from "../models/basicModels";
+import { bridge_checkUserRightToComplexGroup, bridge_checkUserRightToField, bridge_getDevicebyId, bridge_getDevicebyKey, bridge_getUserbyId, bridge_tryToChangeDeviceFieldValue, bridge_tryToChangeFieldValueInComplexGroup } from "./serviceBridge";
 import { getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "../firestoreDB/deviceStructureFunctions";
 import { ERightType } from "../models/userRightsModels";
 
@@ -147,7 +147,100 @@ export class TriggerService {
         }
     }
 
+    //call this
+    async checkTriggersForFieldInGroup(deviceId: number, groupId: number, fieldId: number, oldValue: any) {
+        let triggers = await this.findTriggersForFieldInGroup(deviceId, groupId, fieldId);
 
+        let device = await bridge_getDevicebyId(deviceId);
+        let group = getDeviceFieldGroup(device, groupId);
+        let field = getDeviceField(group, fieldId);
+
+        this.checkTrigger(triggers, field, oldValue);
+
+    }
+
+    //call this
+    async checkTriggersForFieldInComplexGroup(deviceId: number, complexGroupId: number, stateId: number, fieldId: number, oldValue: any) {
+        let triggers = await this.findTriggersForFieldInComplexGroup(deviceId, complexGroupId, stateId, fieldId);
+
+        let device = await bridge_getDevicebyId(deviceId);
+        let complexGroup = getComplexGroup(device, complexGroupId);
+        let complexState = getComplexGroupState(complexGroup, stateId);
+        let field = getFieldInComplexGroup(complexState, fieldId);
+
+        this.checkTrigger(triggers, field, oldValue);
+    }
+
+    private checkTrigger(triggers: ITrigger[], field: IDeviceFieldBasic, oldValue: any) {
+        for (let trigger of triggers) {
+            switch (trigger.fieldType) {
+                case 'numeric':
+                    let numField = field.fieldValue as IDeviceFieldNumeric;
+                    let numTrigger = trigger.settings as INumericTrigger;
+                    if (this.checkTrigger_numeric(numField, numTrigger, oldValue)) {
+                        //TODO kick off
+                    }
+                    break;
+                case 'text':
+                    let textField = field.fieldValue as IDeviceFieldText;
+                    let textTrigger = trigger.settings as ITextTrigger;
+                    if (this.checkTrigger_text(textField, textTrigger, oldValue)) {
+                        //TODO kick off
+                    }
+                    break;
+                case 'button':
+                    let buttonField = field.fieldValue as IDeviceFieldButton;
+                    let buttonTrigger = trigger.settings as IBooleanTrigger;
+                    if (this.checkTrigger_button(buttonField, buttonTrigger, oldValue)) {
+                        //TODO kick off
+                    }
+                    break;
+                case 'multipleChoice':
+                    let mcField = field.fieldValue as IDeviceFieldMultipleChoice;
+                    let mcTrigger = trigger.settings as IMCTrigger;
+                    if (this.checkTrigger_MC(mcField, mcTrigger, oldValue)) {
+                        //TODO kick off
+                    }
+                    break;
+                case 'RGB':
+                    let rgbField = field.fieldValue as IDeviceFieldRGB;
+                    let rgbTrigger = trigger.settings as IRGBTrigger;
+                    if (this.checkTrigger_RGB(rgbField, rgbTrigger, oldValue)) {
+                        //TODO kick off
+                    }
+                    break;
+
+            }
+        }
+    }
+
+    async findTriggersForFieldInGroup(deviceId: number, groupId: number, fieldId: number) {
+        let triggers = await this.db.getAllTriggersForDeviceSource();
+        let foundTriggers: ITrigger[] = [];
+        for (let trigger of triggers) {
+            if (trigger.sourceType === ETriggerSourceType.FieldInGroup) {
+                let sourceSettings = trigger.sourceData as ITriggerSourceAdress_fieldInGroup;
+                if (sourceSettings.deviceId === deviceId && sourceSettings.groupId === groupId && sourceSettings.fieldId === fieldId) {
+                    foundTriggers.push(trigger);
+                }
+            }
+        }
+        return foundTriggers;
+    }
+
+    async findTriggersForFieldInComplexGroup(deviceId: number, complexGroupId: number, stateId: number, fieldId: number) {
+        let triggers = await this.db.getAllTriggersForDeviceSource();
+        let foundTriggers: ITrigger[] = [];
+        for (let trigger of triggers) {
+            if (trigger.sourceType === ETriggerSourceType.FieldInComplexGroup) {
+                let sourceSettings = trigger.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
+                if (sourceSettings.deviceId === deviceId && sourceSettings.complexGroupId === complexGroupId && sourceSettings.stateId === stateId && sourceSettings.fieldId === fieldId) {
+                    foundTriggers.push(trigger);
+                }
+            }
+        }
+        return foundTriggers;
+    }
 
     // private async checkTriggerTargerValidity(triggerData: ITrigger) {
     //     let device: IDevice;
@@ -313,4 +406,186 @@ export class TriggerService {
         }
         return false;
     }
+
+    checkTrigger_numeric(field: IDeviceFieldNumeric, triggerData: INumericTrigger, oldValue: number): boolean {
+        switch (triggerData.type) {
+            case ENumericTriggerType.Bigger:
+                if (
+                    field.fieldValue > triggerData.value &&
+                    oldValue <= triggerData.value
+                ) {
+                    return true;
+                }
+                break;
+            case ENumericTriggerType.Smaller:
+                if (
+                    field.fieldValue < triggerData.value &&
+                    oldValue >= triggerData.value
+                ) {
+                    return true;
+                }
+                break;
+            case ENumericTriggerType.Equal:
+                if (
+                    field.fieldValue === triggerData.value &&
+                    oldValue !== triggerData.value
+                ) {
+                    return true;
+                }
+                break;
+            case ENumericTriggerType.Inbetween:
+                if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
+                if (
+                    field.fieldValue >= triggerData.value &&
+                    field.fieldValue <= triggerData.second_value &&
+                    !(oldValue >= triggerData.value && oldValue <= triggerData.second_value)
+                ) {
+                    return true;
+                }
+                break;
+            case ENumericTriggerType.NotInBetween:
+                if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
+                if (
+                    field.fieldValue < triggerData.value &&
+                    field.fieldValue > triggerData.second_value &&
+                    !(oldValue < triggerData.value && oldValue > triggerData.second_value)
+                ) {
+                    return true;
+                }
+                break;
+        }
+        return false;
+    }
+
+    checkTrigger_text(field: IDeviceFieldText, triggerData: ITextTrigger, oldValue: string): boolean {
+        switch (triggerData.type) {
+            case ETextTriggerType.StartsWith:
+                if (field.fieldValue.startsWith(triggerData.value) && !field.fieldValue.startsWith(oldValue)) {
+                    return true;
+                }
+                break;
+            case ETextTriggerType.EndsWith:
+                if (field.fieldValue.endsWith(triggerData.value) && !field.fieldValue.endsWith(oldValue)) {
+                    return true;
+                }
+                break;
+            case ETextTriggerType.Contains:
+                if (field.fieldValue.includes(triggerData.value) && !field.fieldValue.includes(oldValue)) {
+                    return true;
+                }
+                break;
+            case ETextTriggerType.IsEqualTo:
+                if (field.fieldValue === triggerData.value && field.fieldValue !== oldValue) {
+                    return true;
+                }
+                break;
+            case ETextTriggerType.IsNotEqualTo:
+                if (field.fieldValue !== triggerData.value && field.fieldValue === oldValue) {
+                    return true;
+                }
+                break;
+        }
+        return false;
+    }
+
+    checkTrigger_button(field: IDeviceFieldButton, triggerData: IBooleanTrigger, oldValue: boolean): boolean {
+        switch (triggerData.type) {
+            case false:
+                if (field.fieldValue === false && oldValue === true) {
+                    return true;
+                }
+                break;
+            case true:
+                if (field.fieldValue === true && oldValue === false) {
+                    return true;
+                }
+                break;
+        }
+        return false;
+    }
+
+    checkTrigger_MC(field: IDeviceFieldMultipleChoice, triggerData: IMCTrigger, oldValue: number): boolean {
+        switch (triggerData.type) {
+            case EMCTriggerType.IsEqualTo:
+                if (field.fieldValue === triggerData.value && oldValue !== triggerData.value) {
+                    return true;
+                }
+                break;
+            case EMCTriggerType.IsNotEqualTo:
+                if (field.fieldValue !== triggerData.value && oldValue === triggerData.value) {
+                    return true;
+                }
+                break;
+        }
+        return false;
+    }
+
+    checkTrigger_RGB(field: IDeviceFieldRGB, triggerData: IRGBTrigger, oldValue: IRGB): boolean {
+        let neww: number;
+        let old: number;
+        switch (triggerData.contextType) {
+            case ERGBTriggerType_context.R:
+                neww = field.R;
+                old = oldValue.R;
+                break;
+            case ERGBTriggerType_context.G:
+                neww = field.G;
+                old = oldValue.G;
+                break;
+            case ERGBTriggerType_context.B:
+                neww = field.B;
+                old = oldValue.B;
+                break;
+        }
+
+        switch (triggerData.type) {
+            case ERGBTriggerType_numeric.Bigger:
+                if (
+                    neww > triggerData.value &&
+                    old <= triggerData.value
+                ) {
+                    return true;
+                }
+                break;
+            case ERGBTriggerType_numeric.Smaller:
+                if (
+                    neww < triggerData.value &&
+                    old >= triggerData.value
+                ) {
+                    return true;
+                }
+                break;
+            case ERGBTriggerType_numeric.Equal:
+                if (
+                    neww === triggerData.value &&
+                    old !== triggerData.value
+                ) {
+                    return true;
+                }
+                break;
+            case ERGBTriggerType_numeric.Inbetween:
+                if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
+                if (
+                    neww >= triggerData.value &&
+                    neww <= triggerData.second_value &&
+                    !(old >= triggerData.value && old <= triggerData.second_value)
+                ) {
+                    return true;
+                }
+                break;
+            case ERGBTriggerType_numeric.NotInBetween:
+                if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
+                if (
+                    neww < triggerData.value &&
+                    neww > triggerData.second_value &&
+                    !(old < triggerData.value && old > triggerData.second_value)
+                ) {
+                    return true;
+                }
+                break;
+        }
+
+        return false;
+    }
+
 }

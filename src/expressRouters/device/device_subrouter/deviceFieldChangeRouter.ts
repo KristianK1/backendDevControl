@@ -3,10 +3,11 @@ import { IUser } from "models/basicModels";
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 import { ERightType } from "../../../models/userRightsModels";
-import { deviceServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { deviceServiceSingletonFactory, triggerServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
 import { DeviceService } from "../../../services/deviceService";
-import { UserPermissionService } from "services/userPermissionService";
+import { UserPermissionService } from "../../../services/userPermissionService";
+import { TriggerService } from "../../../services/triggerService";
 
 var express = require('express');
 var router = express.Router();
@@ -14,6 +15,7 @@ var router = express.Router();
 var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
 var userService: UserService = userServiceSingletonFactory.getInstance();
 var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
+var triggerService: TriggerService = triggerServiceSingletonFactory.getInstance();
 
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
@@ -51,6 +53,7 @@ router.post('/user', async (req: any, res: any) => {
 
     try {
         await deviceService.changeDeviceFieldValueFromUser(request.deviceId, request.groupId, request.fieldId, request.fieldValue);
+        await triggerService.checkTriggersForFieldInGroup(request.deviceId, request.groupId, request.fieldId, "TODO");
         wsServer.emitFieldChanged(request.deviceId, request.groupId, request.fieldId);
     } catch (e) {
         res.status(400);

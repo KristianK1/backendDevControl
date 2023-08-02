@@ -52,8 +52,8 @@ router.post('/user', async (req: any, res: any) => {
     }
 
     try {
-        await deviceService.changeDeviceFieldValueFromUser(request.deviceId, request.groupId, request.fieldId, request.fieldValue);
-        await triggerService.checkTriggersForFieldInGroup(request.deviceId, request.groupId, request.fieldId, "TODO");
+        let oldValue = await deviceService.changeDeviceFieldValueFromUser(request.deviceId, request.groupId, request.fieldId, request.fieldValue);
+        await triggerService.checkTriggersForFieldInGroup(request.deviceId, request.groupId, request.fieldId, oldValue);
         wsServer.emitFieldChanged(request.deviceId, request.groupId, request.fieldId);
     } catch (e) {
         res.status(400);

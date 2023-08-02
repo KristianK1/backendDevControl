@@ -54,8 +54,8 @@ router.post('/user', async (req: any, res: any) => {
     }
 
     try {
-        await deviceService.changeFieldValueInComplexGroupFromUser(request.deviceId, request.groupId, request.stateId, request.fieldId, request.fieldValue);
-        await triggerService.checkTriggersForFieldInComplexGroup(request.deviceId, request.groupId, request.stateId, request.fieldId, "TODO");
+        let oldValue = await deviceService.changeFieldValueInComplexGroupFromUser(request.deviceId, request.groupId, request.stateId, request.fieldId, request.fieldValue);
+        await triggerService.checkTriggersForFieldInComplexGroup(request.deviceId, request.groupId, request.stateId, request.fieldId, oldValue);
         wsServer.emitComplexGroupChanged(request.deviceId, request.groupId);
     } catch (e) {
         res.status(400);

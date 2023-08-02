@@ -1,4 +1,4 @@
-import { IComplexFieldGroup, IComplexFieldGroupState, IDevice, IDeviceFieldBasic, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IFieldGroup, IUser } from "models/basicModels";
+import { IComplexFieldGroup, IComplexFieldGroupState, IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText, IFieldGroup, IRGB, IUser } from "models/basicModels";
 import { v4 as uuid } from 'uuid';
 import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
@@ -199,7 +199,7 @@ export class DeviceService {
         if (field.fieldValue.fieldDirection === 'output') {
             throw ({ message: 'Field value is output only - can\'t be set by user' });
         }
-        await this.tryToChangeFieldValueInComplexGroup(device.id, groupId, stateId, field, fieldValue);
+        return await this.tryToChangeFieldValueInComplexGroup(device.id, groupId, stateId, field, fieldValue);
     }
 
     async deleteFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number) {
@@ -382,13 +382,17 @@ export class DeviceService {
     }
 
     async tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any, dontSetValue?: boolean) {
+        let oldValue: any;
         if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
+            let buttonField = field.fieldValue as IDeviceFieldButton;
+            oldValue = buttonField.fieldValue;
             if (!dontSetValue) {
                 await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
             }
         }
         else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
-            let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
+            let numField = field.fieldValue as IDeviceFieldNumeric;
+            oldValue = numField.fieldValue;
             if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
                 let N = (fieldValue - numField.minValue) / numField.valueStep;
                 if (N % 1 < 0.05 || N % 1 > 0.95) {
@@ -401,12 +405,15 @@ export class DeviceService {
             else throw ({ message: 'Value out of interval [min,max]' });
         }
         else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
+            let textField = field.fieldValue as IDeviceFieldText;
+            oldValue = textField.fieldValue;
             if (!dontSetValue) {
                 await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
             }
         }
         else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
-            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
+            let multipleCField = field.fieldValue as IDeviceFieldMultipleChoice;
+            oldValue = multipleCField.fieldValue;
             if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
                 if (!dontSetValue) {
                     await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
@@ -420,6 +427,12 @@ export class DeviceService {
             ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0 && fieldValue.G < 256) &&
             ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0 && fieldValue.B < 256)
         ) {
+            let rgbField = field.fieldValue as IDeviceFieldRGB;
+            oldValue = {
+                R: rgbField.R,
+                G: rgbField.G,
+                B: rgbField.B,
+            };
             if (!dontSetValue) {
                 await this.db.changeDeviceFieldValueRGB(deviceId, groupId, field.id, fieldValue);
             }
@@ -428,6 +441,7 @@ export class DeviceService {
             console.log('wrong');
             throw ({ message: 'Wrong field data type' });
         }
+        return oldValue;
     }
 
     async tryToChangeComplexGroupState(device: IDevice, groupId: number, state: number) {
@@ -439,14 +453,18 @@ export class DeviceService {
         else throw ({ message: 'Invalid state number' });
     }
 
-    async tryToChangeFieldValueInComplexGroup(deviceId: number, groupId: number, stateId: number, field: IDeviceFieldBasic, fieldValue: any, dontSetValue?: boolean) {
+    async tryToChangeFieldValueInComplexGroup(deviceId: number, groupId: number, stateId: number, field: IDeviceFieldBasic, fieldValue: any, dontSetValue?: boolean): Promise<any> {
+        let oldValue: any;
         if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
+            let buttonField = field.fieldValue as IDeviceFieldButton;
+            oldValue = buttonField.fieldValue;
             if (!dontSetValue) {
                 await this.db.changeDeviceFieldValueInComplexGroup(deviceId, groupId, stateId, field.id, fieldValue);
             }
         }
         else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
-            let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
+            let numField = field.fieldValue as IDeviceFieldNumeric;
+            oldValue = numField.fieldValue;
             if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
                 let N = (fieldValue - numField.minValue) / numField.valueStep;
                 if (N % 1 < 0.05 || N % 1 > 0.95) {
@@ -460,12 +478,15 @@ export class DeviceService {
 
         }
         else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
+            let textField = field.fieldValue as IDeviceFieldText;
+            oldValue = textField.fieldValue;
             if (!dontSetValue) {
                 await this.db.changeDeviceFieldValueInComplexGroup(deviceId, groupId, stateId, field.id, fieldValue);
             }
         }
         else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
-            let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
+            let multipleCField = field.fieldValue as IDeviceFieldMultipleChoice;
+            oldValue = multipleCField.fieldValue;
             if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
                 if (!dontSetValue) {
                     await this.db.changeDeviceFieldValueInComplexGroup(deviceId, groupId, stateId, field.id, fieldValue);
@@ -479,6 +500,12 @@ export class DeviceService {
             ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
             ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
         ) {
+            let rgbField = field.fieldValue as IDeviceFieldRGB;
+            oldValue = {
+                R: rgbField.R,
+                G: rgbField.G,
+                B: rgbField.B,
+            };
             if (!dontSetValue) {
                 await this.db.changeDeviceFieldValueInComplexGroupRGB(deviceId, groupId, stateId, field.id, fieldValue);
             }
@@ -486,6 +513,7 @@ export class DeviceService {
         else {
             throw ({ message: 'Wrong field data type' });
         }
+        return oldValue;
     }
 
     async getGroup(deviceId: number, groupId: number, device?: IDevice) {

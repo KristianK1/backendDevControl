@@ -75,6 +75,7 @@ router.post('/', async (req: any, res: any) => {
 
     try {
         await userPermissionService.addUserRightToField(user, request.deviceId, request.groupId, request.fieldId, request.readOnly);
+
         if (request.readOnly) {
             await triggerService.checkValidityOfTriggersForUser(user.id);
         }

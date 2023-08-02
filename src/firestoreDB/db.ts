@@ -461,32 +461,52 @@ export class Db {
     async getAllTriggersForDeviceSource(): Promise<ITrigger[]> {
         let data = await this.firestore.getDocumentData(Db.triggersCollName, 'devices');
         let triggers: ITrigger[] = [];
-        for (let deviceId of Object.keys(data)) {
-            for (let groupId of Object.keys(data[deviceId]['groups'])) {
-                for (let fieldId of Object.keys(data[deviceId]['groups'][groupId])) {
-                    for (let triggerId of Object.keys(data[deviceId]['groups'][groupId][fieldId])) {
-                        triggers.push(data[deviceId]['groups'][groupId][fieldId][triggerId]);
+        if (data) {
+            for (let deviceId of Object.keys(data)) {
+                if (data[deviceId]['groups']) {
+                    for (let groupId of Object.keys(data[deviceId]['groups'])) {
+                        if (data[deviceId]['groups'][groupId]) {
+                            for (let fieldId of Object.keys(data[deviceId]['groups'][groupId])) {
+                                if (data[deviceId]['groups'][groupId][fieldId]) {
+                                    for (let triggerId of Object.keys(data[deviceId]['groups'][groupId][fieldId])) {
+                                        triggers.push(data[deviceId]['groups'][groupId][fieldId][triggerId]);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-            }
-            for (let complexGroupId of Object.keys(data[deviceId]['complexGroups'])) {
-                for (let stateId of Object.keys(data[deviceId]['complexGroups'][complexGroupId])) {
-                    for (let fieldId of Object.keys(data[deviceId]['complexGroups'][complexGroupId][stateId])) {
-                        for (let triggerId of Object.keys(data[deviceId]['complexGroups'][complexGroupId][stateId][fieldId])) {
-                            triggers.push(data[deviceId]['complexGroups'][complexGroupId][stateId][fieldId][triggerId]);
+                console.log('z0');
+                if (data[deviceId]['complexGroups']) {
+                    for (let complexGroupId of Object.keys(data[deviceId]['complexGroups'])) {
+                        if (data[deviceId]['complexGroups'][complexGroupId]) {
+                            for (let stateId of Object.keys(data[deviceId]['complexGroups'][complexGroupId])) {
+                                if (data[deviceId]['complexGroups'][complexGroupId][stateId]) {
+                                    for (let fieldId of Object.keys(data[deviceId]['complexGroups'][complexGroupId][stateId])) {
+                                        if (data[deviceId]['complexGroups'][complexGroupId][stateId][fieldId]) {
+                                            for (let triggerId of Object.keys(data[deviceId]['complexGroups'][complexGroupId][stateId][fieldId])) {
+                                                triggers.push(data[deviceId]['complexGroups'][complexGroupId][stateId][fieldId][triggerId]);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+
         return triggers;
     }
 
     async getAllTimeTriggers(): Promise<ITrigger[]> {
         let data = await this.firestore.getDocumentData(Db.triggersCollName, 'time');
         let triggers: ITrigger[] = [];
-        for (let triggerId of Object.keys(data)) {
-            triggers.push(data[triggerId]);
+        if (data) {
+            for (let triggerId of Object.keys(data)) {
+                triggers.push(data[triggerId]);
+            }
         }
         return triggers;
     }
@@ -494,6 +514,7 @@ export class Db {
     async getAllTriggers(): Promise<ITrigger[]> {
         let triggers: ITrigger[] = await this.getAllTriggersForDeviceSource();
         triggers.push(... await this.getAllTimeTriggers());
+
         return triggers;
     }
 

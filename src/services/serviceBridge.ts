@@ -2,7 +2,8 @@ import { deviceServiceSingletonFactory, userPermissionServiceSingletonFactory, u
 import { UserService } from "../services/userService";
 import { DeviceService } from "../services/deviceService";
 import { UserPermissionService } from "../services/userPermissionService";
-import { IDevice, IUser } from "models/basicModels";
+import { IDevice, IDeviceFieldBasic, IUser } from "models/basicModels";
+import { ERightType } from "models/userRightsModels";
 
 export async function bridge_deleteDeviceOnAllUsers(deviceId: number): Promise<void> {
     var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
@@ -42,4 +43,24 @@ export async function bridge_getUsers(): Promise<IUser[]> {
 export async function bridge_getUserbyId(userId: number): Promise<IUser> {
     var userService: UserService = userServiceSingletonFactory.getInstance();
     return await userService.getUserbyId(userId);
+}
+
+export async function bridge_tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any, dontSetValue?: boolean) {
+    var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+    await deviceService.tryToChangeDeviceFieldValue(deviceId, groupId, field, fieldValue, dontSetValue);
+}
+
+export async function bridge_tryToChangeFieldValueInComplexGroup(deviceId: number, complexGroupId: number, stateId: number, field: IDeviceFieldBasic, fieldValue: any, dontSetValue?: boolean) {
+    var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+    await deviceService.tryToChangeFieldValueInComplexGroup(deviceId, complexGroupId, stateId, field, fieldValue, dontSetValue);
+}
+
+export async function bridge_checkUserRightToField(user: IUser, deviceId: number, groupId: number, fieldId: number, device?: IDevice): Promise<ERightType> {
+    var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
+    return await userPermissionService.checkUserRightToField(user, deviceId, groupId, fieldId, device);
+}
+
+export async function bridge_checkUserRightToComplexGroup(user: IUser, deviceId: number, complexGroupId: number, device?: IDevice): Promise<ERightType> {
+    var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
+    return await userPermissionService.checkUserRightToComplexGroup(user, deviceId, complexGroupId, device);
 }

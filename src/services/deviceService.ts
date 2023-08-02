@@ -10,7 +10,7 @@ import { bridge_deleteComplexGroupOnAllUsers, bridge_deleteDeviceOnAllUsers, bri
 export class DeviceService {
 
     private db: Db;
-    
+
     constructor() {
         this.db = DBSingletonFactory.getInstance();
     }
@@ -188,7 +188,7 @@ export class DeviceService {
         let group = getComplexGroup(device, groupId);
         let state = getComplexGroupState(group, stateId);
         let field = getFieldInComplexGroup(state, fieldId);
-        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, field, fieldValue);
+        await this.tryToChangeFieldValueInComplexGroup(device.id, groupId, stateId, field, fieldValue);
     }
 
     async changeFieldValueInComplexGroupFromUser(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
@@ -199,7 +199,7 @@ export class DeviceService {
         if (field.fieldValue.fieldDirection === 'output') {
             throw ({ message: 'Field value is output only - can\'t be set by user' });
         }
-        await this.tryToChangeFieldValueInComplexGroup(device, groupId, stateId, field, fieldValue);
+        await this.tryToChangeFieldValueInComplexGroup(device.id, groupId, stateId, field, fieldValue);
     }
 
     async deleteFieldInComplexGroup(deviceId: number, groupId: number, stateId: number, fieldId: number) {
@@ -381,28 +381,36 @@ export class DeviceService {
         }
     }
 
-    async tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any) {
+    async tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any, dontSetValue?: boolean) {
         if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
-            await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+            if (!dontSetValue) {
+                await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+            }
         }
         else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
             let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
             if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
                 let N = (fieldValue - numField.minValue) / numField.valueStep;
                 if (N % 1 < 0.05 || N % 1 > 0.95) {
-                    await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+                    if (!dontSetValue) {
+                        await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+                    }
                 }
                 else throw ({ message: 'Incorrect step' });
             }
             else throw ({ message: 'Value out of interval [min,max]' });
         }
         else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
-            await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+            if (!dontSetValue) {
+                await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+            }
         }
         else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
             let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
             if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
-                await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+                if (!dontSetValue) {
+                    await this.db.changeDeviceFieldValue(deviceId, groupId, field.id, fieldValue);
+                }
             }
             else throw ({ message: 'Out of range - MC field' });
         }
@@ -412,9 +420,9 @@ export class DeviceService {
             ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0 && fieldValue.G < 256) &&
             ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0 && fieldValue.B < 256)
         ) {
-            console.log('RGB');
-            console.log(fieldValue);
-            await this.db.changeDeviceFieldValueRGB(deviceId, groupId, field.id, fieldValue);
+            if (!dontSetValue) {
+                await this.db.changeDeviceFieldValueRGB(deviceId, groupId, field.id, fieldValue);
+            }
         }
         else {
             console.log('wrong');
@@ -431,16 +439,20 @@ export class DeviceService {
         else throw ({ message: 'Invalid state number' });
     }
 
-    async tryToChangeFieldValueInComplexGroup(device: IDevice, groupId: number, stateId: number, field: IDeviceFieldBasic, fieldValue: any) {
+    async tryToChangeFieldValueInComplexGroup(deviceId: number, groupId: number, stateId: number, field: IDeviceFieldBasic, fieldValue: any, dontSetValue?: boolean) {
         if (field.fieldType === 'button' && typeof fieldValue === 'boolean') {
-            await this.db.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
+            if (!dontSetValue) {
+                await this.db.changeDeviceFieldValueInComplexGroup(deviceId, groupId, stateId, field.id, fieldValue);
+            }
         }
         else if (field.fieldType === 'numeric' && typeof fieldValue === 'number') {
             let numField: IDeviceFieldNumeric = JSON.parse(JSON.stringify(field.fieldValue));
             if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
                 let N = (fieldValue - numField.minValue) / numField.valueStep;
                 if (N % 1 < 0.05 || N % 1 > 0.95) {
-                    await this.db.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
+                    if (!dontSetValue) {
+                        await this.db.changeDeviceFieldValueInComplexGroup(deviceId, groupId, stateId, field.id, fieldValue);
+                    }
                 }
                 else throw ({ message: 'Incorrect step' });
             }
@@ -448,12 +460,16 @@ export class DeviceService {
 
         }
         else if (field.fieldType === 'text' && typeof fieldValue === 'string') {
-            await this.db.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
+            if (!dontSetValue) {
+                await this.db.changeDeviceFieldValueInComplexGroup(deviceId, groupId, stateId, field.id, fieldValue);
+            }
         }
         else if (field.fieldType === 'multipleChoice' && typeof fieldValue === 'number') {
             let multipleCField: IDeviceFieldMultipleChoice = JSON.parse(JSON.stringify(field.fieldValue));
             if (multipleCField.values.length > fieldValue && fieldValue >= 0) {
-                await this.db.changeDeviceFieldValueInComplexGroup(device.id, groupId, stateId, field.id, fieldValue);
+                if (!dontSetValue) {
+                    await this.db.changeDeviceFieldValueInComplexGroup(deviceId, groupId, stateId, field.id, fieldValue);
+                }
             }
             else throw ({ message: 'Out of range - MC field' });
         }
@@ -463,8 +479,9 @@ export class DeviceService {
             ((!!fieldValue.G || fieldValue.G === 0) && typeof fieldValue.G === 'number' && fieldValue.G >= 0) &&
             ((!!fieldValue.B || fieldValue.B === 0) && typeof fieldValue.B === 'number' && fieldValue.B >= 0)
         ) {
-            console.log(fieldValue);
-            await this.db.changeDeviceFieldValueInComplexGroupRGB(device.id, groupId, stateId, field.id, fieldValue);
+            if (!dontSetValue) {
+                await this.db.changeDeviceFieldValueInComplexGroupRGB(deviceId, groupId, stateId, field.id, fieldValue);
+            }
         }
         else {
             throw ({ message: 'Wrong field data type' });

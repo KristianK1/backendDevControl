@@ -17,6 +17,7 @@ router.post('/', async (req: any, res: any) => {
     var registerDeviceDataReq: IDevice = req.body;
     try {
         await deviceService.registerDeviceData(registerDeviceDataReq);
+        await triggerService.checkValidityOfTriggers();
         wsServer.emitDeviceRegistration(registerDeviceDataReq.deviceKey); //bez await-a
     } catch (e) {
         res.status(400);

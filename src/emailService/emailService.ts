@@ -1,6 +1,8 @@
 var nodemailer = require('nodemailer');
+import { ITrigger, ITriggerEmailResponse } from 'models/triggerModels';
 import { IEmailData } from './emailModels';
 import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath, setupNewPasswordPath } from './emailPaths';
+import { bridge_getUserbyId } from '../services/serviceBridge';
 
 export const emailServiceSingletonFactory = (function () {
   var emailServiceInstance: EmailService;
@@ -97,6 +99,29 @@ export class EmailService {
       payload: payload,
     }
     return data;
+  }
+
+  async sendTriggerResponseEmail(triggerData: ITrigger) {
+    let user = await bridge_getUserbyId(triggerData.userId);
+    let responseSettings = triggerData.responseSettings as ITriggerEmailResponse;
+    let emailSubject = responseSettings.emailSubject;
+    let emailText = responseSettings.emailText;
+
+    let emailSignature = `
+    
+
+    This email was automaticly sent from the devControl system as a response to the trigger #${triggerData.id}.
+
+    If you would like to not recive emails like this contact the system administrator at kristiankliskovic@gmail.com .
+    `;
+
+    emailText = emailText + emailSignature;
+    let data: IEmailData = {
+      reciver: user.email,
+      title: emailSubject,
+      payload: emailText,
+    }
+    await this.sendEmail(data);
   }
 
   private async sendEmail(data: IEmailData) {

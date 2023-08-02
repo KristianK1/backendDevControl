@@ -5,12 +5,15 @@ import { IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleCho
 import { bridge_checkUserRightToComplexGroup, bridge_checkUserRightToField, bridge_getDevicebyId, bridge_getDevicebyKey, bridge_getUserbyId, bridge_tryToChangeDeviceFieldValue, bridge_tryToChangeFieldValueInComplexGroup } from "./serviceBridge";
 import { getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "../firestoreDB/deviceStructureFunctions";
 import { ERightType } from "../models/userRightsModels";
+import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
+
 
 export class TriggerService {
     private db: Db;
-
+    private emailService: EmailService;
     constructor() {
         this.db = DBSingletonFactory.getInstance();
+        this.emailService = emailServiceSingletonFactory.getInstance();
     }
 
     async saveTrigger(triggerData: ITrigger) {
@@ -130,7 +133,7 @@ export class TriggerService {
             try {
                 await this.checkValidityOfTrigger(trigger);
             } catch (e) {
-                //TODO delete trigger
+                await this.deleteTrigger(trigger);
             }
         }
     }
@@ -142,7 +145,7 @@ export class TriggerService {
             try {
                 await this.checkValidityOfTrigger(trigger);
             } catch (e) {
-                //TODO delete trigger
+                await this.deleteTrigger(trigger);
             }
         }
     }
@@ -155,8 +158,7 @@ export class TriggerService {
         let group = getDeviceFieldGroup(device, groupId);
         let field = getDeviceField(group, fieldId);
 
-        this.checkTrigger(triggers, field, oldValue);
-
+        await this.checkTrigger(triggers, field, oldValue);
     }
 
     //call this
@@ -168,45 +170,45 @@ export class TriggerService {
         let complexState = getComplexGroupState(complexGroup, stateId);
         let field = getFieldInComplexGroup(complexState, fieldId);
 
-        this.checkTrigger(triggers, field, oldValue);
+        await this.checkTrigger(triggers, field, oldValue);
     }
 
-    private checkTrigger(triggers: ITrigger[], field: IDeviceFieldBasic, oldValue: any) {
+    private async checkTrigger(triggers: ITrigger[], field: IDeviceFieldBasic, oldValue: any) {
         for (let trigger of triggers) {
             switch (trigger.fieldType) {
                 case 'numeric':
                     let numField = field.fieldValue as IDeviceFieldNumeric;
                     let numTrigger = trigger.settings as INumericTrigger;
                     if (this.checkTrigger_numeric(numField, numTrigger, oldValue)) {
-                        //TODO kick off
+                        await this.kickOffTrigger(trigger);
                     }
                     break;
                 case 'text':
                     let textField = field.fieldValue as IDeviceFieldText;
                     let textTrigger = trigger.settings as ITextTrigger;
                     if (this.checkTrigger_text(textField, textTrigger, oldValue)) {
-                        //TODO kick off
+                        await this.kickOffTrigger(trigger);
                     }
                     break;
                 case 'button':
                     let buttonField = field.fieldValue as IDeviceFieldButton;
                     let buttonTrigger = trigger.settings as IBooleanTrigger;
                     if (this.checkTrigger_button(buttonField, buttonTrigger, oldValue)) {
-                        //TODO kick off
+                        await this.kickOffTrigger(trigger);
                     }
                     break;
                 case 'multipleChoice':
                     let mcField = field.fieldValue as IDeviceFieldMultipleChoice;
                     let mcTrigger = trigger.settings as IMCTrigger;
                     if (this.checkTrigger_MC(mcField, mcTrigger, oldValue)) {
-                        //TODO kick off
+                        await this.kickOffTrigger(trigger);
                     }
                     break;
                 case 'RGB':
                     let rgbField = field.fieldValue as IDeviceFieldRGB;
                     let rgbTrigger = trigger.settings as IRGBTrigger;
                     if (this.checkTrigger_RGB(rgbField, rgbTrigger, oldValue)) {
-                        //TODO kick off
+                        await this.kickOffTrigger(trigger);
                     }
                     break;
 
@@ -272,6 +274,34 @@ export class TriggerService {
 
     //     }
     // }
+
+    async kickOffTrigger(triggerData: ITrigger) {
+        switch (triggerData.responseType) {
+            case ETriggerResponseType.Email:
+                await this.emailService.sendTriggerResponseEmail(triggerData);
+                break;
+            case ETriggerResponseType.MobileNotification:
+
+                break;
+            case ETriggerResponseType.SettingValue_fieldInGroup:
+                let Gresponse = triggerData.responseSettings as ITriggerSettingValueResponse_fieldInGroup;
+                let Gdevice = await bridge_getDevicebyId(Gresponse.deviceId);
+                let Ggroup = getDeviceFieldGroup(Gdevice, Gresponse.groupId);
+                let Gfield = getDeviceField(Ggroup, Gresponse.fieldId);
+                await bridge_tryToChangeDeviceFieldValue(Gresponse.deviceId, Gresponse.groupId, Gfield, Gresponse.value);
+                break;
+             case ETriggerResponseType.SettingValue_fieldInComplexGroup:
+                let CGresponse = triggerData.responseSettings as ITriggerSettingsValueResponse_fieldInComplexGroup
+                let CGdevice = await bridge_getDevicebyId(CGresponse.deviceId);
+                let CGgroup = getComplexGroup(CGdevice, CGresponse.complexGroupId);
+                let CGstate = getComplexGroupState(CGgroup, CGresponse.complexGroupState);
+                let CGfield = getFieldInComplexGroup(CGstate, CGresponse.fieldId);
+                await bridge_tryToChangeFieldValueInComplexGroup(CGresponse.deviceId, CGresponse.complexGroupId, CGresponse.complexGroupState, CGfield, CGresponse.value);
+                break;
+        }
+    }
+
+
 
     private async checkTriggerSourceValueValidity(triggerData: ITrigger, field: IDeviceFieldBasic) {
 

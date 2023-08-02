@@ -22,8 +22,9 @@ var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 router.post('/device', async (req: any, res: any) => {
     let request: IChangeDeviceField_Device = req.body;
     try {
-        await deviceService.changeDeviceFieldValueFromDevice(request.deviceKey, request.groupId, request.fieldId, request.fieldValue)
+        let oldValue = await deviceService.changeDeviceFieldValueFromDevice(request.deviceKey, request.groupId, request.fieldId, request.fieldValue)
         let id = (await deviceService.getDevicebyKey(request.deviceKey)).id;
+        await triggerService.checkTriggersForFieldInGroup(id, request.groupId, request.fieldId, oldValue);
         wsServer.emitFieldChanged(id, request.groupId, request.fieldId);
     } catch (e) {
         res.status(400);

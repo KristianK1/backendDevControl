@@ -188,7 +188,7 @@ export class DeviceService {
         let group = getComplexGroup(device, groupId);
         let state = getComplexGroupState(group, stateId);
         let field = getFieldInComplexGroup(state, fieldId);
-        await this.tryToChangeFieldValueInComplexGroup(device.id, groupId, stateId, field, fieldValue);
+        return await this.tryToChangeFieldValueInComplexGroup(device.id, groupId, stateId, field, fieldValue);
     }
 
     async changeFieldValueInComplexGroupFromUser(deviceId: number, groupId: number, stateId: number, fieldId: number, fieldValue: any) {
@@ -210,7 +210,7 @@ export class DeviceService {
         let device = await this.getDevicebyKey(deviceKey);
         let group = getDeviceFieldGroup(device, groupId);
         let field = getDeviceField(group, fieldId);
-        await this.tryToChangeDeviceFieldValue(device.id, groupId, field, fieldValue);
+        return await this.tryToChangeDeviceFieldValue(device.id, groupId, field, fieldValue);
     }
 
     async changeDeviceFieldValueFromUser(deviceId: number, groupId: number, fieldId: number, fieldValue: any) {

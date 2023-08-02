@@ -23,8 +23,9 @@ router.post('/device', async (req: any, res: any) => {
     let request: IChangeComplexGroupField_Device = req.body;
 
     try {
-        await deviceService.changeFieldValueInComplexGroupFromDevice(request.deviceKey, request.groupId, request.stateId, request.fieldId, request.fieldValue);
+        let oldValue = await deviceService.changeFieldValueInComplexGroupFromDevice(request.deviceKey, request.groupId, request.stateId, request.fieldId, request.fieldValue);
         let id = (await deviceService.getDevicebyKey(request.deviceKey)).id;
+        await triggerService.checkTriggersForFieldInComplexGroup(id, request.groupId, request.stateId, request.fieldId, oldValue);
         wsServer.emitComplexGroupChanged(id, request.groupId);
     } catch (e) {
         res.status(400);

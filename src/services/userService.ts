@@ -226,7 +226,11 @@ export class UserService {
             throw ({ message: "Can't find the change password request" });
         }
 
+        console.log(getCurrentTimeUNIX());
+        
         if (getCurrentTimeUNIX() - ISOToUNIX(req.timeStamp) > 1000 * 60 * 15) { //15 minutes
+            console.log('no timeeee');
+            
             throw ({ message: "Expired" });
         }
 

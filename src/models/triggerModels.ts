@@ -84,15 +84,16 @@ export enum ETriggerTimeType {
     Once,
     Daily,
     Weekly,
-    ChooseDaysInWeek,
-    Monthly,
-    Yearly,
+    // ChooseDaysInWeek,
+    // Monthly,
+    // Wearly,
 }
 
 export interface ITriggerTimeSourceData {
     type: ETriggerTimeType,
     firstTimeStamp: string,
     daysInWeek?: number[],
+    lastRunTimestamp: string,
 }
 
 

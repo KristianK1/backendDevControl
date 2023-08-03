@@ -8,11 +8,14 @@ import { ERightType } from "../models/userRightsModels";
 import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
 import { log, time } from "console";
 import { ISOToUNIX, UNIXToISO, getCurrentTimeISO, getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
+import { MyWebSocketServer } from "WSRouters/WSRouter";
+import { wsServerSingletonFactory } from "../WSRouters/WSRouterSingletonFactory";
 
 
 export class TriggerService {
     private db: Db;
     private emailService: EmailService;
+    private wsServer: MyWebSocketServer;
 
     static TimeTrigger_checkInterval = 5; //static af
     private lastCheckedInterval: number;
@@ -20,6 +23,8 @@ export class TriggerService {
     constructor() {
         this.db = DBSingletonFactory.getInstance();
         this.emailService = emailServiceSingletonFactory.getInstance();
+        this.wsServer = wsServerSingletonFactory.getInstance();
+
         console.log(getCurrentTimeUNIX());
         console.log(getCurrentTimeISO());
 
@@ -363,6 +368,8 @@ export class TriggerService {
                 let Ggroup = getDeviceFieldGroup(Gdevice, Gresponse.groupId);
                 let Gfield = getDeviceField(Ggroup, Gresponse.fieldId);
                 await bridge_tryToChangeDeviceFieldValue(Gresponse.deviceId, Gresponse.groupId, Gfield, Gresponse.value);
+                this.wsServer.emitFieldChanged(Gresponse.deviceId, Gresponse.groupId, Gresponse.fieldId);
+
                 break;
             case ETriggerResponseType.SettingValue_fieldInComplexGroup:
                 let CGresponse = triggerData.responseSettings as ITriggerSettingsValueResponse_fieldInComplexGroup
@@ -371,6 +378,7 @@ export class TriggerService {
                 let CGstate = getComplexGroupState(CGgroup, CGresponse.complexGroupState);
                 let CGfield = getFieldInComplexGroup(CGstate, CGresponse.fieldId);
                 await bridge_tryToChangeFieldValueInComplexGroup(CGresponse.deviceId, CGresponse.complexGroupId, CGresponse.complexGroupState, CGfield, CGresponse.value);
+                this.wsServer.emitComplexGroupChanged(CGresponse.deviceId, CGresponse.complexGroupId);
                 break;
         }
     }

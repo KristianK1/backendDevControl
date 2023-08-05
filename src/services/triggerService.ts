@@ -601,19 +601,7 @@ export class TriggerService {
     }
 
     checkTrigger_button(field: IDeviceFieldButton, triggerData: IBooleanTrigger, oldValue: boolean): boolean {
-        switch (triggerData.type) {
-            case false:
-                if (field.fieldValue === false && oldValue === true) {
-                    return true;
-                }
-                break;
-            case true:
-                if (field.fieldValue === true && oldValue === false) {
-                    return true;
-                }
-                break;
-        }
-        return false;
+        return (field.fieldValue === triggerData.value && oldValue !== triggerData.value);
     }
 
     checkTrigger_MC(field: IDeviceFieldMultipleChoice, triggerData: IMCTrigger, oldValue: number): boolean {

@@ -58,7 +58,6 @@ export interface IRGBTrigger {
 
 export interface IBooleanTrigger {
     value: boolean,
-    type: boolean,
 }
 
 export enum ETriggerSourceType {

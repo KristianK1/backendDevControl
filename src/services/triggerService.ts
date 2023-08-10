@@ -25,11 +25,6 @@ export class TriggerService {
         this.emailService = emailServiceSingletonFactory.getInstance();
         this.wsServer = wsServerSingletonFactory.getInstance();
 
-        console.log(getCurrentTimeUNIX());
-        console.log(getCurrentTimeISO());
-
-        console.log('yy |' + ISOToUNIX("2023-08-03T3:40:00.000Z") + '|')
-
         setInterval(() => {
             this.checkForNewTriggerTimeInterval();
         }, 1000 * 20);

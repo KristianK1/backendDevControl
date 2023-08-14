@@ -11,6 +11,8 @@ let cors = require('cors');
 
 let emailRouter = require('./expressRouters/email/emailRouter.ts');
 
+// let firebaseN = firebaseNotificationsSingletonFactory.getInstance();
+
 export class Server {
 
     testPath = '/test3';
@@ -55,6 +57,10 @@ export class Server {
         this.app.get('/dummy', (req: any, res: any) => {
             console.log('request:/dummy');
             res.send('dummy');
+        });
+
+        this.app.get('/not', (req: any, res: any) => {
+            // firebaseNotificationsSingletonFactory.getInstance().createAndSendTestNott();
         });
 
         this.app.use('/email', emailRouter)

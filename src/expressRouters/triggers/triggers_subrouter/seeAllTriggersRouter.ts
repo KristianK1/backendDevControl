@@ -1,9 +1,7 @@
-import { deviceServiceSingletonFactory, triggerServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { triggerServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
 import { UserService } from "../../../services/userService";
-import { DeviceService } from "../../../services/deviceService";
-import { UserPermissionService } from "services/userPermissionService";
 import { TriggerService } from "../../../services/triggerService";
-import { IGetAllUserTriggersReq } from "../../../models/API/triggersReqRes";
+import { IGetAllUserTriggersReq, IGetAllUserTriggersRes } from "../../../models/API/triggersReqRes";
 import { IUser } from "../../../models/basicModels";
 
 var express = require('express');
@@ -25,9 +23,11 @@ router.post('/', async (req: any, res: any) => {
     }
 
     let tgs = await triggerService.getAllTriggersForUser(user.id);
-    
-    res.status(200);
-    res.send(JSON.stringify(tgs));
+    let response: IGetAllUserTriggersRes = {
+        triggers: tgs,
+    }
+    // res.status(200);
+    res.json(response);
 });
 
 module.exports = router;

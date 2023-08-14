@@ -111,6 +111,7 @@ export interface ITriggerSettingValueResponse_fieldInGroup {
     groupId: number,
     fieldId: number,
     value: any,
+    rgbContext: ERGBTriggerType_context,
 }
 
 export interface ITriggerSettingsValueResponse_fieldInComplexGroup {
@@ -119,6 +120,7 @@ export interface ITriggerSettingsValueResponse_fieldInComplexGroup {
     complexGroupState: number,
     fieldId: number,
     value: any,
+    rgbContext: ERGBTriggerType_context,
 }
 
 export enum ETriggerResponseType {

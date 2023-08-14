@@ -20,16 +20,17 @@ var triggerService: TriggerService = triggerServiceSingletonFactory.getInstance(
 
 router.post('/', async (req: any, res: any) => {
     let request: IAddTriggerReq = req.body;
-
+    console.log(request)
     let user: IUser;
     try {
         user = await userService.getUserByToken(request.authToken, false);
+        request.trigger.userId = user.id;
     } catch (e) {
         res.status(400);
         res.send(e.message)
         return;
     }
-
+    console.log('xx1')
     let triggerData = request.trigger;
 
     try{
@@ -39,7 +40,7 @@ router.post('/', async (req: any, res: any) => {
         res.send(e.message);
         return;
     }
-
+    console.log('xx2')
     try {
         await triggerService.saveTrigger(triggerData);
     } catch (e) {
@@ -47,7 +48,7 @@ router.post('/', async (req: any, res: any) => {
         res.send('Not saved');
         return;
     }
-
+    console.log('xx3')
     res.sendStatus(200);
 
 });

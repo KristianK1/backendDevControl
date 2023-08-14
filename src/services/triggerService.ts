@@ -56,12 +56,14 @@ export class TriggerService {
                 field = getDeviceField(group, sourceAdress_field_group.fieldId);
 
                 let rightToField = await bridge_checkUserRightToField(user, sourceAdress_field_group.deviceId, sourceAdress_field_group.groupId, sourceAdress_field_group.fieldId);
-
+                console.log(rightToField);
                 if (rightToField === ERightType.None) {
                     throw ({ message: 'User doesn\'t have rights' });
                 }
 
                 await this.checkTriggerSourceValueValidity(triggerData, field);
+                console.log('yy1');
+                
                 break;
             case ETriggerSourceType.FieldInComplexGroup:
                 let sourceAdress_field_complexGroup = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
@@ -139,6 +141,7 @@ export class TriggerService {
                 myTriggers.push(trigger);
             }
         }
+
         return myTriggers;
     }
     async checkValidityOfTriggersForUser(userId: number) {
@@ -385,13 +388,14 @@ export class TriggerService {
         switch (field.fieldType) {
             case "numeric":
                 if (triggerData.fieldType != 'numeric') throw ({ message: 'wrong field type' });
-
+                console.log('zz1');
                 let numericSettings = triggerData.settings as INumericTrigger;
                 let numericField = field.fieldValue as IDeviceFieldNumeric;
-
+                console.log('zz2');
                 if (!this.checkNumericTriggerSettings(numericField, numericSettings)) {
                     throw ({ message: 'Incorrect numeric settings' });
                 }
+                console.log('zz3');
                 break;
 
             case "text":
@@ -446,7 +450,7 @@ export class TriggerService {
             case ENumericTriggerType.Smaller:
                 return (settings.value < field.maxValue && settings.value > field.minValue)
             case ENumericTriggerType.Equal:
-                return (settings.value < field.minValue && settings.value < field.maxValue)
+                return (settings.value > field.minValue && settings.value < field.maxValue)
             case ENumericTriggerType.Inbetween:
                 if (!settings.second_value) return false;
                 for (let i = field.minValue; i <= field.maxValue; i += field.valueStep) {

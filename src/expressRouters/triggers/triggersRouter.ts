@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var addTriggerRouter = require('./triggers_subrouter/addTriggerRouter.ts');
+var addTriggerRouter = require('./triggers_subrouter/addTriggerRouter');
 router.use('/addTrigger', addTriggerRouter);
 
 var deleteTriggerRouter = require('./triggers_subrouter/deleteTriggerRouter.ts');

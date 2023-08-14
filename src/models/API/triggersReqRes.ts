@@ -9,6 +9,10 @@ export interface IGetAllUserTriggersReq {
     authToken: string,
 }
 
+export interface IGetAllUserTriggersRes {
+    triggers: ITrigger[],
+}
+
 export interface IDeleteTriggersReq {
     authToken: string,
     triggerId: number,

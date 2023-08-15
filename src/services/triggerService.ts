@@ -260,12 +260,7 @@ export class TriggerService {
     }
 
     private async checkForNewTriggerTimeInterval() {
-        let currentTime = getCurrentTimeUNIX();
-        console.log(currentTime);
-        console.log(UNIXToISO(currentTime));
-        let NofPeriods = Math.floor(currentTime / 1000 / 60 / TriggerService.TimeTrigger_checkInterval);
-        let lastPeriod = NofPeriods * 1000 * 60 * TriggerService.TimeTrigger_checkInterval;
-        console.log(UNIXToISO(lastPeriod));
+        let lastPeriod = this.getTimeTriggerTimestampFromTimeStamp();
         if (!this.lastCheckedInterval) {
             this.lastCheckedInterval = lastPeriod;
         }
@@ -273,6 +268,21 @@ export class TriggerService {
             this.lastCheckedInterval = lastPeriod;
             await this.kickOffTimeTriggers();
         }
+    }
+
+    private getTimeTriggerTimestampFromTimeStamp(iso?: string): number {
+        let time: number;
+        if (!iso) {
+            time = getCurrentTimeUNIX();
+        }else{
+            time = ISOToUNIX(iso);
+        }
+        console.log(time);
+        console.log(UNIXToISO(time));
+        let NofPeriods = Math.floor(time / 1000 / 60 / TriggerService.TimeTrigger_checkInterval);
+        let lastPeriod = NofPeriods * 1000 * 60 * TriggerService.TimeTrigger_checkInterval;
+        console.log(UNIXToISO(lastPeriod));
+        return lastPeriod
     }
 
     private async kickOffTimeTriggers() {
@@ -301,20 +311,20 @@ export class TriggerService {
         let nextDays: number;
         switch (timeSettings.type) {
             case ETriggerTimeType.Once:
-                if (firstTimeStampUNIX === currentTime) return true;
+                if (firstTimeStampUNIX === currentTime && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
                 break;
             case ETriggerTimeType.Daily:
                 nextDays = firstTimeStampUNIX;
                 while (nextDays <= currentTime) {
-                    if (nextDays === currentTime) return true;
+                    if (nextDays === currentTime  && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
                     nextDays = nextDays + 1000 * 3600 * 24;
                 }
                 break;
             case ETriggerTimeType.Weekly:
                 nextDays = firstTimeStampUNIX;
                 while (nextDays <= currentTime) {
-                    if (nextDays === currentTime) return true;
-                    nextDays = nextDays + 1000 * 3600 * 24;
+                    if (nextDays === currentTime  && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
+                    nextDays = nextDays + 1000 * 3600 * 24 * 7;
                 }
                 break;
         }

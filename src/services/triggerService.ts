@@ -360,7 +360,7 @@ export class TriggerService {
             case ETriggerResponseType.MobileNotification:
                 let userFirebaseTokens = await bridge_getUsersFirebaseTokens(triggerData.userId);
                 let responseSettings = triggerData.responseSettings as ITriggerMobileNotificationResponse;
-                await firebaseNotificationsSingletonFactory.getInstance().createAndSendNotification(userFirebaseTokens, responseSettings.notificationTitle, responseSettings.notificationText)
+                await firebaseNotificationsSingletonFactory.getInstance().sendNotifications(userFirebaseTokens, responseSettings.notificationTitle, responseSettings.notificationText)
                 break;
             case ETriggerResponseType.SettingValue_fieldInGroup:
                 let Gresponse = triggerData.responseSettings as ITriggerSettingValueResponse_fieldInGroup;

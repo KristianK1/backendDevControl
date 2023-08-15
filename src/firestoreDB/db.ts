@@ -11,6 +11,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { ETriggerSourceType, ITrigger, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup } from "../models/triggerModels";
 import { bridge_getDevicebyKey } from "../services/serviceBridge";
 import { log } from "console";
+import { auth } from "firebase-admin";
 
 export class Db {
     static usersCollName = 'users';
@@ -85,7 +86,7 @@ export class Db {
     //</USER>
 
     //<TOKENs>
-    async generateAndSaveNewToken(userId: number): Promise<IAuthToken> {
+    async generateAndSaveNewToken(userId: number, firebaseToken?: string): Promise<IAuthToken> {
 
         const newAuthToken = uuid().replace('-', '');
         const authToken: IAuthToken = {} as IAuthToken;
@@ -93,6 +94,7 @@ export class Db {
         authToken.authToken = newAuthToken;
         authToken.userId = userId;
         authToken.validUntil = addDaysToCurrentTime(30);
+        authToken.firebaseToken = firebaseToken;
 
         await this.firestore.setDocumentValue(Db.authTokenCollName, newAuthToken, authToken);
 
@@ -106,6 +108,13 @@ export class Db {
     async extendToken(token: string): Promise<void> {
         await this.firestore.updateDocumentValue(Db.authTokenCollName, token, {
             validUntil: addDaysToCurrentTime(30)
+        });
+    }
+
+    async updateFirebaseToken(authToken: string, firebaseToken?: string){
+        let tokenData = await this.getToken(authToken);
+        await this.firestore.updateDocumentValue(Db.authTokenCollName, tokenData.authToken, {
+            firebaseToken: firebaseToken
         });
     }
 

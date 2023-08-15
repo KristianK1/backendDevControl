@@ -25,7 +25,7 @@ export class UserService {
         return await this.db.getUsers();
     }
 
-    async loginUserByCreds(username: string, password: string): Promise<ILoginResponse> {
+    async loginUserByCreds(username: string, password: string, firebaseToken?: string): Promise<ILoginResponse> {
         var users = await this.db.getUsers();
         const user = users.find(user => user.username === username);
         if (!user) {
@@ -35,7 +35,7 @@ export class UserService {
             throw ({ message: 'Wrong password' });
         }
 
-        let tokenData = await this.db.generateAndSaveNewToken(user.id)
+        let tokenData = await this.db.generateAndSaveNewToken(user.id, firebaseToken)
 
         let loginResponse: ILoginResponse = {
             authToken: tokenData.authToken,
@@ -227,14 +227,25 @@ export class UserService {
         }
 
         console.log(getCurrentTimeUNIX());
-        
+
         if (getCurrentTimeUNIX() - ISOToUNIX(req.timeStamp) > 1000 * 60 * 15) { //15 minutes
             console.log('no timeeee');
-            
+
             throw ({ message: "Expired" });
         }
 
         await this.db.updateUserPassword(req.userId, newPassword);
         await this.db.deleteForgotPasswordRequest(req.userId);
+    }
+
+    async getUsersFirebaseTokens(userId: number):Promise<string[]> {
+        let tokens = await this.db.getTokens();
+        let myTokens: string[] = [];
+        for (let token of tokens) {
+            if (token.firebaseToken != null && token.userId === userId) {
+                myTokens.push(token.firebaseToken);
+            }
+        }
+        return myTokens;
     }
 }

@@ -2,14 +2,14 @@ import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_context, ERGBTriggerType_numeric, ETextTriggerType, ETriggerResponseType, ETriggerSourceType, ETriggerTimeType, IBooleanTrigger, IMCTrigger, INumericTrigger, IRGBTrigger, ITextTrigger, ITrigger, ITriggerEmailResponse, ITriggerMobileNotificationResponse, ITriggerSettingValueResponse_fieldInGroup, ITriggerSettingsValueResponse_fieldInComplexGroup, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup, ITriggerTimeSourceData } from "../models/triggerModels";
 import { IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText, IRGB } from "../models/basicModels";
-import { bridge_checkUserRightToComplexGroup, bridge_checkUserRightToField, bridge_getDevicebyId, bridge_getDevicebyKey, bridge_getUserbyId, bridge_tryToChangeDeviceFieldValue, bridge_tryToChangeFieldValueInComplexGroup } from "./serviceBridge";
+import { bridge_checkUserRightToComplexGroup, bridge_checkUserRightToField, bridge_getDevicebyId, bridge_getDevicebyKey, bridge_getUserbyId, bridge_getUsersFirebaseTokens, bridge_tryToChangeDeviceFieldValue, bridge_tryToChangeFieldValueInComplexGroup } from "./serviceBridge";
 import { getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "../firestoreDB/deviceStructureFunctions";
 import { ERightType } from "../models/userRightsModels";
 import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
-import { log, time } from "console";
-import { ISOToUNIX, UNIXToISO, getCurrentTimeISO, getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
+import { ISOToUNIX, UNIXToISO, getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../WSRouters/WSRouterSingletonFactory";
+import { firebaseNotificationsSingletonFactory } from "../firebaseNotifications/firebaseNotifications_singletonService";
 
 
 export class TriggerService {
@@ -63,7 +63,7 @@ export class TriggerService {
 
                 await this.checkTriggerSourceValueValidity(triggerData, field);
                 console.log('yy1');
-                
+
                 break;
             case ETriggerSourceType.FieldInComplexGroup:
                 let sourceAdress_field_complexGroup = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
@@ -358,7 +358,9 @@ export class TriggerService {
                 await this.emailService.sendTriggerResponseEmail(triggerData);
                 break;
             case ETriggerResponseType.MobileNotification:
-
+                let userFirebaseTokens = await bridge_getUsersFirebaseTokens(triggerData.userId);
+                let responseSettings = triggerData.responseSettings as ITriggerMobileNotificationResponse;
+                await firebaseNotificationsSingletonFactory.getInstance().createAndSendNotification(userFirebaseTokens, responseSettings.notificationTitle, responseSettings.notificationText)
                 break;
             case ETriggerResponseType.SettingValue_fieldInGroup:
                 let Gresponse = triggerData.responseSettings as ITriggerSettingValueResponse_fieldInGroup;

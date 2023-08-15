@@ -1,10 +1,12 @@
 export interface ILoginRequest {
-    username: string, //or email
+    username: string,
     password: string,
+    firebaseToken: string,
 }
 
 export interface ILoginByTokenRequest {
     authToken: string,
+    firebaseToken: string,
 }
 
 export interface ILoginResponse {
@@ -18,6 +20,7 @@ export interface IRegisterRequest {
     username: string,
     email: string,
     password: string,
+    firebaseToken: string,
 }
 
 export interface ILogoutRequest {
@@ -41,7 +44,7 @@ export interface IGetUsersRequest {
     authToken: string,
 }
 
-export interface IGetUsersResponse { 
+export interface IGetUsersResponse {
     users: IFrontendUser[],
 }
 

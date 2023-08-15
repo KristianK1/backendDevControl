@@ -15,7 +15,7 @@ router.post('/', async (req: any, res: any) => {
     let loginResponse: ILoginResponse;
     try {
         await userService.addUser(registerReq.username, registerReq.password, registerReq.email);
-        loginResponse = await userService.loginUserByCreds(registerReq.username, registerReq.password);
+        loginResponse = await userService.loginUserByCreds(registerReq.username, registerReq.password, registerReq.firebaseToken);
         res.json(loginResponse);
     } catch (e) {
         res.status(400);

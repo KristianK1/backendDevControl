@@ -14,7 +14,7 @@ router.post('/creds', async (req: any, res: any) => {
     console.log(loginReq);
     let loginResponse: ILoginResponse;
     try {
-        loginResponse = await userService.loginUserByCreds(loginReq.username, loginReq.password);
+        loginResponse = await userService.loginUserByCreds(loginReq.username, loginReq.password, loginReq.firebaseToken);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -30,7 +30,7 @@ router.post('/token', async (req: any, res: any) => {
     let loginResponse = {} as ILoginResponse;
     try {
         const user = await userService.getUserByToken(loginReq.authToken, true);
-
+        
         loginResponse.username = user.username;
         loginResponse.id = user.id;
         loginResponse.authToken = loginReq.authToken;

@@ -13,6 +13,7 @@ export interface IAuthToken {
     authToken: string,
     userId: number,
     validUntil: string,
+    firebaseToken?: string,
 }
 
 export interface IUserView {

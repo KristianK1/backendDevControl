@@ -5,6 +5,7 @@ import { MyWebSocketServer } from './WSRouters/WSRouter';
 import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
 import { emailServiceSingletonFactory } from './emailService/emailService';
 import * as path from 'path';
+import { firebaseNotificationsSingletonFactory } from "../src/firebaseNotifications/firebaseNotifications_singletonService"
 
 let http = require('http');
 let cors = require('cors');
@@ -32,6 +33,7 @@ export class Server {
         this.startServer();
         this.startEmailService();
         // this.startTimeout();
+        firebaseNotificationsSingletonFactory.getInstance();
     }
 
     setConfig() {

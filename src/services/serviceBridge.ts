@@ -45,6 +45,11 @@ export async function bridge_getUserbyId(userId: number): Promise<IUser> {
     return await userService.getUserbyId(userId);
 }
 
+export async function bridge_getUsersFirebaseTokens(userId: number): Promise<string[]> {
+    var userService: UserService = userServiceSingletonFactory.getInstance();
+    return await userService.getUsersFirebaseTokens(userId);
+}
+
 export async function bridge_tryToChangeDeviceFieldValue(deviceId: number, groupId: number, field: IDeviceFieldBasic, fieldValue: any, dontSetValue?: boolean) {
     var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
     await deviceService.tryToChangeDeviceFieldValue(deviceId, groupId, field, fieldValue, dontSetValue);

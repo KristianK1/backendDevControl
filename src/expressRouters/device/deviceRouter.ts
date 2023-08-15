@@ -25,24 +25,4 @@ router.use('/changeComplexGroupState', changeComplexGroupStateRouter);
 var changeFieldInComplexGroupRouter = require('./device_subrouter/deviceComplexGroupFieldChangeRouter.ts');
 router.use('/fieldInComplexGroupState', changeFieldInComplexGroupRouter);
 
-
-import { deviceDBSingletonFactory } from "../../firestoreDB/singletonService";
-var deviceDb = deviceDBSingletonFactory.getInstance();
-router.get('/:id', async (req: any, res: any) => {
-    let id = req.params.id;
-    console.log(id);
-    let device;
-    try {
-        device = await deviceDb.getDevicebyId(id);
-    } catch (e) {
-        res.status(400);
-        res.send(e.message);
-    }
-    res.json(device);
-});
-
-
-
-
-
 module.exports = router;

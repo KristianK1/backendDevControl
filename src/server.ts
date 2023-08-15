@@ -1,17 +1,18 @@
 // import * as BodyParser from 'body-parser';
 import * as Express from 'express';
-import { firestoreSingletonFactory, usersDBSingletonFactory } from './firestoreDB/singletonService';
 import { server as webSocketServer } from 'websocket';
 import { MyWebSocketServer } from './WSRouters/WSRouter';
 import { wsServerSingletonFactory } from './WSRouters/WSRouterSingletonFactory';
 import { emailServiceSingletonFactory } from './emailService/emailService';
 import * as path from 'path';
-import { IEmailConfirmationData } from 'emailService/emailModels';
-import { IUser } from 'models/basicModels';
+import { firebaseNotificationsSingletonFactory } from "../src/firebaseNotifications/firebaseNotifications_singletonService"
+
 let http = require('http');
 let cors = require('cors');
 
 let emailRouter = require('./expressRouters/email/emailRouter.ts');
+
+// let firebaseN = firebaseNotificationsSingletonFactory.getInstance();
 
 export class Server {
 
@@ -32,6 +33,7 @@ export class Server {
         this.startServer();
         this.startEmailService();
         // this.startTimeout();
+        firebaseNotificationsSingletonFactory.getInstance();
     }
 
     setConfig() {
@@ -59,6 +61,10 @@ export class Server {
             res.send('dummy');
         });
 
+        this.app.get('/not', (req: any, res: any) => {
+            // firebaseNotificationsSingletonFactory.getInstance().createAndSendTestNott();
+        });
+
         this.app.use('/email', emailRouter)
 
         var mainRouter = require('./expressRouters/expressRouter.ts');
@@ -74,13 +80,6 @@ export class Server {
     setupWSS() {
         this.wss = wsServerSingletonFactory.getInstance();
         this.wss.setupServer(this.wsServer);
-    }
-
-
-    startTimeout() {
-        const timeout = setInterval(() => {
-            let x = 3;
-        }, 5 * 1000);
     }
 
     startEmailService(){

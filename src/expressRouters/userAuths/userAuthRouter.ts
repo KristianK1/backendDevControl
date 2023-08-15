@@ -1,5 +1,3 @@
-import { usersDBSingletonFactory } from "../../firestoreDB/singletonService";
-
 var express = require('express');
 var router = express.Router();
 
@@ -23,20 +21,5 @@ router.use('/getUsers', getUsersRouter);
 
 var addEmailRouter = require('./subrouter/addEmailRouter.ts');
 router.use('/addEmail', addEmailRouter);
-
-
-
-var usersDB = usersDBSingletonFactory.getInstance();
-router.get('/:id', async (req: any, res: any) => {
-    let id = req.params.id;
-    let user;
-    try {
-        user = await usersDB.getUserbyId(id);
-    } catch (e) {
-        res.status(400);
-        res.send(e.message);
-    }
-    res.json(user);
-})
 
 module.exports = router;

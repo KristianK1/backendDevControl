@@ -3,24 +3,28 @@ var admin = require('firebase-admin');
 export class FirestoreDB {
 
   private db: any;
-
+  private serviceAccount;
+    
   constructor() {
     console.log('firestore constructor');
 
-    var serviceAccount;
     try {
       if (!process.env.firebaseKey) throw ("");
-      serviceAccount = JSON.parse(process.env.firebaseKey);
+      this.serviceAccount = JSON.parse(process.env.firebaseKey);
     } catch {
       console.log('failed to get env.port.firebaseKey. Looking for file in firebase.json');
-      serviceAccount = require('../../firebaseKey.json')
+      this.serviceAccount = require('../../firebaseKey.json')
     }
 
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+      credential: admin.credential.cert(this.serviceAccount),
     })
     this.db = admin.firestore();
     this.db.settings({ ignoreUndefinedProperties: true })
+  }
+
+  getCredential(){
+    return admin.credential.cert(this.serviceAccount);
   }
 
   async setDocumentValue(collectionPath: string, documentName: string, value: any) {
@@ -33,7 +37,6 @@ export class FirestoreDB {
 
   async updateDocumentValueAtPath(collectionPath: string, documentName: string, path: string, value: any){
     return await this.db.collection(collectionPath).doc(documentName).update(path,value);
-    
   }
 
   async deleteDocument(collectionPath: string, documentName: string) {

@@ -1,22 +1,27 @@
-import { DeviceDB } from "firestoreDB/devices/deviceDB";
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { UsersDB } from "firestoreDB/users/userDB";
 import { IAddUserRightFieldReq } from "models/API/UserRightAlterReqRes";
 import { IDevice, IUser } from "models/basicModels";
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
+import { deviceServiceSingletonFactory, triggerServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
+import { DeviceService } from "../../../services/deviceService";
+import { UserPermissionService } from "services/userPermissionService";
+import { TriggerService } from "../../../services/triggerService";
 
 var express = require('express');
 var router = express.Router();
 
-var userDB: UsersDB = usersDBSingletonFactory.getInstance();
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
+var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
+var triggerService: TriggerService = triggerServiceSingletonFactory.getInstance();
+
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     let request: IAddUserRightFieldReq = req.body;
     console.log("field rights router");
-    
+
     if (typeof request.readOnly !== "boolean") {
         res.status(400);
         res.send('readOnly property must be boolean');
@@ -25,7 +30,7 @@ router.post('/', async (req: any, res: any) => {
 
     let admin: IUser;
     try {
-        admin = await userDB.getUserByToken(request.authToken, true);
+        admin = await userService.getUserByToken(request.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -34,7 +39,7 @@ router.post('/', async (req: any, res: any) => {
 
     let device: IDevice;
     try {
-        device = await deviceDb.getDevicebyId(request.deviceId);
+        device = await deviceService.getDevicebyId(request.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -49,7 +54,7 @@ router.post('/', async (req: any, res: any) => {
 
     let user: IUser;
     try {
-        user = await userDB.getUserbyId(request.userId);
+        user = await userService.getUserbyId(request.userId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -62,18 +67,19 @@ router.post('/', async (req: any, res: any) => {
         return;
     }
 
-    try {
-        let group = deviceDb.getDeviceFieldGroup(device, request.groupId);
-        deviceDb.getDeviceField(group, request.fieldId);
-    } catch (e) {
+    if (!(await deviceService.checkDoesFieldExist(request.deviceId, request.groupId, request.fieldId))) {
         res.status(400);
-        res.send(e.message);
+        res.send('Field doesn\'t exist');
         return;
     }
 
     try {
-        await userDB.addUserRightToField(user, request.deviceId, request.groupId, request.fieldId, request.readOnly);
-        wsServer.emitUserRightUpdate(user.id, request.deviceId);
+        await userPermissionService.addUserRightToField(user, request.deviceId, request.groupId, request.fieldId, request.readOnly);
+
+        if (request.readOnly) {
+            await triggerService.checkValidityOfTriggersForUser(user.id);
+        }
+        wsServer.emitUserRightUpdate(user.id);
     } catch (e) {
         res.status(400);
         res.send(e.message);

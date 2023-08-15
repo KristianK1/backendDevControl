@@ -1,23 +1,24 @@
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { DeviceDB } from "../../../firestoreDB/devices/deviceDB";
-import { UsersDB } from "../../../firestoreDB/users/userDB";
-import { IRenameDeviceReq } from "../../../models/API/deviceCreateAlterReqRes";
 import { IDevice, IUser } from "../../../models/basicModels";
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
+import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
+import { DeviceService } from "../../../services/deviceService";
+import { IRenameDeviceReq } from "models/API/deviceCreateAlterReqRes";
 
 var express = require('express');
 var router = express.Router();
 
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
-var userDb: UsersDB = usersDBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
+var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
     var renameDeviceReq: IRenameDeviceReq = req.body;
     let user: IUser;
     try {
-        user = await userDb.getUserByToken(renameDeviceReq.authToken, true);
+        user = await userService.getUserByToken(renameDeviceReq.authToken, true);
     } catch (e) {
         res.status(400);
         res.send(e.message)
@@ -26,7 +27,7 @@ router.post('/', async (req: any, res: any) => {
     
     let device: IDevice;
     try {
-        device = await deviceDb.getDevicebyId(renameDeviceReq.deviceId);
+        device = await deviceService.getDevicebyId(renameDeviceReq.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message)
@@ -40,7 +41,7 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        await deviceDb.renameDevice(renameDeviceReq.deviceId, renameDeviceReq.deviceName);
+        await deviceService.renameDevice(renameDeviceReq.deviceId, renameDeviceReq.deviceName);
         wsServer.emitDeviceRegistration(device.deviceKey);
     } catch (e) {
         res.status(400);

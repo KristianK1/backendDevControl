@@ -1,16 +1,15 @@
-import { DeviceDB } from "firestoreDB/devices/deviceDB";
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../firestoreDB/singletonService";
-import { UsersDB } from "firestoreDB/users/userDB";
 import { IWSSBasicConnection, IWSSConnectionDevice, IWSSConnectionUser, IWSSDeviceConnectRequest, IWSSUserConnectRequest } from "models/WSS/wssConnectionReqRes";
 import { IDevice, IUser } from "models/basicModels";
+import { UserService } from "services/userService";
+import { deviceServiceSingletonFactory, userServiceSingletonFactory } from "../../services/serviceSingletonFactory";
+import { DeviceService } from "../../services/deviceService";
 
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
-var userDb: UsersDB = usersDBSingletonFactory.getInstance();
-
+var userService: UserService = userServiceSingletonFactory.getInstance();
+var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
 export async function addUserConnection(request: IWSSUserConnectRequest, basicConnection: IWSSBasicConnection) {
     let user: IUser;
     try {
-        user = await userDb.getUserByToken(request.authToken, true);
+        user = await userService.getUserByToken(request.authToken, true);
     } catch (e) {
         console.log(e.message);
         return;
@@ -33,7 +32,7 @@ export async function addUserConnection(request: IWSSUserConnectRequest, basicCo
 export async function addDeviceConnection(request: IWSSDeviceConnectRequest, basicConnection: IWSSBasicConnection): Promise<IWSSConnectionDevice | undefined> {
     let device: IDevice;
     try {
-        device = await deviceDb.getDeviceByKey(request.deviceKey)
+        device = await deviceService.getDevicebyKey(request.deviceKey)
     } catch (e) {
         console.log(e.message);
         return;

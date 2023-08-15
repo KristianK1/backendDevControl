@@ -13,6 +13,7 @@ export interface IAuthToken {
     authToken: string,
     userId: number,
     validUntil: string,
+    firebaseToken?: string,
 }
 
 export interface IUserView {
@@ -66,7 +67,6 @@ export interface IDeviceFieldBasic {
 
 export interface IDeviceFieldNumeric {
     fieldValue: number,
-    // fieldControlType: 'slider' | 'upDownButtons',
     minValue: number,
     maxValue: number,
     valueStep: number,

@@ -1,16 +1,19 @@
-import { deviceDBSingletonFactory, usersDBSingletonFactory } from "../../../firestoreDB/singletonService";
-import { DeviceDB } from "../../../firestoreDB/devices/deviceDB";
-import { UsersDB } from "../../../firestoreDB/users/userDB";
 import { IChangeDeviceAdminReq } from "../../../models/API/deviceCreateAlterReqRes";
 import { MyWebSocketServer } from "../../../WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../../../WSRouters/WSRouterSingletonFactory";
 import { IDevice, IUser } from "models/basicModels";
+import { deviceServiceSingletonFactory, userPermissionServiceSingletonFactory, userServiceSingletonFactory } from "../../../services/serviceSingletonFactory";
+import { UserService } from "../../../services/userService";
+import { DeviceService } from "../../../services/deviceService";
+import { UserPermissionService } from "services/userPermissionService";
 
 var express = require('express');
 var router = express.Router();
 
-var deviceDb: DeviceDB = deviceDBSingletonFactory.getInstance();
-var userDb: UsersDB = usersDBSingletonFactory.getInstance();
+var userService: UserService = userServiceSingletonFactory.getInstance();
+var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
+var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
+
 var wsServer: MyWebSocketServer = wsServerSingletonFactory.getInstance();
 
 router.post('/', async (req: any, res: any) => {
@@ -21,7 +24,7 @@ router.post('/', async (req: any, res: any) => {
 
     let device: IDevice;
     try {
-        device = await deviceDb.getDevicebyId(changeDeviceAdminReq.deviceId);
+        device = await deviceService.getDevicebyId(changeDeviceAdminReq.deviceId);
     } catch (e) {
         res.status(400);
         res.send(e.message);
@@ -30,7 +33,7 @@ router.post('/', async (req: any, res: any) => {
 
     let admin: IUser;
     try {
-        admin = await userDb.getUserByToken(changeDeviceAdminReq.authToken, true);
+        admin = await userService.getUserByToken(changeDeviceAdminReq.authToken, true);
     } catch (e) {
         console.log("change admin request - ERROR1");
         res.status(400);
@@ -42,10 +45,11 @@ router.post('/', async (req: any, res: any) => {
         console.log("change admin request - ERROR1.5");
         res.status(400);
         res.send('User isn\'t admin');
+        return;
     }
 
     try {
-        await userDb.getUserbyId(changeDeviceAdminReq.userAdminId);
+        await userService.getUserbyId(changeDeviceAdminReq.userAdminId);
     } catch (e) {
         console.log("change admin request - ERROR2");
         res.status(400);
@@ -54,19 +58,14 @@ router.post('/', async (req: any, res: any) => {
     }
 
     try {
-        await deviceDb.changeDeviceAdmin(changeDeviceAdminReq.deviceId, changeDeviceAdminReq.userAdminId);
-        await userDb.addUserRightToDevice(admin, device.id, false)
-        wsServer.emitDeviceRegistrationById(changeDeviceAdminReq.deviceId);
-        wsServer.emitUserRightUpdate(admin.id, changeDeviceAdminReq.deviceId)
+        await userPermissionService.changeDeviceAdmin(changeDeviceAdminReq.deviceId, changeDeviceAdminReq.userAdminId);
+        wsServer.emitDeviceRegistrationById(changeDeviceAdminReq.deviceId); //TODO jel treba oboje
+        wsServer.emitUserRightUpdate(admin.id)
     } catch (e) {
-        console.log("change admin request - ERROR3");
-        console.log(e.message);
-        
         res.status(400);
         res.send(e.message);
         return;
     }
-    console.log("change admin request END");
 
     res.sendStatus(200);
 });

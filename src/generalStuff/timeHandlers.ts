@@ -7,7 +7,12 @@ export function getCurrentTimeISO(): string {
 }
 
 export function ISOToUNIX(iso: string): number {
-    return new Date(iso).getTime();
+    let x = new Date(iso).getTime();
+    return x;
+}
+
+export function UNIXToISO(unix: number): string {
+    return new Date(unix).toISOString();
 }
 
 export function hasTimePASSED(iso: string): boolean {

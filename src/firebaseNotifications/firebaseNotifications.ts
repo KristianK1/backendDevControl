@@ -21,7 +21,8 @@ export class FirebaseNotifications {
             let dddd = {
                 data: { data: JSON.stringify(body) },
                 notification: {
-                    title: title
+                    title: title,
+                    body: content,
                 },
                 token: token
             }

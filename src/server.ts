@@ -16,10 +16,10 @@ let emailRouter = require('./expressRouters/email/emailRouter.ts');
 
 export class Server {
 
-    testPath = '/test3';
+    testPath = '/test4';
 
+    port = process.env.PORT || 8000;
 
-    port;
 
     private app: Express.Application;
 
@@ -28,9 +28,6 @@ export class Server {
     server: any;
 
     constructor() {
-        let random = Math.floor(Math.random() * 5000);
-        this.port = process.env.PORT || (8000 + random);
-
         this.app = Express();
         this.setConfig();
         this.setupRoutes();

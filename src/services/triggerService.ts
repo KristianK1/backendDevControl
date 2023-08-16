@@ -6,10 +6,11 @@ import { bridge_checkUserRightToComplexGroup, bridge_checkUserRightToField, brid
 import { getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "../firestoreDB/deviceStructureFunctions";
 import { ERightType } from "../models/userRightsModels";
 import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
-import { ISOToUNIX, UNIXToISO, getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
+import { ISOToUNIX, UNIXToISO, getCurrentTimeISO, getCurrentTimeUNIX } from "../generalStuff/timeHandlers";
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../WSRouters/WSRouterSingletonFactory";
 import { firebaseNotificationsSingletonFactory } from "../firebaseNotifications/firebaseNotifications_singletonService";
+import { log } from "console";
 
 
 export class TriggerService {
@@ -18,6 +19,8 @@ export class TriggerService {
     private wsServer: MyWebSocketServer;
 
     static TimeTrigger_checkInterval = 5; //static af
+
+    static TimeTrigger_newInterval_check = 15;
     private lastCheckedInterval: number;
 
     constructor() {
@@ -27,7 +30,7 @@ export class TriggerService {
 
         setInterval(() => {
             this.checkForNewTriggerTimeInterval();
-        }, 1000 * 20);
+        }, 1000 * TriggerService.TimeTrigger_newInterval_check);
     }
 
     async saveTrigger(triggerData: ITrigger) {
@@ -261,37 +264,50 @@ export class TriggerService {
 
     private async checkForNewTriggerTimeInterval() {
         let lastPeriod = this.getTimeTriggerTimestampFromTimeStamp();
+
         if (!this.lastCheckedInterval) {
             this.lastCheckedInterval = lastPeriod;
         }
         if (lastPeriod !== this.lastCheckedInterval) {
             this.lastCheckedInterval = lastPeriod;
-            await this.kickOffTimeTriggers();
+            if (!!process.env.PORT) {
+                this.kickOffTimeTriggers();
+            }
+            else {
+                setTimeout(() => {
+                    this.kickOffTimeTriggers();
+                }, 1000 * TriggerService.TimeTrigger_newInterval_check * 1.5);
+            }
         }
     }
 
     private getTimeTriggerTimestampFromTimeStamp(iso?: string): number {
         let time: number;
-        if (!iso) {
+        if (iso === undefined || iso === null) {
             time = getCurrentTimeUNIX();
-        }else{
+        }
+        else if (iso?.length === 0) {
+            return 0;
+        } else {
             time = ISOToUNIX(iso);
         }
-        console.log(time);
-        console.log(UNIXToISO(time));
         let NofPeriods = Math.floor(time / 1000 / 60 / TriggerService.TimeTrigger_checkInterval);
         let lastPeriod = NofPeriods * 1000 * 60 * TriggerService.TimeTrigger_checkInterval;
-        console.log(UNIXToISO(lastPeriod));
+        console.log('time transformation result: ' + UNIXToISO(lastPeriod));
         return lastPeriod
     }
 
     private async kickOffTimeTriggers() {
         let remainingTriggers: ITrigger[] = await this.db.getAllTimeTriggers();
         for (let i = 0; i < remainingTriggers.length; i++) {
+            // console.log(remainingTriggers[i]);
 
-            let kickOff = this.checkTimeTrigger(remainingTriggers[i], this.lastCheckedInterval);
+            let triggg = await this.db.getTriggerbyId(remainingTriggers[i].id);
+
+            let kickOff = this.checkTimeTrigger(triggg, this.lastCheckedInterval);
             if (kickOff) {
-                let trigg: ITrigger = JSON.parse(JSON.stringify(remainingTriggers[i]));
+                let trigg: ITrigger = JSON.parse(JSON.stringify(triggg));
+                await this.db.updateTriggerLastKicked(trigg.id, getCurrentTimeISO());
                 try {
                     await this.kickOffTrigger(trigg);
                 } catch (e) {
@@ -316,14 +332,14 @@ export class TriggerService {
             case ETriggerTimeType.Daily:
                 nextDays = firstTimeStampUNIX;
                 while (nextDays <= currentTime) {
-                    if (nextDays === currentTime  && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
+                    if (nextDays === currentTime && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
                     nextDays = nextDays + 1000 * 3600 * 24;
                 }
                 break;
             case ETriggerTimeType.Weekly:
                 nextDays = firstTimeStampUNIX;
                 while (nextDays <= currentTime) {
-                    if (nextDays === currentTime  && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
+                    if (nextDays === currentTime && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
                     nextDays = nextDays + 1000 * 3600 * 24 * 7;
                 }
                 break;

@@ -153,7 +153,7 @@ export class EmailService {
 
     await transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
-        console.log(error);
+        console.log('failed to send email');
       } else {
         console.log('Email sent: ' + info.response);
       }

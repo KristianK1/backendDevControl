@@ -10,7 +10,6 @@ import { ISOToUNIX, UNIXToISO, getCurrentTimeISO, getCurrentTimeUNIX } from "../
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../WSRouters/WSRouterSingletonFactory";
 import { firebaseNotificationsSingletonFactory } from "../firebaseNotifications/firebaseNotifications_singletonService";
-import { log } from "console";
 
 
 export class TriggerService {
@@ -28,9 +27,9 @@ export class TriggerService {
         this.emailService = emailServiceSingletonFactory.getInstance();
         this.wsServer = wsServerSingletonFactory.getInstance();
 
-        setInterval(() => {
-            this.checkForNewTriggerTimeInterval();
-        }, 1000 * TriggerService.TimeTrigger_newInterval_check);
+        // setInterval(() => {
+        //     this.checkForNewTriggerTimeInterval();
+        // }, 1000 * TriggerService.TimeTrigger_newInterval_check);
     }
 
     async saveTrigger(triggerData: ITrigger) {

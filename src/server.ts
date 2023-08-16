@@ -37,7 +37,6 @@ export class Server {
         this.setupWSS();
         this.startServer();
         this.startEmailService();
-        // this.startTimeout();
         firebaseNotificationsSingletonFactory.getInstance();
     }
 

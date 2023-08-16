@@ -18,9 +18,9 @@ export class TriggerService {
     private emailService: EmailService;
     private wsServer: MyWebSocketServer;
 
-    static TimeTrigger_checkInterval = 5; //static af
+    static TimeTrigger_checkInterval = 5; //static af (minutes)
 
-    static TimeTrigger_newInterval_check = 15;
+    static TimeTrigger_newInterval_check = 30; //seconds
     private lastCheckedInterval: number;
 
     constructor() {

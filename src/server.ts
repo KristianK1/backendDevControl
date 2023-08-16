@@ -28,6 +28,9 @@ export class Server {
     server: any;
 
     constructor() {
+        // if(!process.env.PORT){
+        //     this.port = 3000 + Math.floor(Math.random() * 5000);
+        // }
         this.app = Express();
         this.setConfig();
         this.setupRoutes();

@@ -16,8 +16,10 @@ let emailRouter = require('./expressRouters/email/emailRouter.ts');
 
 export class Server {
 
-    testPath = '/test3';
+    testPath = '/test4';
+
     port = process.env.PORT || 8000;
+
 
     private app: Express.Application;
 
@@ -82,7 +84,7 @@ export class Server {
         this.wss.setupServer(this.wsServer);
     }
 
-    startEmailService(){
+    startEmailService() {
         emailServiceSingletonFactory.getInstance();
     }
 }

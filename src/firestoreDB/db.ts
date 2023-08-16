@@ -111,7 +111,7 @@ export class Db {
         });
     }
 
-    async updateFirebaseToken(authToken: string, firebaseToken?: string){
+    async updateFirebaseToken(authToken: string, firebaseToken?: string) {
         let tokenData = await this.getToken(authToken);
         await this.firestore.updateDocumentValue(Db.authTokenCollName, tokenData.authToken, {
             firebaseToken: firebaseToken
@@ -535,6 +535,12 @@ export class Db {
             }
         }
         throw ({ message: "no trigger" });
+    }
+
+    async updateTriggerLastKicked(id: number, iso: string) {
+        await this.firestore.updateDocumentValue(Db.triggersCollName, 'time', {
+            [`${id}.sourceData.lastRunTimestamp`]: iso
+        });
     }
 
     async deleteTrigger(triggerData: ITrigger) {

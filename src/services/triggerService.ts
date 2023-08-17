@@ -27,9 +27,9 @@ export class TriggerService {
         this.emailService = emailServiceSingletonFactory.getInstance();
         this.wsServer = wsServerSingletonFactory.getInstance();
 
-        // setInterval(() => {
-        //     this.checkForNewTriggerTimeInterval();
-        // }, 1000 * TriggerService.TimeTrigger_newInterval_check);
+        setInterval(() => {
+            this.checkForNewTriggerTimeInterval();
+        }, 1000 * TriggerService.TimeTrigger_newInterval_check);
     }
 
     async saveTrigger(triggerData: ITrigger) {

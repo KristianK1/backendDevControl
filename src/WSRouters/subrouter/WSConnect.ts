@@ -44,6 +44,7 @@ export async function addDeviceConnection(request: IWSSDeviceConnectRequest, bas
             connectionUUID: basicConnection.connectionUUID,
             startedAt: basicConnection.startedAt,
         },
+        lastEmited: 0,
         deviceId: device.id,
     };
     return connection;

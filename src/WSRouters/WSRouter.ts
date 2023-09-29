@@ -15,9 +15,9 @@ var userService: UserService = userServiceSingletonFactory.getInstance();
 var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
 var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
 
-const WSRouterEmitCheckInterval = 200;
-const WSRouterSlowTapInterval = 1000;
-const WSRouterSlowTapOverrideInterval = WSRouterSlowTapInterval + WSRouterEmitCheckInterval + 5; //avoid collision from slowTap emit and a "normal" emit
+const WSRouterEmit_CheckInterval = 200;
+const WSRouter_SlowTapInterval = 1000;
+const WSRouter_SlowTap_OverrideInterval = WSRouter_SlowTapInterval + WSRouterEmit_CheckInterval + 5; //avoid collision from slowTap emit and a "normal" emit
 
 export class MyWebSocketServer {
     private wsServer: server;
@@ -26,7 +26,8 @@ export class MyWebSocketServer {
     private userClients: IWSSConnectionUser[] = [];
     private deviceClients: IWSSConnectionDevice[] = [];
 
-    private deviceDataEmitQueue: IWSSConnectionUser[] = [];
+    private userDataEmitQueue: IWSSConnectionUser[] = [];
+    private deviceDataEmitQueue: IWSSConnectionDevice[] = [];
 
     public setupServer(server: server) {
         this.wsServer = server;
@@ -77,7 +78,7 @@ export class MyWebSocketServer {
                         }
                         this.userClients.push(userConn);
                         console.log('user connected')
-                        this.emitDeviceDataToConnection(userConn);
+                        this.emitUserDataToConnection(userConn);
                         break;
                     case 'connectDevice':
                         let connectDevRequest = wsMessage.data as IWSSDeviceConnectRequest;
@@ -127,22 +128,30 @@ export class MyWebSocketServer {
         });
 
         setInterval(() => {
-            // console.log("wsRouter Queue check. Size: " + this.deviceDataEmitQueue.length + "                        " + getCurrentTimeISO());
-            for (let i = 0; i < this.deviceDataEmitQueue.length; i++) {
-                let connection = this.deviceDataEmitQueue[i];
-                console.log(i + ": fromLastEmit: " + (getCurrentTimeUNIX() - connection.lastEmited));
-                if (getCurrentTimeUNIX() - connection.lastEmited > WSRouterSlowTapInterval) {
-                    console.log("emit " + i);
-
-                    this.emitDeviceDataToConnection(connection).then(() => {
+            for (let i = 0; i < this.userDataEmitQueue.length; i++) {
+                let connection = this.userDataEmitQueue[i];
+                if (getCurrentTimeUNIX() - connection.lastEmited > WSRouter_SlowTapInterval) {
+                    this.emitUserDataToConnection(connection).then(() => {
                         connection.lastEmited = getCurrentTimeUNIX();
                     });
+                    this.userDataEmitQueue.splice(i, 1);
+                    i--;
+                }
+            }
+
+            for(let i = 0; i<this.deviceDataEmitQueue.length; i++){
+                let connection = this.deviceDataEmitQueue[i];
+                if(getCurrentTimeUNIX() - connection.lastEmited > WSRouter_SlowTapInterval) {
+                    //send data
+                    this.emitDeviceDataToConnection(connection).then( () => {
+                        connection.lastEmited = getCurrentTimeUNIX();
+                    });
+
                     this.deviceDataEmitQueue.splice(i, 1);
                     i--;
                 }
-                console.log();
             }
-        }, WSRouterEmitCheckInterval)
+        }, WSRouterEmit_CheckInterval)
     }
 
     //<logout>
@@ -270,12 +279,17 @@ export class MyWebSocketServer {
     //</reasons to emit data>
 
     //<single connection emit>
-    private async emitDeviceDataToConnection(userConnection: IWSSConnectionUser) {
+    private async emitUserDataToConnection(userConnection: IWSSConnectionUser) {
         let devices = await deviceService.getDevices();
         let user = await userService.getUserbyId(userConnection.userId);
 
         let userData = JSON.stringify(await this.getAllDeviceDataMessageForUser(devices, user));
         this.sendDataToUserConnection(userData, userConnection);
+    }
+
+    private async emitDeviceDataToConnection(deviceConnection: IWSSConnectionDevice){
+        let device = await deviceService.getDevicebyId(deviceConnection.deviceId);
+        await this.emitDeviceConfigToDevice(device);
     }
     //<single connection emit>
 
@@ -284,7 +298,6 @@ export class MyWebSocketServer {
     private async getAllDeviceDataMessageForUser(allDeviceData: IDevice[], user: IUser): Promise<IWSSMessageForUser> {
         let devices: IDeviceForUser[] = [];
         for (let device of allDeviceData) {
-
             let isActive = this.isDeviceActive(device.id);
             let deviceForUser = await userPermissionService.getDeviceForUser(user, device, isActive);
             if (deviceForUser) {
@@ -313,33 +326,40 @@ export class MyWebSocketServer {
         }
     }
 
-    private async sendUserDataToUser(user: IUser[]) {
-
-    }
-
     private async sendDataToUserConnection(data: string, userConnection: IWSSConnectionUser, urgent?: boolean) {
         if (urgent) {
             userConnection.basicConnection.connection.sendUTF(data);
         } else {
             let currentTime = getCurrentTimeUNIX();
-            if (currentTime - userConnection.lastEmited > WSRouterSlowTapOverrideInterval) {
+            if (currentTime - userConnection.lastEmited > WSRouter_SlowTap_OverrideInterval) {
                 //enough time has passed from some old emit to this connection
                 userConnection.basicConnection.connection.sendUTF(data);
                 userConnection.lastEmited = getCurrentTimeUNIX();
             }
             else {
-                let exists = !!this.deviceDataEmitQueue.find(o => o.basicConnection === userConnection.basicConnection);
+                let exists = !!this.userDataEmitQueue.find(o => o.basicConnection === userConnection.basicConnection);
                 if (!exists) {
-                    this.deviceDataEmitQueue.push(userConnection);
+                    this.userDataEmitQueue.push(userConnection);
                 }
             }
         }
     }
 
     async emitDeviceConfigToDevice(deviceData: IDevice) {
+        let currentTime = getCurrentTimeUNIX();
+
         let thisDevConns = this.deviceClients.filter(conn => conn.deviceId === deviceData.id);
         for (let devCon of thisDevConns) {
-            devCon.basicConnection.connection.sendUTF(JSON.stringify(deviceData));
+            if (currentTime - devCon.lastEmited > WSRouter_SlowTap_OverrideInterval) {
+                devCon.basicConnection.connection.sendUTF(JSON.stringify(deviceData));
+                devCon.lastEmited = currentTime;
+            }
+            else {
+                let exists = !!this.deviceDataEmitQueue.find(o => o.basicConnection === devCon.basicConnection);
+                if (!exists) {
+                    this.deviceDataEmitQueue.push(devCon);
+                }
+            }
         }
     }
     //<send>

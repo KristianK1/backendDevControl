@@ -31,6 +31,7 @@ export interface IWSSConnectionUser {
 export interface IWSSConnectionDevice {
     deviceId: number,
     basicConnection: IWSSBasicConnection,
+    lastEmited: number,
 }
 
 export enum EFrontendType {

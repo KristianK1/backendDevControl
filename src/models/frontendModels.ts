@@ -21,9 +21,6 @@ export interface IDeviceForDevice {
     updateTimeStamp: number,
 }
 
-export interface IDeviceForUserFailed {
-    lostRightsToDevice: number,
-}
 
 export interface IDeviceDeleted {
     deletedDeviceId: number,
@@ -55,8 +52,8 @@ export interface IDeviceFieldBasicForUser {
     readOnly: boolean,
 }
 export interface IWSSMessageForUser {
-    messageType: 'userMessage' | 'deviceData' | 'deviceDeleted' | 'lostRightsToDevice',
-    data: ILoggedReason | IDeviceForUser[] | IDeviceDeleted | IDeviceForUserFailed
+    messageType: 'userMessage' | 'deviceData',
+    data: ILoggedReason | IDeviceForUser[],
 }
 
 export interface ILoggedReason {

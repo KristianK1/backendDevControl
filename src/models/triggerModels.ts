@@ -91,7 +91,7 @@ export enum ETriggerTimeType {
 export interface ITriggerTimeSourceData {
     type: ETriggerTimeType,
     firstTimeStamp: string,
-    daysInWeek?: number[],
+    // daysInWeek?: number[],
     lastRunTimestamp: string,
 }
 

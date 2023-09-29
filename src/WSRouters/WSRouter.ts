@@ -209,7 +209,7 @@ export class MyWebSocketServer {
                 usersWithRight.push(user);
             }
         }
-        // await this.emitDeviceConfig(deviceData, usersWithRight);
+        await this.emitDeviceConfigToDevice(deviceData);
         await this.sendAllDataToUsers(usersWithRight);
     }
 
@@ -230,7 +230,7 @@ export class MyWebSocketServer {
                 usersWithRight.push(user);
             }
         }
-        // await this.emitDeviceConfig(deviceData, usersWithRight);
+        await this.emitDeviceConfigToDevice(deviceData);
         await this.sendAllDataToUsers(usersWithRight);
     }
 
@@ -252,7 +252,7 @@ export class MyWebSocketServer {
                 usersWithRight.push(user);
             }
         }
-        // await this.emitDeviceConfig(deviceData, usersWithRight);
+        await this.emitDeviceConfigToDevice(deviceData);
         await this.sendAllDataToUsers(usersWithRight);
     }
 
@@ -333,6 +333,13 @@ export class MyWebSocketServer {
                     this.deviceDataEmitQueue.push(userConnection);
                 }
             }
+        }
+    }
+
+    async emitDeviceConfigToDevice(deviceData: IDevice) {
+        let thisDevConns = this.deviceClients.filter(conn => conn.deviceId === deviceData.id);
+        for (let devCon of thisDevConns) {
+            devCon.basicConnection.connection.sendUTF(JSON.stringify(deviceData));
         }
     }
     //<send>

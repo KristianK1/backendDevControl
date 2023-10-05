@@ -240,7 +240,7 @@ export class DeviceService {
                 device = await this.getDevicebyId(deviceId);
             }
         }
-        if (newDeviceGroups.length) {
+        if (newDeviceGroups) {
             for (let newGroup of newDeviceGroups) {
                 let oldGroup: IFieldGroup;
                 try {
@@ -303,7 +303,7 @@ export class DeviceService {
                 device = await this.getDevicebyId(deviceId);
             }
         }
-        if (newDeviceComplexGroups.length) {
+        if (newDeviceComplexGroups) {
             for (let newGroup of newDeviceComplexGroups) {
                 let oldGroup: IComplexFieldGroup;
                 try {

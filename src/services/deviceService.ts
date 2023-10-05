@@ -240,51 +240,52 @@ export class DeviceService {
                 device = await this.getDevicebyId(deviceId);
             }
         }
-
-        for (let newGroup of newDeviceGroups) {
-            let oldGroup: IFieldGroup;
-            try {
-                oldGroup = getDeviceFieldGroup(device, newGroup.id);
-            }
-            catch {
-                await this.addDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
-                device = await this.getDevicebyId(deviceId);
-            }
-            oldGroup = getDeviceFieldGroup(device, newGroup.id);
-
-            if (oldGroup.groupName !== newGroup.groupName) {
-                await this.db.renameDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
-            }
-
-            let oldDeviceFields = getDeviceFieldGroup(device, newGroup.id).fields;
-            let newDeviceFields = newGroup.fields;
-
-            for (let oldField of oldDeviceFields) {
+        if (newDeviceGroups.length) {
+            for (let newGroup of newDeviceGroups) {
+                let oldGroup: IFieldGroup;
                 try {
-                    getDeviceField(newGroup, oldField.id);
-                } catch {
-                    await this.db.deleteDeviceField(deviceId, newGroup.id, oldField.id);
-                    //deleteTriggers for Field
-                }
-            }
-
-            for (let newField of newDeviceFields) {
-                let oldField: IDeviceFieldBasic;
-                try {
-                    oldField = getDeviceField(oldGroup, newField.id);
+                    oldGroup = getDeviceFieldGroup(device, newGroup.id);
                 }
                 catch {
-                    await this.db.addDeviceField(deviceId, newGroup.id, newField);
+                    await this.addDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
                     device = await this.getDevicebyId(deviceId);
-                    continue;
                 }
-                if (newField.fieldName !== oldField.fieldName) {
-                    await this.db.renameDeviceField(deviceId, newGroup.id, newField.id, newField.fieldName);
+                oldGroup = getDeviceFieldGroup(device, newGroup.id);
+
+                if (oldGroup.groupName !== newGroup.groupName) {
+                    await this.db.renameDeviceFieldGroup(deviceId, newGroup.id, newGroup.groupName);
                 }
-                if (compareFields(newField, oldField) === false) {
-                    await this.db.deleteDeviceField(deviceId, newGroup.id, newField.id);
-                    await this.db.addDeviceField(deviceId, newGroup.id, newField);
-                    //check is the trigger still valid
+
+                let oldDeviceFields = getDeviceFieldGroup(device, newGroup.id).fields;
+                let newDeviceFields = newGroup.fields;
+
+                for (let oldField of oldDeviceFields) {
+                    try {
+                        getDeviceField(newGroup, oldField.id);
+                    } catch {
+                        await this.db.deleteDeviceField(deviceId, newGroup.id, oldField.id);
+                        //deleteTriggers for Field
+                    }
+                }
+
+                for (let newField of newDeviceFields) {
+                    let oldField: IDeviceFieldBasic;
+                    try {
+                        oldField = getDeviceField(oldGroup, newField.id);
+                    }
+                    catch {
+                        await this.db.addDeviceField(deviceId, newGroup.id, newField);
+                        device = await this.getDevicebyId(deviceId);
+                        continue;
+                    }
+                    if (newField.fieldName !== oldField.fieldName) {
+                        await this.db.renameDeviceField(deviceId, newGroup.id, newField.id, newField.fieldName);
+                    }
+                    if (compareFields(newField, oldField) === false) {
+                        await this.db.deleteDeviceField(deviceId, newGroup.id, newField.id);
+                        await this.db.addDeviceField(deviceId, newGroup.id, newField);
+                        //check is the trigger still valid
+                    }
                 }
             }
         }
@@ -302,80 +303,81 @@ export class DeviceService {
                 device = await this.getDevicebyId(deviceId);
             }
         }
-
-        for (let newGroup of newDeviceComplexGroups) {
-            let oldGroup: IComplexFieldGroup;
-            try {
-                oldGroup = getComplexGroup(device, newGroup.id);
-            }
-            catch {
-                await this.addComplexGroup(deviceId, newGroup.id, newGroup.groupName);
-                device = await this.getDevicebyId(deviceId);
-            }
-
-            oldGroup = getComplexGroup(device, newGroup.id);
-
-            if (newGroup.groupName !== oldGroup.groupName) {
-                await this.db.renameComplexGroup(deviceId, newGroup.id, newGroup.groupName);
-            }
-
-            let oldComplexGroupStates = oldGroup.fieldGroupStates;
-            let newComplexGroupStates = newGroup.fieldGroupStates;
-            for (let oldState of oldComplexGroupStates) {
+        if (newDeviceComplexGroups.length) {
+            for (let newGroup of newDeviceComplexGroups) {
+                let oldGroup: IComplexFieldGroup;
                 try {
-                    getComplexGroupState(newGroup, oldState.id);
-                } catch {
-                    await this.db.deleteComplexGroupState(deviceId, newGroup.id, oldState.id);
-                    //delete triggers for CGS
-                }
-            }
-
-            for (let newState of newComplexGroupStates) {
-                let oldState: IComplexFieldGroupState;
-                try {
-                    oldState = getComplexGroupState(oldGroup, newState.id);
+                    oldGroup = getComplexGroup(device, newGroup.id);
                 }
                 catch {
-                    await this.addComplexGroupState(deviceId, newGroup.id, newState.id, newState.stateName);
+                    await this.addComplexGroup(deviceId, newGroup.id, newGroup.groupName);
                     device = await this.getDevicebyId(deviceId);
                 }
-                oldState = getComplexGroupState(getComplexGroup(device, newGroup.id), newState.id);
 
-                if (newState.stateName !== oldState.stateName) {
-                    await this.db.renameComplexGroupState(deviceId, newGroup.id, newState.id, newState.stateName);
+                oldGroup = getComplexGroup(device, newGroup.id);
+
+                if (newGroup.groupName !== oldGroup.groupName) {
+                    await this.db.renameComplexGroup(deviceId, newGroup.id, newGroup.groupName);
                 }
 
-                let oldComplexGroupFields = oldState.fields;
-                let newComplexGroupFields = newState.fields;
-
-                for (let oldField of oldComplexGroupFields) {
+                let oldComplexGroupStates = oldGroup.fieldGroupStates;
+                let newComplexGroupStates = newGroup.fieldGroupStates;
+                for (let oldState of oldComplexGroupStates) {
                     try {
-                        getFieldInComplexGroup(newState, oldField.id);
+                        getComplexGroupState(newGroup, oldState.id);
                     } catch {
-                        await this.db.deleteFieldInComplexGroup(deviceId, newGroup.id, newState.id, oldField.id);
-                        //delete triggers for F in CG
+                        await this.db.deleteComplexGroupState(deviceId, newGroup.id, oldState.id);
+                        //delete triggers for CGS
                     }
                 }
 
-                for (let newField of newComplexGroupFields) {
-                    let oldField: IDeviceFieldBasic;
+                for (let newState of newComplexGroupStates) {
+                    let oldState: IComplexFieldGroupState;
                     try {
-                        oldField = getFieldInComplexGroup(oldState, newField.id);
+                        oldState = getComplexGroupState(oldGroup, newState.id);
                     }
                     catch {
-                        await this.db.addFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField);
+                        await this.addComplexGroupState(deviceId, newGroup.id, newState.id, newState.stateName);
                         device = await this.getDevicebyId(deviceId);
                     }
-                    oldField = getFieldInComplexGroup(getComplexGroupState(getComplexGroup(device, newGroup.id), newState.id), newField.id);
+                    oldState = getComplexGroupState(getComplexGroup(device, newGroup.id), newState.id);
 
-                    if (newField.fieldName !== oldField.fieldName) {
-                        await this.db.renameFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField.id, newField.fieldName);
+                    if (newState.stateName !== oldState.stateName) {
+                        await this.db.renameComplexGroupState(deviceId, newGroup.id, newState.id, newState.stateName);
                     }
 
-                    if (compareFields(newField, oldField) === false) {
-                        await this.db.deleteFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField.id);
-                        await this.db.addFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField);
-                        //check is the trigger still valid
+                    let oldComplexGroupFields = oldState.fields;
+                    let newComplexGroupFields = newState.fields;
+
+                    for (let oldField of oldComplexGroupFields) {
+                        try {
+                            getFieldInComplexGroup(newState, oldField.id);
+                        } catch {
+                            await this.db.deleteFieldInComplexGroup(deviceId, newGroup.id, newState.id, oldField.id);
+                            //delete triggers for F in CG
+                        }
+                    }
+
+                    for (let newField of newComplexGroupFields) {
+                        let oldField: IDeviceFieldBasic;
+                        try {
+                            oldField = getFieldInComplexGroup(oldState, newField.id);
+                        }
+                        catch {
+                            await this.db.addFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField);
+                            device = await this.getDevicebyId(deviceId);
+                        }
+                        oldField = getFieldInComplexGroup(getComplexGroupState(getComplexGroup(device, newGroup.id), newState.id), newField.id);
+
+                        if (newField.fieldName !== oldField.fieldName) {
+                            await this.db.renameFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField.id, newField.fieldName);
+                        }
+
+                        if (compareFields(newField, oldField) === false) {
+                            await this.db.deleteFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField.id);
+                            await this.db.addFieldInComplexGroup(deviceId, newGroup.id, newState.id, newField);
+                            //check is the trigger still valid
+                        }
                     }
                 }
             }
@@ -395,7 +397,7 @@ export class DeviceService {
             let numField = field.fieldValue as IDeviceFieldNumeric;
             oldValue = numField.fieldValue;
             console.log('OLD VALUE: ' + oldValue);
-            
+
             if (fieldValue <= numField.maxValue && fieldValue >= numField.minValue) {
                 let N = (fieldValue - numField.minValue) / numField.valueStep;
                 if (N % 1 < 0.05 || N % 1 > 0.95) {

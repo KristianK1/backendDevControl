@@ -1,4 +1,4 @@
-import { IDevice, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText, IRGB } from "../basicModels"
+import { IDevice, IRGB } from "../basicModels"
 
 export interface IAddDeviceReq {
     deviceName: string

@@ -72,7 +72,7 @@ export interface IDeviceFieldNumeric {
     valueStep: number,
     prefix: string,
     sufix: string,
-    fieldDirection: 'input',
+    fieldDirection: 'input' | 'output',
 }
 
 export interface IDeviceFieldText {
@@ -95,7 +95,7 @@ export interface IDeviceFieldRGB {
     R: number,
     G: number,
     B: number,
-    fieldDirection: 'input'
+    fieldDirection: 'input',
 }
 
 export interface IRGB {

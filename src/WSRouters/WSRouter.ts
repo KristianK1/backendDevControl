@@ -374,4 +374,11 @@ export class MyWebSocketServer {
     //     let logoutReason: ILoggedReason = { logoutReason: reason };
     //     client?.basicConnection.connection.sendUTF(JSON.stringify(logoutReason));
     // }
+
+    async removeAllDeviceClients(){
+        for(let devCon of this.deviceClients){
+            devCon.basicConnection.connection.close();
+        }
+        this.deviceClients = [];
+    }
 }

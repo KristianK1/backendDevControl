@@ -73,6 +73,10 @@ export class Server {
 
         var mainRouter = require('./expressRouters/expressRouter.ts');
         this.app.use('/API', mainRouter);
+
+        this.app.get('/WS_remove', (req: any, res: any) => {
+            this.wss.removeAllDeviceClients();
+        });
     }
 
     startServer() {

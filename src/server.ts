@@ -76,6 +76,17 @@ export class Server {
 
         this.app.get('/WS_remove', (req: any, res: any) => {
             this.wss.removeAllDeviceClients();
+            res.send('ok');
+        });
+
+        this.app.get('/WS_stopAccept', (req: any, res: any) => {
+            this.wss.stopAccept();
+            res.send('stopped accepting');
+        });
+
+        this.app.get('/WS_startAccept', (req: any, res: any) => {
+            this.wss.startAccept();
+            res.send('started accepting');
         });
     }
 

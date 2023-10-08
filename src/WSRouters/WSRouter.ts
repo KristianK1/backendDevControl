@@ -29,11 +29,17 @@ export class MyWebSocketServer {
     private userDataEmitQueue: IWSSConnectionUser[] = [];
     private deviceDataEmitQueue: IWSSConnectionDevice[] = [];
 
+    private acceptWS: boolean;
+
     public setupServer(server: server) {
         this.wsServer = server;
 
         this.wsServer.on('request', (request: request) => {
             console.log('new r');
+            if(this.acceptWS == false){
+                request.reject();
+                return;
+            }
 
             let connection = request.accept(null, request.origin);
             let newConnection: IWSSBasicConnection = {
@@ -380,5 +386,13 @@ export class MyWebSocketServer {
             devCon.basicConnection.connection.close();
         }
         this.deviceClients = [];
+    }
+
+    async stopAccept(){
+        this.acceptWS = false;
+    }
+
+    async startAccept(){
+        this.acceptWS = true;
     }
 }

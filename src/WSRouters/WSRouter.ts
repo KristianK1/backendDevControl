@@ -158,7 +158,7 @@ export class MyWebSocketServer {
                 if(getCurrentTimeUNIX() - connection.lastEmited > WSRouter_SlowTapInterval) {
                     //send data
                     this.emitDeviceDataToConnection(connection).then( () => {
-                        connection.lastEmited = getCurrentTimeUNIX();
+                        // connection.lastEmited = getCurrentTimeUNIX();
                     });
 
                     this.deviceDataEmitQueue.splice(i, 1);

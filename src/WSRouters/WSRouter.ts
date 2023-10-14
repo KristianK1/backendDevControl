@@ -367,6 +367,7 @@ export class MyWebSocketServer {
             if (currentTime - devCon.lastEmited > WSRouter_SlowTap_OverrideInterval) {
                 devCon.basicConnection.connection.sendUTF(JSON.stringify(deviceData));
                 devCon.lastEmited = currentTime;
+                this.deviceDataEmitQueue = this.deviceDataEmitQueue.filter(o => o.basicConnection !== devCon.basicConnection);
             }
             else {
                 console.log("want to push device to Q");

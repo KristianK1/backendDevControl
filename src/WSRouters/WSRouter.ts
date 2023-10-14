@@ -145,6 +145,14 @@ export class MyWebSocketServer {
                 }
             }
 
+            if(this.deviceDataEmitQueue.length > 0){
+                let devsQ: number[] = [];
+                for(let i = 0; i<this.deviceDataEmitQueue.length; i++){
+                    let devConnInQ = this.deviceDataEmitQueue[i];
+                    devsQ.push(devConnInQ.deviceId);
+                }
+                console.log(devsQ);
+            }
             for(let i = 0; i<this.deviceDataEmitQueue.length; i++){
                 let connection = this.deviceDataEmitQueue[i];
                 if(getCurrentTimeUNIX() - connection.lastEmited > WSRouter_SlowTapInterval) {
@@ -361,6 +369,7 @@ export class MyWebSocketServer {
                 devCon.lastEmited = currentTime;
             }
             else {
+                console.log("want to push device to Q");
                 let exists = !!this.deviceDataEmitQueue.find(o => o.basicConnection === devCon.basicConnection);
                 if (!exists) {
                     this.deviceDataEmitQueue.push(devCon);

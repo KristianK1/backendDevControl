@@ -16,7 +16,7 @@ var deviceService: DeviceService = deviceServiceSingletonFactory.getInstance();
 var userPermissionService: UserPermissionService = userPermissionServiceSingletonFactory.getInstance();
 
 const WSRouterEmit_CheckInterval = 50;
-const WSRouter_SlowTapInterval = 200;
+const WSRouter_SlowTapInterval = 500;
 const WSRouter_SlowTap_OverrideInterval = WSRouter_SlowTapInterval + WSRouterEmit_CheckInterval + 5; //avoid collision from slowTap emit and a "normal" emit
 
 export class MyWebSocketServer {

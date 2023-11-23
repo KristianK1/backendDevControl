@@ -33,46 +33,46 @@ export enum ERGBTriggerType_context {
     B,
 }
 
-export interface INumericTrigger {
+export interface INumTrig {
     value: number,
     second_value: number | null,
     type: ENumericTriggerType,
 }
 
-export interface ITextTrigger {
+export interface ITextTrig {
     value: string,
     type: ETextTriggerType,
 }
 
-export interface IMCTrigger {
+export interface IMCTrig {
     value: number,
     type: EMCTriggerType,
 }
 
-export interface IRGBTrigger {
+export interface IRGBTrig {
     value: number,
     second_value: number,
     type: ERGBTriggerType_numeric,
     contextType: ERGBTriggerType_context,
 }
 
-export interface IBooleanTrigger {
+export interface IBoolTrig {
     value: boolean,
 }
 
-export enum ETriggerSourceType {
+export enum ETrigSourceType {
     FieldInGroup,
     FieldInComplexGroup,
     TimeTrigger,
 }
 
-export interface ITriggerSourceAdress_fieldInGroup {
+export interface ITrigSourceFG {
     deviceId: number,
     groupId: number,
     fieldId: number,
 }
 
-export interface ITriggerSourceAdress_fieldInComplexGroup {
+export interface ITrigSourceFCG {
     deviceId: number,
     complexGroupId: number,
     stateId: number,
@@ -88,7 +88,7 @@ export enum ETriggerTimeType {
     // Wearly,
 }
 
-export interface ITriggerTimeSourceData {
+export interface ITrigSourceTime {
     type: ETriggerTimeType,
     firstTimeStamp: string,
     // daysInWeek?: number[],
@@ -96,17 +96,17 @@ export interface ITriggerTimeSourceData {
 }
 
 
-export interface ITriggerEmailResponse {
+export interface ITrigRespEmail {
     emailSubject: string,
     emailText: string,
 }
 
-export interface ITriggerMobileNotificationResponse {
+export interface ITrigRespMobNot {
     notificationTitle: string,
     notificationText: string,
 }
 
-export interface ITriggerSettingValueResponse_fieldInGroup {
+export interface ITrigRespFG {
     deviceId: number,
     groupId: number,
     fieldId: number,
@@ -114,7 +114,7 @@ export interface ITriggerSettingValueResponse_fieldInGroup {
     rgbContext: ERGBTriggerType_context,
 }
 
-export interface ITriggerSettingsValueResponse_fieldInComplexGroup {
+export interface ITrigRespFCG {
     deviceId: number,
     complexGroupId: number,
     complexGroupState: number,
@@ -123,7 +123,7 @@ export interface ITriggerSettingsValueResponse_fieldInComplexGroup {
     rgbContext: ERGBTriggerType_context,
 }
 
-export enum ETriggerResponseType {
+export enum ETrigRespType {
     Email,
     MobileNotification,
     SettingValue_fieldInGroup,
@@ -136,12 +136,12 @@ export interface ITrigger {
     name: string,
     userId: number,
 
-    sourceType: ETriggerSourceType,
-    sourceData: ITriggerSourceAdress_fieldInGroup | ITriggerSourceAdress_fieldInComplexGroup | ITriggerTimeSourceData,
+    sourceType: ETrigSourceType,
+    sourceData: ITrigSourceFG | ITrigSourceFCG | ITrigSourceTime,
 
     fieldType: 'numeric' | 'text' | 'button' | 'RGB' | 'multipleChoice',
-    settings: INumericTrigger | ITextTrigger | IMCTrigger | IBooleanTrigger | IRGBTrigger,
+    settings: INumTrig | ITextTrig | IMCTrig | IBoolTrig | IRGBTrig,
 
-    responseType: ETriggerResponseType,
-    responseSettings: ITriggerEmailResponse | ITriggerMobileNotificationResponse | ITriggerSettingValueResponse_fieldInGroup | ITriggerSettingsValueResponse_fieldInComplexGroup,
+    responseType: ETrigRespType,
+    responseSettings: ITrigRespEmail | ITrigRespMobNot | ITrigRespFG | ITrigRespFCG,
 }

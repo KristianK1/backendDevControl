@@ -1,6 +1,6 @@
 import { Db } from "../firestoreDB/db";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
-import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_context, ERGBTriggerType_numeric, ETextTriggerType, ETriggerResponseType, ETriggerSourceType, ETriggerTimeType, IBooleanTrigger, IMCTrigger, INumericTrigger, IRGBTrigger, ITextTrigger, ITrigger, ITriggerEmailResponse, ITriggerMobileNotificationResponse, ITriggerSettingValueResponse_fieldInGroup, ITriggerSettingsValueResponse_fieldInComplexGroup, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup, ITriggerTimeSourceData } from "../models/triggerModels";
+import { EMCTriggerType, ENumericTriggerType, ERGBTriggerType_context, ERGBTriggerType_numeric, ETextTriggerType, ETrigRespType, ETrigSourceType, ETriggerTimeType, IBoolTrig, IMCTrig, INumTrig, IRGBTrig, ITextTrig, ITrigger, ITrigRespEmail, ITrigRespMobNot, ITrigRespFG, ITrigRespFCG, ITrigSourceFCG, ITrigSourceFG, ITrigSourceTime } from "../models/triggerModels";
 import { IDevice, IDeviceFieldBasic, IDeviceFieldButton, IDeviceFieldMultipleChoice, IDeviceFieldNumeric, IDeviceFieldRGB, IDeviceFieldText, IRGB } from "../models/basicModels";
 import { bridge_checkUserRightToComplexGroup, bridge_checkUserRightToField, bridge_getDevicebyId, bridge_getDevicebyKey, bridge_getUserbyId, bridge_getUsersFirebaseTokens, bridge_tryToChangeDeviceFieldValue, bridge_tryToChangeFieldValueInComplexGroup } from "./serviceBridge";
 import { getComplexGroup, getComplexGroupState, getDeviceField, getDeviceFieldGroup, getFieldInComplexGroup } from "../firestoreDB/deviceStructureFunctions";
@@ -50,8 +50,8 @@ export class TriggerService {
         let field: IDeviceFieldBasic;
 
         switch (triggerData.sourceType) {
-            case ETriggerSourceType.FieldInGroup:
-                let sourceAdress_field_group = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
+            case ETrigSourceType.FieldInGroup:
+                let sourceAdress_field_group = triggerData.sourceData as ITrigSourceFG;
 
                 sourceDeviceData = await bridge_getDevicebyId(sourceAdress_field_group.deviceId);
                 let group = getDeviceFieldGroup(sourceDeviceData, sourceAdress_field_group.groupId);
@@ -67,8 +67,8 @@ export class TriggerService {
                 console.log('yy1');
 
                 break;
-            case ETriggerSourceType.FieldInComplexGroup:
-                let sourceAdress_field_complexGroup = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
+            case ETrigSourceType.FieldInComplexGroup:
+                let sourceAdress_field_complexGroup = triggerData.sourceData as ITrigSourceFCG;
 
                 sourceDeviceData = await bridge_getDevicebyId(sourceAdress_field_complexGroup.deviceId);
                 let complexGroup = getComplexGroup(sourceDeviceData, sourceAdress_field_complexGroup.complexGroupId);
@@ -83,7 +83,7 @@ export class TriggerService {
 
                 await this.checkTriggerSourceValueValidity(triggerData, field);
                 break;
-            case ETriggerSourceType.TimeTrigger:
+            case ETrigSourceType.TimeTrigger:
 
                 break;
             default:
@@ -93,19 +93,19 @@ export class TriggerService {
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         let responseDeviceData: IDevice;
         switch (triggerData.responseType) {
-            case ETriggerResponseType.Email:
-                let emailSettings = triggerData.responseSettings as ITriggerEmailResponse;
+            case ETrigRespType.Email:
+                let emailSettings = triggerData.responseSettings as ITrigRespEmail;
                 if (user.email === '') {
                     throw ({ message: 'User doesn\'t have an email adress' })
                 }
                 break;
 
-            case ETriggerResponseType.MobileNotification:
-                let mobNotSettings = triggerData.responseSettings as ITriggerMobileNotificationResponse;
+            case ETrigRespType.MobileNotification:
+                let mobNotSettings = triggerData.responseSettings as ITrigRespMobNot;
                 break;
 
-            case ETriggerResponseType.SettingValue_fieldInGroup:
-                let adressG = triggerData.responseSettings as ITriggerSettingValueResponse_fieldInGroup;
+            case ETrigRespType.SettingValue_fieldInGroup:
+                let adressG = triggerData.responseSettings as ITrigRespFG;
                 let fieldPermission = await bridge_checkUserRightToField(user, adressG.deviceId, adressG.groupId, adressG.fieldId);
 
                 if (fieldPermission !== ERightType.Write) {
@@ -118,8 +118,8 @@ export class TriggerService {
                 await bridge_tryToChangeDeviceFieldValue(adressG.deviceId, adressG.groupId, fieldInGroup, adressG.value, true);
                 break;
 
-            case ETriggerResponseType.SettingValue_fieldInComplexGroup:
-                let adressCG = triggerData.responseSettings as ITriggerSettingsValueResponse_fieldInComplexGroup;
+            case ETrigRespType.SettingValue_fieldInComplexGroup:
+                let adressCG = triggerData.responseSettings as ITrigRespFCG;
                 let complexGroupPermission = await bridge_checkUserRightToComplexGroup(user, adressCG.deviceId, adressCG.complexGroupId);
 
                 if (complexGroupPermission !== ERightType.Write) {
@@ -195,35 +195,35 @@ export class TriggerService {
             switch (trigger.fieldType) {
                 case 'numeric':
                     let numField = field.fieldValue as IDeviceFieldNumeric;
-                    let numTrigger = trigger.settings as INumericTrigger;
+                    let numTrigger = trigger.settings as INumTrig;
                     if (this.checkTrigger_numeric(numField, numTrigger, oldValue)) {
                         await this.kickOffTrigger(trigger);
                     }
                     break;
                 case 'text':
                     let textField = field.fieldValue as IDeviceFieldText;
-                    let textTrigger = trigger.settings as ITextTrigger;
+                    let textTrigger = trigger.settings as ITextTrig;
                     if (this.checkTrigger_text(textField, textTrigger, oldValue)) {
                         await this.kickOffTrigger(trigger);
                     }
                     break;
                 case 'button':
                     let buttonField = field.fieldValue as IDeviceFieldButton;
-                    let buttonTrigger = trigger.settings as IBooleanTrigger;
+                    let buttonTrigger = trigger.settings as IBoolTrig;
                     if (this.checkTrigger_button(buttonField, buttonTrigger, oldValue)) {
                         await this.kickOffTrigger(trigger);
                     }
                     break;
                 case 'multipleChoice':
                     let mcField = field.fieldValue as IDeviceFieldMultipleChoice;
-                    let mcTrigger = trigger.settings as IMCTrigger;
+                    let mcTrigger = trigger.settings as IMCTrig;
                     if (this.checkTrigger_MC(mcField, mcTrigger, oldValue)) {
                         await this.kickOffTrigger(trigger);
                     }
                     break;
                 case 'RGB':
                     let rgbField = field.fieldValue as IDeviceFieldRGB;
-                    let rgbTrigger = trigger.settings as IRGBTrigger;
+                    let rgbTrigger = trigger.settings as IRGBTrig;
                     if (this.checkTrigger_RGB(rgbField, rgbTrigger, oldValue)) {
                         await this.kickOffTrigger(trigger);
                     }
@@ -237,8 +237,8 @@ export class TriggerService {
         let triggers = await this.db.getAllTriggersForDeviceSource();
         let foundTriggers: ITrigger[] = [];
         for (let trigger of triggers) {
-            if (trigger.sourceType === ETriggerSourceType.FieldInGroup) {
-                let sourceSettings = trigger.sourceData as ITriggerSourceAdress_fieldInGroup;
+            if (trigger.sourceType === ETrigSourceType.FieldInGroup) {
+                let sourceSettings = trigger.sourceData as ITrigSourceFG;
                 if (sourceSettings.deviceId === deviceId && sourceSettings.groupId === groupId && sourceSettings.fieldId === fieldId) {
                     foundTriggers.push(trigger);
                 }
@@ -251,8 +251,8 @@ export class TriggerService {
         let triggers = await this.db.getAllTriggersForDeviceSource();
         let foundTriggers: ITrigger[] = [];
         for (let trigger of triggers) {
-            if (trigger.sourceType === ETriggerSourceType.FieldInComplexGroup) {
-                let sourceSettings = trigger.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
+            if (trigger.sourceType === ETrigSourceType.FieldInComplexGroup) {
+                let sourceSettings = trigger.sourceData as ITrigSourceFCG;
                 if (sourceSettings.deviceId === deviceId && sourceSettings.complexGroupId === complexGroupId && sourceSettings.stateId === stateId && sourceSettings.fieldId === fieldId) {
                     foundTriggers.push(trigger);
                 }
@@ -320,7 +320,7 @@ export class TriggerService {
     }
 
     checkTimeTrigger(trigger: ITrigger, currentTime: number) {
-        let timeSettings = trigger.sourceData as ITriggerTimeSourceData;
+        let timeSettings = trigger.sourceData as ITrigSourceTime;
         let firstTimeStampUNIX = ISOToUNIX(timeSettings.firstTimeStamp);
 
         let nextDays: number;
@@ -379,16 +379,16 @@ export class TriggerService {
 
     async kickOffTrigger(triggerData: ITrigger) {
         switch (triggerData.responseType) {
-            case ETriggerResponseType.Email:
+            case ETrigRespType.Email:
                 await this.emailService.sendTriggerResponseEmail(triggerData);
                 break;
-            case ETriggerResponseType.MobileNotification:
+            case ETrigRespType.MobileNotification:
                 let userFirebaseTokens = await bridge_getUsersFirebaseTokens(triggerData.userId);
-                let responseSettings = triggerData.responseSettings as ITriggerMobileNotificationResponse;
+                let responseSettings = triggerData.responseSettings as ITrigRespMobNot;
                 await firebaseNotificationsSingletonFactory.getInstance().sendNotifications(userFirebaseTokens, responseSettings.notificationTitle, responseSettings.notificationText)
                 break;
-            case ETriggerResponseType.SettingValue_fieldInGroup:
-                let Gresponse = triggerData.responseSettings as ITriggerSettingValueResponse_fieldInGroup;
+            case ETrigRespType.SettingValue_fieldInGroup:
+                let Gresponse = triggerData.responseSettings as ITrigRespFG;
                 let Gdevice = await bridge_getDevicebyId(Gresponse.deviceId);
                 let Ggroup = getDeviceFieldGroup(Gdevice, Gresponse.groupId);
                 let Gfield = getDeviceField(Ggroup, Gresponse.fieldId);
@@ -396,8 +396,8 @@ export class TriggerService {
                 this.wsServer.emitFieldChanged(Gresponse.deviceId, Gresponse.groupId, Gresponse.fieldId);
 
                 break;
-            case ETriggerResponseType.SettingValue_fieldInComplexGroup:
-                let CGresponse = triggerData.responseSettings as ITriggerSettingsValueResponse_fieldInComplexGroup
+            case ETrigRespType.SettingValue_fieldInComplexGroup:
+                let CGresponse = triggerData.responseSettings as ITrigRespFCG
                 let CGdevice = await bridge_getDevicebyId(CGresponse.deviceId);
                 let CGgroup = getComplexGroup(CGdevice, CGresponse.complexGroupId);
                 let CGstate = getComplexGroupState(CGgroup, CGresponse.complexGroupState);
@@ -416,7 +416,7 @@ export class TriggerService {
             case "numeric":
                 if (triggerData.fieldType != 'numeric') throw ({ message: 'wrong field type' });
                 console.log('zz1');
-                let numericSettings = triggerData.settings as INumericTrigger;
+                let numericSettings = triggerData.settings as INumTrig;
                 let numericField = field.fieldValue as IDeviceFieldNumeric;
                 console.log('zz2');
                 if (!this.checkNumericTriggerSettings(numericField, numericSettings)) {
@@ -428,7 +428,7 @@ export class TriggerService {
             case "text":
                 if (triggerData.fieldType != 'text') throw ({ message: 'wrong field type' });
 
-                let textSettings = triggerData.settings as ITextTrigger;
+                let textSettings = triggerData.settings as ITextTrig;
                 let textField = field.fieldValue as IDeviceFieldText;
 
                 if (!this.checkTextTriggerSettings(textField, textSettings)) {
@@ -439,7 +439,7 @@ export class TriggerService {
             case "button":
                 if (triggerData.fieldType != 'button') throw ({ message: 'wrong field type' });
 
-                let buttonSettings = triggerData.settings as IBooleanTrigger;
+                let buttonSettings = triggerData.settings as IBoolTrig;
                 let buttonField = field.fieldValue as IDeviceFieldButton;
 
                 if (!this.checkButtonTriggerSettings(buttonField, buttonSettings)) {
@@ -449,7 +449,7 @@ export class TriggerService {
             case "multipleChoice":
                 if (triggerData.fieldType != 'multipleChoice') throw ({ message: 'wrong field type' });
 
-                let MCSettings = triggerData.settings as IMCTrigger;
+                let MCSettings = triggerData.settings as IMCTrig;
                 let MCField = field.fieldValue as IDeviceFieldMultipleChoice;
 
                 if (!this.checkMCTriggerSettings(MCField, MCSettings)) {
@@ -459,7 +459,7 @@ export class TriggerService {
             case "RGB":
                 if (triggerData.fieldType != 'RGB') throw ({ message: 'wrong field type' });
 
-                let RGBSettings = triggerData.settings as IRGBTrigger;
+                let RGBSettings = triggerData.settings as IRGBTrig;
                 let RGBField = field.fieldValue as IDeviceFieldRGB;
 
                 if (!this.checkRGBTriggerSettings(RGBField, RGBSettings)) {
@@ -470,7 +470,7 @@ export class TriggerService {
         }
     }
 
-    private checkNumericTriggerSettings(field: IDeviceFieldNumeric, settings: INumericTrigger): boolean {
+    private checkNumericTriggerSettings(field: IDeviceFieldNumeric, settings: INumTrig): boolean {
         switch (settings.type) {
             case ENumericTriggerType.Bigger:
                 return (settings.value < field.maxValue && settings.value > field.minValue)
@@ -491,7 +491,7 @@ export class TriggerService {
         }
     }
 
-    private checkTextTriggerSettings(field: IDeviceFieldText, settings: ITextTrigger) {
+    private checkTextTriggerSettings(field: IDeviceFieldText, settings: ITextTrig) {
         switch (settings.type) {
             case ETextTriggerType.StartsWith:
                 return true;
@@ -507,7 +507,7 @@ export class TriggerService {
         return false;
     }
 
-    private checkMCTriggerSettings(field: IDeviceFieldMultipleChoice, settings: IMCTrigger) {
+    private checkMCTriggerSettings(field: IDeviceFieldMultipleChoice, settings: IMCTrig) {
         switch (settings.type) {
             case EMCTriggerType.IsEqualTo:
                 return (settings.value >= 0 && settings.value < field.values.length);
@@ -517,11 +517,11 @@ export class TriggerService {
         }
     }
 
-    private checkButtonTriggerSettings(field: IDeviceFieldButton, settings: IBooleanTrigger) {
+    private checkButtonTriggerSettings(field: IDeviceFieldButton, settings: IBoolTrig) {
         return true;
     }
 
-    private checkRGBTriggerSettings(field: IDeviceFieldRGB, settings: IRGBTrigger) {
+    private checkRGBTriggerSettings(field: IDeviceFieldRGB, settings: IRGBTrig) {
         switch (settings.type) {
             case ERGBTriggerType_numeric.Bigger:
                 return (settings.value < 255)
@@ -545,7 +545,7 @@ export class TriggerService {
         return false;
     }
 
-    checkTrigger_numeric(field: IDeviceFieldNumeric, triggerData: INumericTrigger, oldValue: number): boolean {
+    checkTrigger_numeric(field: IDeviceFieldNumeric, triggerData: INumTrig, oldValue: number): boolean {
         switch (triggerData.type) {
             case ENumericTriggerType.Bigger:
                 if (
@@ -595,7 +595,7 @@ export class TriggerService {
         return false;
     }
 
-    checkTrigger_text(field: IDeviceFieldText, triggerData: ITextTrigger, oldValue: string): boolean {
+    checkTrigger_text(field: IDeviceFieldText, triggerData: ITextTrig, oldValue: string): boolean {
         switch (triggerData.type) {
             case ETextTriggerType.StartsWith:
                 if (field.fieldValue.startsWith(triggerData.value) && !field.fieldValue.startsWith(oldValue)) {
@@ -626,11 +626,11 @@ export class TriggerService {
         return false;
     }
 
-    checkTrigger_button(field: IDeviceFieldButton, triggerData: IBooleanTrigger, oldValue: boolean): boolean {
+    checkTrigger_button(field: IDeviceFieldButton, triggerData: IBoolTrig, oldValue: boolean): boolean {
         return (field.fieldValue === triggerData.value && oldValue !== triggerData.value);
     }
 
-    checkTrigger_MC(field: IDeviceFieldMultipleChoice, triggerData: IMCTrigger, oldValue: number): boolean {
+    checkTrigger_MC(field: IDeviceFieldMultipleChoice, triggerData: IMCTrig, oldValue: number): boolean {
         switch (triggerData.type) {
             case EMCTriggerType.IsEqualTo:
                 if (field.fieldValue === triggerData.value && oldValue !== triggerData.value) {
@@ -646,7 +646,7 @@ export class TriggerService {
         return false;
     }
 
-    checkTrigger_RGB(field: IDeviceFieldRGB, triggerData: IRGBTrigger, oldValue: IRGB): boolean {
+    checkTrigger_RGB(field: IDeviceFieldRGB, triggerData: IRGBTrig, oldValue: IRGB): boolean {
         let neww: number;
         let old: number;
         switch (triggerData.contextType) {

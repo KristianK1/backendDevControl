@@ -1,5 +1,5 @@
 var nodemailer = require('nodemailer');
-import { ITrigger, ITriggerEmailResponse } from 'models/triggerModels';
+import { ITrigger, ITrigRespEmail } from 'models/triggerModels';
 import { IEmailData } from './emailModels';
 import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath, setupNewPasswordPath } from './emailPaths';
 import { bridge_getUserbyId } from '../services/serviceBridge';
@@ -103,7 +103,7 @@ export class EmailService {
 
   async sendTriggerResponseEmail(triggerData: ITrigger) {
     let user = await bridge_getUserbyId(triggerData.userId);
-    let responseSettings = triggerData.responseSettings as ITriggerEmailResponse;
+    let responseSettings = triggerData.responseSettings as ITrigRespEmail;
     let emailSubject = responseSettings.emailSubject;
     let emailText = responseSettings.emailText;
 

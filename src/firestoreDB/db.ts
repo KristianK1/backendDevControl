@@ -8,7 +8,7 @@ import { IUserRight, IUserRightComplexGroup, IUserRightDevice, IUserRightField, 
 import { IEmailConfirmationData, IForgotPasswordData } from "../emailService/emailModels";
 import { EmailService, emailServiceSingletonFactory } from "../emailService/emailService";
 import { FieldValue } from "firebase-admin/firestore";
-import { ETriggerSourceType, ITrigger, ITriggerSourceAdress_fieldInComplexGroup, ITriggerSourceAdress_fieldInGroup } from "../models/triggerModels";
+import { ETrigSourceType, ITrigger, ITrigSourceFCG, ITrigSourceFG } from "../models/triggerModels";
 import { bridge_getDevicebyKey } from "../services/serviceBridge";
 import { log } from "console";
 import { auth } from "firebase-admin";
@@ -446,20 +446,20 @@ export class Db {
         triggerData.id = newTriggerId;
 
         switch (triggerData.sourceType) {
-            case ETriggerSourceType.FieldInGroup:
-                let addressG = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
+            case ETrigSourceType.FieldInGroup:
+                let addressG = triggerData.sourceData as ITrigSourceFG;
                 let pathFG = `${addressG.deviceId}.groups.${addressG.groupId}.${addressG.fieldId}.${newTriggerId}`;
                 await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
                     [`${pathFG}`]: triggerData
                 });
                 break;
-            case ETriggerSourceType.FieldInComplexGroup:
-                let addressCG = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
+            case ETrigSourceType.FieldInComplexGroup:
+                let addressCG = triggerData.sourceData as ITrigSourceFCG;
                 let pathCFG = `${addressCG.deviceId}.complexGroups.${addressCG.complexGroupId}.${addressCG.stateId}.${addressCG.fieldId}.${newTriggerId}`;
                 await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
                     [`${pathCFG}`]: triggerData
                 }); break;
-            case ETriggerSourceType.TimeTrigger:
+            case ETrigSourceType.TimeTrigger:
                 let pathT = `${newTriggerId}`;
                 await this.firestore.updateDocumentValue(Db.triggersCollName, 'time', {
                     [`${pathT}`]: triggerData
@@ -545,23 +545,23 @@ export class Db {
 
     async deleteTrigger(triggerData: ITrigger) {
         switch (triggerData.sourceType) {
-            case ETriggerSourceType.FieldInGroup:
-                let addressG = triggerData.sourceData as ITriggerSourceAdress_fieldInGroup;
+            case ETrigSourceType.FieldInGroup:
+                let addressG = triggerData.sourceData as ITrigSourceFG;
                 let pathFG = `${addressG.deviceId}.groups.${addressG.groupId}.${addressG.fieldId}.${triggerData.id}`;
                 await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
                     [`${pathFG}`]: FieldValue.delete()
                 });
                 break;
 
-            case ETriggerSourceType.FieldInComplexGroup:
-                let addressCG = triggerData.sourceData as ITriggerSourceAdress_fieldInComplexGroup;
+            case ETrigSourceType.FieldInComplexGroup:
+                let addressCG = triggerData.sourceData as ITrigSourceFCG;
                 let pathCFG = `${addressCG.deviceId}.complexGroups.${addressCG.complexGroupId}.${addressCG.stateId}.${addressCG.fieldId}.${triggerData.id}`;
                 await this.firestore.updateDocumentValue(Db.triggersCollName, 'devices', {
                     [`${pathCFG}`]: FieldValue.delete()
                 });
                 break;
 
-            case ETriggerSourceType.TimeTrigger:
+            case ETrigSourceType.TimeTrigger:
                 let pathT = `${triggerData.id}`;
                 await this.firestore.updateDocumentValue(Db.triggersCollName, 'time', {
                     [`${pathT}`]: FieldValue.delete()

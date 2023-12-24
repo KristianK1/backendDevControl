@@ -530,7 +530,7 @@ export class TriggerService {
                 return (settings.value > 0)
 
             case ERGBTriggerType_numeric.Equal:
-                return (settings.value > 0 && settings.value < 255);
+                return (settings.value >= 0 && settings.value <= 255);
             case ERGBTriggerType_numeric.Inbetween:
                 if (!settings.second_value) return false;
                 for (let i = 0; i <= 255; i++) {

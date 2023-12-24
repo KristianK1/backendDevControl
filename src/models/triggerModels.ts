@@ -111,7 +111,6 @@ export interface ITrigRespFG {
     groupId: number,
     fieldId: number,
     value: any,
-    rgbContext: ERGBTriggerType_context,
 }
 
 export interface ITrigRespFCG {
@@ -120,7 +119,6 @@ export interface ITrigRespFCG {
     complexGroupState: number,
     fieldId: number,
     value: any,
-    rgbContext: ERGBTriggerType_context,
 }
 
 export enum ETrigRespType {

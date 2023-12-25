@@ -35,9 +35,9 @@ export class EmailService {
     var serverLink: string = "";
 
     try {
-      secretEmail = require('./emailKey_email').secretEmail;
-      secretPassword = require('./emailKey_password').secretPassword;
-      serverLink = require('../serverData').serverLink;
+      secretEmail = require('./emailKey_email.json').secretEmail;
+      secretPassword = require('./emailKey_password.json').secretPassword;
+      serverLink = require('../serverData.json').serverLink;
     } catch (e) {
 
     }

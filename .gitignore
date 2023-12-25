@@ -1,6 +1,7 @@
 *node_modules
 firebaseKey.json
+firebaseKey_testing.json
 src/emailService/emailKeys.ts
-src/serverData.ts
-src/emailService/emailKey_email.ts
-src/emailService/emailKey_password.ts
+src/serverData.json
+src/emailService/emailKey_email.json
+src/emailService/emailKey_password.json

@@ -581,16 +581,11 @@ export class TriggerService {
                 }
                 break;
             case ENumericTriggerType.NotInBetween:
-                console.log('check not in bet');
-                
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
-                console.log('check not in bet2');
-
                 if (
                     field.fieldValue < triggerData.value || field.fieldValue > triggerData.second_value &&
                     !(oldValue < triggerData.value && oldValue > triggerData.second_value)
                 ) {
-                    console.log('34tzrwsdfs');
                     return true;
                 }
                 break;

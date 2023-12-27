@@ -574,20 +574,23 @@ export class TriggerService {
             case ENumericTriggerType.Inbetween:
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
                 if (
-                    field.fieldValue >= triggerData.value &&
-                    field.fieldValue <= triggerData.second_value &&
+                    field.fieldValue >= triggerData.value && field.fieldValue <= triggerData.second_value &&
                     !(oldValue >= triggerData.value && oldValue <= triggerData.second_value)
                 ) {
                     return true;
                 }
                 break;
             case ENumericTriggerType.NotInBetween:
+                console.log('check not in bet');
+                
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
+                console.log('check not in bet2');
+
                 if (
-                    field.fieldValue < triggerData.value &&
-                    field.fieldValue > triggerData.second_value &&
+                    field.fieldValue < triggerData.value || field.fieldValue > triggerData.second_value &&
                     !(oldValue < triggerData.value && oldValue > triggerData.second_value)
                 ) {
+                    console.log('34tzrwsdfs');
                     return true;
                 }
                 break;
@@ -692,8 +695,7 @@ export class TriggerService {
             case ERGBTriggerType_numeric.Inbetween:
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
                 if (
-                    neww >= triggerData.value &&
-                    neww <= triggerData.second_value &&
+                    neww >= triggerData.value || neww <= triggerData.second_value &&
                     !(old >= triggerData.value && old <= triggerData.second_value)
                 ) {
                     return true;

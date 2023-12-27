@@ -10,6 +10,7 @@ import { ISOToUNIX, UNIXToISO, getCurrentTimeISO, getCurrentTimeUNIX } from "../
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../WSRouters/WSRouterSingletonFactory";
 import { firebaseNotificationsSingletonFactory } from "../firebaseNotifications/firebaseNotifications_singletonService";
+import { log } from "console";
 
 
 export class TriggerService {
@@ -583,8 +584,8 @@ export class TriggerService {
             case ENumericTriggerType.NotInBetween:
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
                 if (
-                    field.fieldValue < triggerData.value || field.fieldValue > triggerData.second_value &&
-                    !(oldValue < triggerData.value && oldValue > triggerData.second_value)
+                    (field.fieldValue < triggerData.value || field.fieldValue > triggerData.second_value) &&
+                    !(oldValue < triggerData.value || oldValue > triggerData.second_value)
                 ) {
                     return true;
                 }
@@ -616,7 +617,7 @@ export class TriggerService {
                 }
                 break;
             case ETextTriggerType.IsNotEqualTo:
-                if (field.fieldValue !== triggerData.value && field.fieldValue === oldValue) {
+                if (field.fieldValue !== triggerData.value && oldValue === triggerData.value) {
                     return true;
                 }
                 break;
@@ -690,7 +691,7 @@ export class TriggerService {
             case ERGBTriggerType_numeric.Inbetween:
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
                 if (
-                    neww >= triggerData.value || neww <= triggerData.second_value &&
+                    neww >= triggerData.value && neww <= triggerData.second_value &&
                     !(old >= triggerData.value && old <= triggerData.second_value)
                 ) {
                     return true;
@@ -699,10 +700,11 @@ export class TriggerService {
             case ERGBTriggerType_numeric.NotInBetween:
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
                 if (
-                    neww < triggerData.value &&
-                    neww > triggerData.second_value &&
-                    !(old < triggerData.value && old > triggerData.second_value)
+                    (neww < triggerData.value || neww > triggerData.second_value) &&
+                    !(old < triggerData.value || old > triggerData.second_value)
                 ) {
+                    console.log('sdfgsdg');
+                    
                     return true;
                 }
                 break;

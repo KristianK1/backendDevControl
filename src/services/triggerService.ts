@@ -50,6 +50,9 @@ export class TriggerService {
         let sourceDeviceData: IDevice;
         let field: IDeviceFieldBasic;
 
+        console.log(triggerData);
+        
+
         switch (triggerData.sourceType) {
             case ETrigSourceType.FieldInGroup:
                 let sourceAdress_field_group = triggerData.sourceData as ITrigSourceFG;
@@ -85,7 +88,16 @@ export class TriggerService {
                 await this.checkTriggerSourceValueValidity(triggerData, field);
                 break;
             case ETrigSourceType.TimeTrigger:
-
+                let timeSettings = triggerData.sourceData as ITrigSourceTime;
+                console.log(timeSettings);
+                
+                if(timeSettings.type == ETriggerTimeType.ChooseDaysInWeek){
+                    if(timeSettings.daysInWeek == null) throw ({ message: 'Wrong data' });
+                    console.log('days passed');
+                    if(timeSettings.daysInWeek.length != 7) throw ({ message: 'Wrong data' });
+                }
+                console.log('days passed');
+                
                 break;
             default:
                 throw ({ message: 'Wrong data' });
@@ -327,21 +339,40 @@ export class TriggerService {
         let nextDays: number;
         switch (timeSettings.type) {
             case ETriggerTimeType.Once:
-                if (firstTimeStampUNIX === currentTime && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
+                if (
+                    firstTimeStampUNIX === currentTime && 
+                    (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))
+                ) return true;
                 break;
             case ETriggerTimeType.Daily:
                 nextDays = firstTimeStampUNIX;
                 while (nextDays <= currentTime) {
-                    if (nextDays === currentTime && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
+                    if (
+                        nextDays === currentTime && 
+                        (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))
+                    ) return true;
                     nextDays = nextDays + 1000 * 3600 * 24;
                 }
                 break;
             case ETriggerTimeType.Weekly:
                 nextDays = firstTimeStampUNIX;
                 while (nextDays <= currentTime) {
-                    if (nextDays === currentTime && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
+                    if (
+                        nextDays === currentTime && 
+                        (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))
+                    ) return true;
                     nextDays = nextDays + 1000 * 3600 * 24 * 7;
                 }
+                break;
+            case ETriggerTimeType.ChooseDaysInWeek:
+                let thisDate = new Date(currentTime);
+                nextDays = firstTimeStampUNIX;
+                if(
+                    nextDays == currentTime && 
+                    (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp)) &&
+                    timeSettings.daysInWeek != null && 
+                    timeSettings.daysInWeek[thisDate.getDay()] == true
+                ) return true;
                 break;
         }
         return false;

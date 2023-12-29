@@ -83,7 +83,7 @@ export enum ETriggerTimeType {
     Once,
     Daily,
     Weekly,
-    // ChooseDaysInWeek,
+    ChooseDaysInWeek,
     // Monthly,
     // Wearly,
 }
@@ -91,7 +91,7 @@ export enum ETriggerTimeType {
 export interface ITrigSourceTime {
     type: ETriggerTimeType,
     firstTimeStamp: string,
-    // daysInWeek?: number[],
+    daysInWeek?: boolean[],
     lastRunTimestamp: string,
 }
 

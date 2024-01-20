@@ -10,6 +10,7 @@ import { ISOToUNIX, UNIXToISO, getCurrentTimeISO, getCurrentTimeUNIX } from "../
 import { MyWebSocketServer } from "WSRouters/WSRouter";
 import { wsServerSingletonFactory } from "../WSRouters/WSRouterSingletonFactory";
 import { firebaseNotificationsSingletonFactory } from "../firebaseNotifications/firebaseNotifications_singletonService";
+import { log } from "console";
 
 
 export class TriggerService {
@@ -49,6 +50,9 @@ export class TriggerService {
         let sourceDeviceData: IDevice;
         let field: IDeviceFieldBasic;
 
+        console.log(triggerData);
+        
+
         switch (triggerData.sourceType) {
             case ETrigSourceType.FieldInGroup:
                 let sourceAdress_field_group = triggerData.sourceData as ITrigSourceFG;
@@ -84,7 +88,16 @@ export class TriggerService {
                 await this.checkTriggerSourceValueValidity(triggerData, field);
                 break;
             case ETrigSourceType.TimeTrigger:
-
+                let timeSettings = triggerData.sourceData as ITrigSourceTime;
+                console.log(timeSettings);
+                
+                if(timeSettings.type == ETriggerTimeType.ChooseDaysInWeek){
+                    if(timeSettings.daysInWeek == null) throw ({ message: 'Wrong data' });
+                    console.log('days passed');
+                    if(timeSettings.daysInWeek.length != 7) throw ({ message: 'Wrong data' });
+                }
+                console.log('days passed');
+                
                 break;
             default:
                 throw ({ message: 'Wrong data' });
@@ -326,21 +339,40 @@ export class TriggerService {
         let nextDays: number;
         switch (timeSettings.type) {
             case ETriggerTimeType.Once:
-                if (firstTimeStampUNIX === currentTime && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
+                if (
+                    firstTimeStampUNIX === currentTime && 
+                    (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))
+                ) return true;
                 break;
             case ETriggerTimeType.Daily:
                 nextDays = firstTimeStampUNIX;
                 while (nextDays <= currentTime) {
-                    if (nextDays === currentTime && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
+                    if (
+                        nextDays === currentTime && 
+                        (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))
+                    ) return true;
                     nextDays = nextDays + 1000 * 3600 * 24;
                 }
                 break;
             case ETriggerTimeType.Weekly:
                 nextDays = firstTimeStampUNIX;
                 while (nextDays <= currentTime) {
-                    if (nextDays === currentTime && (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))) return true;
+                    if (
+                        nextDays === currentTime && 
+                        (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp))
+                    ) return true;
                     nextDays = nextDays + 1000 * 3600 * 24 * 7;
                 }
+                break;
+            case ETriggerTimeType.ChooseDaysInWeek:
+                let thisDate = new Date(currentTime);
+                nextDays = firstTimeStampUNIX;
+                if(
+                    nextDays == currentTime && 
+                    (this.getTimeTriggerTimestampFromTimeStamp() !== this.getTimeTriggerTimestampFromTimeStamp(timeSettings.lastRunTimestamp)) &&
+                    timeSettings.daysInWeek != null && 
+                    timeSettings.daysInWeek[thisDate.getDay()] == true
+                ) return true;
                 break;
         }
         return false;
@@ -530,7 +562,7 @@ export class TriggerService {
                 return (settings.value > 0)
 
             case ERGBTriggerType_numeric.Equal:
-                return (settings.value > 0 && settings.value < 255);
+                return (settings.value >= 0 && settings.value <= 255);
             case ERGBTriggerType_numeric.Inbetween:
                 if (!settings.second_value) return false;
                 for (let i = 0; i <= 255; i++) {
@@ -574,8 +606,7 @@ export class TriggerService {
             case ENumericTriggerType.Inbetween:
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
                 if (
-                    field.fieldValue >= triggerData.value &&
-                    field.fieldValue <= triggerData.second_value &&
+                    field.fieldValue >= triggerData.value && field.fieldValue <= triggerData.second_value &&
                     !(oldValue >= triggerData.value && oldValue <= triggerData.second_value)
                 ) {
                     return true;
@@ -584,9 +615,8 @@ export class TriggerService {
             case ENumericTriggerType.NotInBetween:
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
                 if (
-                    field.fieldValue < triggerData.value &&
-                    field.fieldValue > triggerData.second_value &&
-                    !(oldValue < triggerData.value && oldValue > triggerData.second_value)
+                    (field.fieldValue < triggerData.value || field.fieldValue > triggerData.second_value) &&
+                    !(oldValue < triggerData.value || oldValue > triggerData.second_value)
                 ) {
                     return true;
                 }
@@ -618,7 +648,7 @@ export class TriggerService {
                 }
                 break;
             case ETextTriggerType.IsNotEqualTo:
-                if (field.fieldValue !== triggerData.value && field.fieldValue === oldValue) {
+                if (field.fieldValue !== triggerData.value && oldValue === triggerData.value) {
                     return true;
                 }
                 break;
@@ -692,8 +722,7 @@ export class TriggerService {
             case ERGBTriggerType_numeric.Inbetween:
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
                 if (
-                    neww >= triggerData.value &&
-                    neww <= triggerData.second_value &&
+                    neww >= triggerData.value && neww <= triggerData.second_value &&
                     !(old >= triggerData.value && old <= triggerData.second_value)
                 ) {
                     return true;
@@ -702,10 +731,11 @@ export class TriggerService {
             case ERGBTriggerType_numeric.NotInBetween:
                 if (!triggerData.second_value) throw ({ message: 'Incorrect trigger' });
                 if (
-                    neww < triggerData.value &&
-                    neww > triggerData.second_value &&
-                    !(old < triggerData.value && old > triggerData.second_value)
+                    (neww < triggerData.value || neww > triggerData.second_value) &&
+                    !(old < triggerData.value || old > triggerData.second_value)
                 ) {
+                    console.log('sdfgsdg');
+                    
                     return true;
                 }
                 break;

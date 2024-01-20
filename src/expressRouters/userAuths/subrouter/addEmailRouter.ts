@@ -41,9 +41,9 @@ router.post('/', async (req: any, res: any) => {
             return;
         }
     } catch (e) {
-        res.status(400);
-        res.send(e.message);
-        return;
+        // res.status(400);
+        // res.send(e.message);
+        // return;
     }
 
     try {

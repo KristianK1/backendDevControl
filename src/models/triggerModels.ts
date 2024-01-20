@@ -83,7 +83,7 @@ export enum ETriggerTimeType {
     Once,
     Daily,
     Weekly,
-    // ChooseDaysInWeek,
+    ChooseDaysInWeek,
     // Monthly,
     // Wearly,
 }
@@ -91,7 +91,7 @@ export enum ETriggerTimeType {
 export interface ITrigSourceTime {
     type: ETriggerTimeType,
     firstTimeStamp: string,
-    // daysInWeek?: number[],
+    daysInWeek?: boolean[],
     lastRunTimestamp: string,
 }
 
@@ -111,7 +111,6 @@ export interface ITrigRespFG {
     groupId: number,
     fieldId: number,
     value: any,
-    rgbContext: ERGBTriggerType_context,
 }
 
 export interface ITrigRespFCG {
@@ -120,7 +119,6 @@ export interface ITrigRespFCG {
     complexGroupState: number,
     fieldId: number,
     value: any,
-    rgbContext: ERGBTriggerType_context,
 }
 
 export enum ETrigRespType {

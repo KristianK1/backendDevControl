@@ -13,7 +13,9 @@ export class FirestoreDB {
       this.serviceAccount = JSON.parse(process.env.firebaseKey);
     } catch {
       console.log('failed to get env.port.firebaseKey. Looking for file in firebase.json');
-      this.serviceAccount = require('../../firebaseKey.json')
+      this.serviceAccount = require('../../firebaseKey.json');
+      // this.serviceAccount = require('../../firebaseKey_testing.json');
+
     }
 
     admin.initializeApp({

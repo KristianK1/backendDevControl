@@ -4,3 +4,7 @@ src/emailService/emailKeys.ts
 src/serverData.ts
 src/emailService/emailKey_email.ts
 src/emailService/emailKey_password.ts
+firebaseKey_testing.json
+src/emailService/emailKey_email.json
+src/serverData.json
+src/emailService/emailKey_password.json

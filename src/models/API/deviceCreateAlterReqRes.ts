@@ -33,6 +33,7 @@ export interface IChangeDeviceField_User {
     groupId: number,
     fieldId: number,
     fieldValue: number | string | boolean | IRGB,
+    increment?: boolean, //true - add, false - subtract
 }
 
 export interface IChangeDeviceField_Device {
@@ -40,6 +41,7 @@ export interface IChangeDeviceField_Device {
     groupId: number,
     fieldId: number,
     fieldValue: number | string | boolean | IRGB,
+    increment?: boolean, //true - add, false - subtract
 }
 
 

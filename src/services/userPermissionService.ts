@@ -1,4 +1,4 @@
-import { IDevice, IUser } from "../models/basicModels";
+import { IComplexFieldGroupState, IDevice, IDeviceFieldBasic, IUser } from "../models/basicModels";
 import { ERightType, IUserRightComplexGroup, IUserRightDevice, IUserRightField, IUserRightGroup } from "../models/userRightsModels";
 import { DBSingletonFactory } from "../firestoreDB/singletonService";
 import { Db } from "../firestoreDB/db";
@@ -444,9 +444,21 @@ export class UserPermissionService {
                 id: complexGroup.id,
                 groupName: complexGroup.groupName,
                 currentState: complexGroup.currentState,
-                fieldGroupStates: complexGroup.fieldGroupStates,
+                fieldGroupStates: [],
                 readOnly: complexGroupRight === ERightType.Read,
             }
+            let states: IComplexFieldGroupState[] = [];
+            for(let state of complexGroup.fieldGroupStates){
+                let fields: IDeviceFieldBasic[] = [];
+                for(let field of state.fields){
+                    if(complexGroupRight == ERightType.Read){
+                        field.fieldValue.fieldDirection = "output";
+                    }
+                    fields.push(field);
+                }
+                states.push(state);
+            }
+            complexGroupReduced.fieldGroupStates = states;
             deviceReduced.deviceFieldComplexGroups.push(complexGroupReduced);
         }
         deviceReduced.updateTimeStamp = getCurrentTimeUNIX();

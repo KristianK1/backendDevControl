@@ -397,7 +397,8 @@ export class UserPermissionService {
         await this.db.deleteUserRightForNewAdmin(userId, deviceId);
     }
 
-    async getDeviceForUser(user: IUser, device: IDevice, isActive: boolean): Promise<IDeviceForUser | undefined> {
+    async getDeviceForUser(user: IUser, deviceMain: IDevice, isActive: boolean): Promise<IDeviceForUser | undefined> {
+        let device = JSON.parse(JSON.stringify(deviceMain));
         if (! await this.checkAnyUserRightToDevice(user, device)) return;
         let deviceReduced: IDeviceForUser = {
             id: device.id,
@@ -439,7 +440,7 @@ export class UserPermissionService {
         for (let complexGroup of device.deviceFieldComplexGroups) {
             let complexGroupRight = await this.checkUserRightToComplexGroup(user, device.id, complexGroup.id, device);
             if (complexGroupRight === ERightType.None) continue;
-
+            
             let complexGroupReduced: IComplexFieldGroupForUser = {
                 id: complexGroup.id,
                 groupName: complexGroup.groupName,
@@ -451,7 +452,7 @@ export class UserPermissionService {
             for(let state of complexGroup.fieldGroupStates){
                 let fields: IDeviceFieldBasic[] = [];
                 for(let field of state.fields){
-                    if(complexGroupRight == ERightType.Read){
+                    if(complexGroupRight === ERightType.Read){
                         field.fieldValue.fieldDirection = "output";
                     }
                     fields.push(field);

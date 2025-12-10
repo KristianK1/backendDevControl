@@ -3,6 +3,9 @@ import { ITrigger, ITrigRespEmail } from 'models/triggerModels';
 import { IEmailData } from './emailModels';
 import { emailConfirmationAddEmailPath, emailConfirmationRegisterPath, setupNewPasswordPath } from './emailPaths';
 import { bridge_getUserbyId } from '../services/serviceBridge';
+import * as FormDataModule from "form-data";
+import Mailgun from "mailgun.js";
+import type { MailgunMessageData } from 'mailgun';
 
 export const emailServiceSingletonFactory = (function () {
   var emailServiceInstance: EmailService;
@@ -129,33 +132,24 @@ export class EmailService {
 
     console.log(this.myHiddenEmail);
     console.log(this.myHiddenEmailPassword);
+    
+    const FormDataClass = (FormDataModule as any).default || FormDataModule;
+    const mailgun = new (Mailgun as any).default(FormDataClass);
 
-    let transporter = nodemailer.createTransport({
-      auth: {
-        user: this.myHiddenEmail,
-        pass: this.myHiddenEmailPassword,
-      },
-      tls: {
-        ciphers: 'SSLv3'
-      },
-      port: 587,
-      host: 'smtp.office365.com',
-      secure: false
+    const client = mailgun.client({
+      username: 'api',
+      key: '04af4ed8-a64c1279',          // e.g. key-xxxxxxxx
     });
 
-    var mailOptions = {
-      from: this.myHiddenEmail,
+    const messageData: MailgunMessageData = {
+      from: 'devControl service <devcontrolservice.eu>',
       to: data.reciver,
-      subject: data.title,
-      text: data.payload
+      subject: "Hello from Mailgun",
+      text: "This is a test email using Mailgun API!"
     };
 
-    await transporter.sendMail(mailOptions, function (error, info) {
-      if (error) {
-        console.log('failed to send email');
-      } else {
-        console.log('Email sent: ' + info.response);
+    client.messages.create('kristiankliskovic@gmail.com', messageData)
+      .then(msg => console.log(msg))
+      .catch(err => console.error(err));
       }
-    });
-  }
 }
